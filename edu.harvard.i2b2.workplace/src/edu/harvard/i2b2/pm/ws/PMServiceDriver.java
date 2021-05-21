@@ -35,7 +35,7 @@ import edu.harvard.i2b2.workplace.datavo.pm.GetUserConfigurationType;
 import edu.harvard.i2b2.workplace.util.WorkplaceUtil;
 
 public class PMServiceDriver {
-	private static Log log = LogFactory.getLog(edu.harvard.i2b2.pm.ws.im.PMServiceDriver.class.getName());
+	private static Log log = LogFactory.getLog(PMServiceDriver.class.getName());
 	//private static ServiceClient serviceClient = null;
 	/**
 	 * Function to convert pm requestVdo to OMElement
