@@ -30,8 +30,8 @@ import edu.harvard.i2b2.workplace.datavo.pm.ConfigureType;
 import edu.harvard.i2b2.workplace.datavo.pm.GetUserConfigurationType;
 import edu.harvard.i2b2.workplace.datavo.pm.ProjectType;
 import edu.harvard.i2b2.workplace.dao.DataSourceLookupHelper;
-import edu.harvard.i2b2.pm.ws.im.PMResponseMessage;
-import edu.harvard.i2b2.pm.ws.im.PMServiceDriver;
+import edu.harvard.i2b2.pm.ws.PMResponseMessage;
+import edu.harvard.i2b2.pm.ws.PMServiceDriver;
 import edu.harvard.i2b2.workplace.ejb.DBInfoType;
 import edu.harvard.i2b2.workplace.util.WorkplaceUtil;
 
@@ -68,7 +68,7 @@ public abstract class RequestHandler {
     }        
     
 
-	public ProjectType getRoleInfo(MessageHeaderType header)
+	public ProjectType getRoleInfo(MessageHeaderType header) 
     {
     	ProjectType projectType = null;
     	
@@ -77,7 +77,7 @@ public abstract class RequestHandler {
 				GetUserConfigurationType userConfigType = new GetUserConfigurationType();
 
 				PMResponseMessage msg = new PMResponseMessage();
-				edu.harvard.i2b2.im.datavo.i2b2message.StatusType procStatus = null;
+				StatusType procStatus = null;	
 				String response = PMServiceDriver.getRoles(userConfigType,header);		
 				log.debug(response);
 				procStatus = msg.processResult(response);
