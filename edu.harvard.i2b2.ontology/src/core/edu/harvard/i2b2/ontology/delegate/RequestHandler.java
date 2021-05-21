@@ -26,9 +26,8 @@ import edu.harvard.i2b2.ontology.datavo.pm.ConfigureType;
 import edu.harvard.i2b2.ontology.datavo.pm.GetUserConfigurationType;
 import edu.harvard.i2b2.ontology.datavo.pm.ProjectType;
 import edu.harvard.i2b2.ontology.ejb.DBInfoType;
-import edu.harvard.i2b2.ontology.util.OntologyUtil;
-import edu.harvard.i2b2.pm.ws.PMResponseMessage;
-import edu.harvard.i2b2.pm.ws.PMServiceDriver;
+import edu.harvard.i2b2.pm.ws.im.PMResponseMessage;
+import edu.harvard.i2b2.pm.ws.im.PMServiceDriver;
 
 
 

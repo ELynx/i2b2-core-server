@@ -13,7 +13,7 @@
  * 		Mike Mendis
  * 		Raj Kuttan
  */
-package edu.harvard.i2b2.pm.ws;
+package edu.harvard.i2b2.pm.ws.im;
 
 import javax.xml.bind.JAXBElement;
 
@@ -27,7 +27,6 @@ import edu.harvard.i2b2.im.datavo.i2b2message.ResponseHeaderType;
 import edu.harvard.i2b2.im.datavo.i2b2message.ResponseMessageType;
 import edu.harvard.i2b2.im.datavo.i2b2message.StatusType;
 import edu.harvard.i2b2.im.datavo.pm.ConfigureType;
-import edu.harvard.i2b2.im.datavo.pm.ProjectType;
 import edu.harvard.i2b2.im.datavo.pm.ProjectsType;
 import edu.harvard.i2b2.im.util.IMJAXBUtil;
 

@@ -32,7 +32,7 @@ import edu.harvard.i2b2.workplace.util.WorkplaceJAXBUtil;
 
 public class PMResponseMessage {
 
-	public static final String THIS_CLASS_NAME = PMResponseMessage.class.getName();
+	public static final String THIS_CLASS_NAME = edu.harvard.i2b2.pm.ws.im.PMResponseMessage.class.getName();
     private Log log = LogFactory.getLog(THIS_CLASS_NAME);	
     private ResponseMessageType pmRespMessageType = null;
     

@@ -24,14 +24,12 @@ import edu.harvard.i2b2.common.exception.I2B2Exception;
 import edu.harvard.i2b2.workplace.datavo.i2b2message.MessageHeaderType;
 //import edu.harvard.i2b2.workplace.datavo.i2b2message.PasswordType;
 import edu.harvard.i2b2.workplace.datavo.i2b2message.SecurityType;
-import edu.harvard.i2b2.workplace.datavo.i2b2message.StatusType;
 import edu.harvard.i2b2.workplace.datavo.pm.CellDataType;
-import edu.harvard.i2b2.workplace.datavo.pm.ConfigureType;
 import edu.harvard.i2b2.workplace.datavo.pm.GetUserConfigurationType;
 import edu.harvard.i2b2.workplace.datavo.pm.ProjectType;
 import edu.harvard.i2b2.workplace.dao.DataSourceLookupHelper;
-import edu.harvard.i2b2.pm.ws.PMResponseMessage;
-import edu.harvard.i2b2.pm.ws.PMServiceDriver;
+import edu.harvard.i2b2.pm.ws.im.PMResponseMessage;
+import edu.harvard.i2b2.pm.ws.im.PMServiceDriver;
 import edu.harvard.i2b2.workplace.ejb.DBInfoType;
 import edu.harvard.i2b2.workplace.util.WorkplaceUtil;
 
@@ -47,15 +45,15 @@ public abstract class RequestHandler {
 
     
     //swc20160519
-    public boolean isAdmin(MessageHeaderType header) {
+    public boolean isAdmin(edu.harvard.i2b2.im.datavo.i2b2message.MessageHeaderType header) {
 		try {
-			GetUserConfigurationType userConfigType = new GetUserConfigurationType();
+			edu.harvard.i2b2.im.datavo.pm.GetUserConfigurationType userConfigType = new edu.harvard.i2b2.im.datavo.pm.GetUserConfigurationType();
 			String response = PMServiceDriver.getRoles(userConfigType, header);		
 			log.debug(response);
 			PMResponseMessage msg = new PMResponseMessage();
-			StatusType procStatus = msg.processResult(response);
+			edu.harvard.i2b2.im.datavo.i2b2message.StatusType procStatus = msg.processResult(response);
 			if(procStatus.getType().equals("ERROR")) return false;
-			ConfigureType pmConfigure = msg.readUserInfo();
+			edu.harvard.i2b2.im.datavo.pm.ConfigureType pmConfigure = msg.readUserInfo();
 			if (pmConfigure.getUser().isIsAdmin()) return true;
 		} catch (AxisFault e) {
 				log.error("Can't connect to PM service");
@@ -68,27 +66,27 @@ public abstract class RequestHandler {
     }        
     
 
-	public ProjectType getRoleInfo(MessageHeaderType header) 
+	public ProjectType getRoleInfo(edu.harvard.i2b2.im.datavo.i2b2message.MessageHeaderType header)
     {
     	ProjectType projectType = null;
     	
 
 			try {
-				GetUserConfigurationType userConfigType = new GetUserConfigurationType();
+				edu.harvard.i2b2.im.datavo.pm.GetUserConfigurationType userConfigType = new edu.harvard.i2b2.im.datavo.pm.GetUserConfigurationType();
 
 				PMResponseMessage msg = new PMResponseMessage();
-				StatusType procStatus = null;	
+				edu.harvard.i2b2.im.datavo.i2b2message.StatusType procStatus = null;
 				String response = PMServiceDriver.getRoles(userConfigType,header);		
 				log.debug(response);
 				procStatus = msg.processResult(response);
 				if(procStatus.getType().equals("ERROR"))
 					return null;
 				// check that user has access to this project.
-				ConfigureType pmConfigure = msg.readUserInfo();
+				edu.harvard.i2b2.im.datavo.pm.ConfigureType pmConfigure = msg.readUserInfo();
 				Iterator it = pmConfigure.getUser().getProject().iterator();
 				
 				//Set CRC Cell URL
-				for (CellDataType cell : pmConfigure.getCellDatas().getCellData())
+				for (edu.harvard.i2b2.im.datavo.pm.CellDataType cell : pmConfigure.getCellDatas().getCellData())
 				{
 					if (cell.getId().equals("CRC"))
 					{

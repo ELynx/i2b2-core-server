@@ -14,7 +14,7 @@
  * 		Raj Kuttan
  * 		Lori Phillips
  */
-package edu.harvard.i2b2.pm.ws;
+package edu.harvard.i2b2.pm.ws.im;
 
 import java.io.StringReader;
 
@@ -22,6 +22,8 @@ import javax.xml.stream.FactoryConfigurationError;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamReader;
 
+import edu.harvard.i2b2.pm.ws.GetAllProjectRequestMessage;
+import edu.harvard.i2b2.pm.ws.GetUserConfigurationRequestMessage;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.impl.builder.StAXOMBuilder;
 import org.apache.axis2.AxisFault;
