@@ -81,7 +81,7 @@ public class FolderDao extends JdbcDaoSupport {
 			//			metadataSchema = ds.getConnection().getSchema() + ".";
 			Connection conn = ds.getConnection();
 
-			metadataSchema = conn.getSchema() + ".";
+			metadataSchema = "\"" + conn.getSchema() + "\".";
 			conn.close();
 		} catch (I2B2Exception e2) {
 			log.error(e2.getMessage());;
@@ -1744,6 +1744,8 @@ class getTableMapper implements RowMapper<DblookupType> {
 		dblu.setDbFullschema(rs.getString("c_db_fullschema"));
 		dblu.setDbDatasource(rs.getString("c_db_datasource"));
 		dblu.setDbServertype(rs.getString("c_db_servertype"));
+		//TODO: IRIS
+//		dblu.setDbServertype("INTERSYSTEMS IRIS");
 		dblu.setDbNicename(rs.getString("c_db_nicename"));
 		dblu.setDbTooltip(rs.getString("c_db_tooltip"));
 		dblu.setComment(rs.getString("c_comment"));

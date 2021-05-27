@@ -27,10 +27,10 @@
  </bean>
  
   <bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
-    <property name="driverClassName" value="oracle.jdbc.driver.OracleDriver"/>
-    <property name="url" value="jdbc:oracle:thin:@localhost:1521:xe"/>
-    <property name="username" value="metadata_uname"/>
-    <property name="password" value="demouser"/>
+    <property name="driverClassName" value="com.intersystems.jdbc.IRISDrive"/>
+    <property name="url" value="jdbc:IRIS://iris:1972/IRISAPP/ont_ontology_act_ds.log"/>
+    <property name="username" value="_SYSTEM"/>
+    <property name="password" value="SYS"/>
     <property name="defaultAutoCommit" value="false"/>
     <property name="defaultReadOnly" value="true"/>
   </bean>

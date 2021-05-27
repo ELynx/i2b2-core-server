@@ -400,7 +400,7 @@ public class QueryProcessorUtil {
 
 				Connection conn = ds.getConnection();
 				
-				String metadataSchema = conn.getSchema();
+				String metadataSchema = "\"" + conn.getSchema() + "\"";
 				conn.close();
 				JdbcTemplate jt =  new JdbcTemplate(ds);
 				String sql =  "select * from " + metadataSchema + ".hive_cell_params where status_cd <> 'D' and cell_id = 'CRC'";

@@ -56,7 +56,8 @@ public class MetadataDbDao extends JdbcDaoSupport {
 	}
 	
 	
-	public List<DBInfoType> getDbLookupByHiveOwner(String domainId,String ownerId) throws I2B2Exception, I2B2DAOException { 
+	public List<DBInfoType> getDbLookupByHiveOwner(String domainId,String ownerId) throws I2B2Exception, I2B2DAOException {
+		log.info("MetadataDbDao.class: getDbLookupByHiveOwner(String domainId,String ownerId)");
 		String metadataSchema = getMetadataSchema();
 		String sql =  "select * from " + metadataSchema + "ont_db_lookup where LOWER(c_domain_id) = ? and c_project_path = ? and (LOWER(c_owner_id) = ? or c_owner_id ='@') order by c_project_path";
 		String projectId = "@";
@@ -68,6 +69,7 @@ public class MetadataDbDao extends JdbcDaoSupport {
 			log.error(e.getMessage());
 			throw new I2B2DAOException("Database error");
 		}
+		log.info("Script: " + sql);
 		return queryResult;
 		
 //		List<DBInfoType> dataSourceLookupList = 
@@ -78,8 +80,9 @@ public class MetadataDbDao extends JdbcDaoSupport {
 	@SuppressWarnings("unchecked")
 	public List<DBInfoType> getDbLookupByHiveProjectOwner(String domainId, String projectId,
 			String ownerId) throws I2B2Exception, I2B2DAOException{
-		String metadataSchema = getMetadataSchema();
-		String sql = "select * from " + metadataSchema + "ont_db_lookup where LOWER(c_domain_id) = ? and LOWER(c_project_path) like  ? and (LOWER(c_owner_id) =? or c_owner_id = '@') order by c_project_path"; // desc  c_owner_id desc"; 
+		log.info("MetadataDbDao.class: getDbLookupByHiveProjectOwner(String domainId, String projectId, String ownerId)");
+    	String metadataSchema = getMetadataSchema();
+		String sql = "select * from " + metadataSchema + "ont_db_lookup where LOWER(c_domain_id) = ? and LOWER(c_project_path) like  ? and (LOWER(c_owner_id) =? or c_owner_id = '@') order by c_project_path"; // desc  c_owner_id desc";
 //		List<DBInfoType> dataSourceLookupList = this.query(sql, new Object[]{domainId,projectId+"%",ownerId},new int[]{Types.VARCHAR,Types.VARCHAR,Types.VARCHAR},new mapper()  );
 //		return dataSourceLookupList;
 //		log.info(sql + domainId + projectId + ownerId);
@@ -90,6 +93,7 @@ public class MetadataDbDao extends JdbcDaoSupport {
 			log.error(e.getMessage());
 			throw new I2B2DAOException("Database error");
 		}
+		log.info("Script: " + sql);
 		return queryResult;
 		
 	}
@@ -110,6 +114,8 @@ class getDBInfoMapper implements RowMapper<DBInfoType> {
 			dataSourceLookup.setDb_fullSchema(rs.getString("c_db_fullschema"));
 			dataSourceLookup.setDb_dataSource(rs.getString("c_db_datasource"));
 			dataSourceLookup.setDb_serverType(rs.getString("c_db_servertype"));
+			//TODO: IRIS
+			dataSourceLookup.setDb_serverType("INTERSYSTEMS IRIS");
 
 			return dataSourceLookup;
 		} 

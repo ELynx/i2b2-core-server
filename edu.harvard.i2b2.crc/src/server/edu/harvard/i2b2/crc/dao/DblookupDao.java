@@ -230,6 +230,8 @@ class getMapper implements RowMapper<DblookupType> {
         	dblu.setDbFullschema(rs.getString("c_db_fullschema"));
         	dblu.setDbDatasource(rs.getString("c_db_datasource"));
         	dblu.setDbServertype(rs.getString("c_db_servertype"));
+        	//TODO: IRIS
+//			dblu.setDbServertype("INTERSYSTEMS IRIS");
         	dblu.setDbNicename(rs.getString("c_db_nicename"));
         	dblu.setDbTooltip(rs.getString("c_db_tooltip"));
         	dblu.setComment(rs.getString("c_comment"));

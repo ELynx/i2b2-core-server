@@ -117,7 +117,7 @@ public class IMUtil {
 		try {
 			Connection conn = dataSource.getConnection();
 			
-			String metadataSchema = conn.getSchema() + ".";
+			String metadataSchema = "\"" + conn.getSchema() + "\".";
 			conn.close();
 			return metadataSchema;
 		} catch (SQLException e) {
@@ -206,7 +206,7 @@ public class IMUtil {
 				JdbcTemplate jt =  new JdbcTemplate(ds);
 				Connection conn = ds.getConnection();
 				
-				String metadataSchema = conn.getSchema();
+				String metadataSchema = "\"" +conn.getSchema() + "\"";
 				conn.close();
 				String sql =  "select * from " + metadataSchema + ".hive_cell_params where status_cd <> 'D' and cell_id = 'IM'";
 

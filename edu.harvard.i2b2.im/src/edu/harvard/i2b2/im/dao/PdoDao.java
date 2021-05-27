@@ -89,7 +89,6 @@ public class PdoDao  extends JdbcDaoSupport {
 	}
 
 	private String getMetadataSchema() throws I2B2Exception{
-
 		return IMUtil.getInstance().getIMDataSchemaName();
 	}
 

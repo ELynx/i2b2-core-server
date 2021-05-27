@@ -119,6 +119,8 @@ class getDBMapper implements RowMapper<DBInfoType> {
 		dataSourceLookup.setDb_fullSchema(rs.getString("c_db_fullschema"));
 		dataSourceLookup.setDb_dataSource(rs.getString("c_db_datasource"));
 		dataSourceLookup.setDb_serverType(rs.getString("c_db_servertype"));
+		//TODO: IRIS
+		dataSourceLookup.setDb_serverType("INTERSYSTEMS IRIS");
 
 		return dataSourceLookup;
 	} 

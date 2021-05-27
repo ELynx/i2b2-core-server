@@ -32,9 +32,9 @@ public class OracleDataSourceLookupDAO extends DataSourceLookupDAO {
 	public OracleDataSourceLookupDAO(DataSource dataSource, String schemaName) {
 		setDataSource(dataSource);
 		if (schemaName != null && schemaName.endsWith(".")) {
-			this.schemaName = schemaName;
+			this.schemaName = "\"" + schemaName.substring(0, schemaName.length() - 1) + "\".";
 		} else {
-			this.schemaName = schemaName + ".";
+			this.schemaName = schemaName != null ? "\"" + schemaName + "\"." : null;
 		}
 	}
 
@@ -94,6 +94,8 @@ public class OracleDataSourceLookupDAO extends DataSourceLookupDAO {
 			dataSourceLookup.setFullSchema(rs.getString("c_db_fullschema"));
 			dataSourceLookup.setDataSource(rs.getString("c_db_datasource"));
 			dataSourceLookup.setServerType(rs.getString("c_db_servertype"));
+			//TODO: IRIS
+			dataSourceLookup.setServerType("INTERSYSTEMS IRIS");
 			dataSourceLookup.setNiceName(rs.getString("c_db_nicename"));
 			dataSourceLookup.setToolTip(rs.getString("c_db_tooltip"));
 			dataSourceLookup.setComment(rs.getString("c_comment"));

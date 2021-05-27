@@ -70,7 +70,9 @@ public class OracleDataSourceLookupDAO extends DataSourceLookupDAO  {
 	        dataSourceLookup.setOwnerId(rs.getString("c_owner_id"));
 	        dataSourceLookup.setFullSchema(rs.getString("c_db_fullschema"));
 	        dataSourceLookup.setDataSource(rs.getString("c_db_datasource"));
-	        dataSourceLookup.setServerType(rs.getString("c_db_servertype")); 
+	        dataSourceLookup.setServerType(rs.getString("c_db_servertype"));
+			//TODO: IRIS
+//			dataSourceLookup.setServerType("INTERSYSTEMS IRIS");
 	        dataSourceLookup.setNiceName(rs.getString("c_db_nicename"));
 	        dataSourceLookup.setToolTip(rs.getString("c_db_tooltip"));
 	        dataSourceLookup.setComment(rs.getString("c_comment"));
