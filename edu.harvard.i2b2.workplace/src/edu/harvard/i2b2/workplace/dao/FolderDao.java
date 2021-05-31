@@ -212,7 +212,9 @@ public class FolderDao extends JdbcDaoSupport {
 
 		List<FolderType> queryResult = null;		
 		if (!protectedAccess){
-			String tablesSql = "select distinct(c_table_cd), " + parameters + " from " +  metadataSchema +  "workplace_access where (c_share_id = 'Y' and LOWER(c_group_id) = ?) or (c_protected_access = ? and LOWER(c_user_id) = ? and LOWER(c_group_id) = ?) order by c_name"; //c_hierarchy";
+			String tablesSql = "select distinct(c_table_cd), " + parameters + " from " +
+					(metadataSchema != null ? ("\"" + metadataSchema + "\"." ) : "") +
+					"workplace_access where (c_share_id = 'Y' and LOWER(c_group_id) = ?) or (c_protected_access = ? and LOWER(c_user_id) = ? and LOWER(c_group_id) = ?) order by c_name"; //c_hierarchy";
 
 			//		log.info(tablesSql);
 			try {
@@ -223,7 +225,9 @@ public class FolderDao extends JdbcDaoSupport {
 			}
 		}
 		else{
-			String tablesSql = "select distinct(c_table_cd), " + parameters + " from " +  metadataSchema +  "workplace_access where (c_share_id = 'Y' and LOWER(c_group_id) = ?) or (LOWER(c_user_id) = ? and LOWER(c_group_id) = ?) order by c_name"; //c_hierarchy";
+			String tablesSql = "select distinct(c_table_cd), " + parameters + " from " +
+					(metadataSchema != null ? ("\"" + metadataSchema + "\"." ) : "") +
+					"workplace_access where (c_share_id = 'Y' and LOWER(c_group_id) = ?) or (LOWER(c_user_id) = ? and LOWER(c_group_id) = ?) order by c_name"; //c_hierarchy";
 			try {
 				queryResult =  jt.query(tablesSql, 
 						GetTableMapper(returnType.getType(), false, null, dbInfo.getDb_serverType())
@@ -265,7 +269,7 @@ public class FolderDao extends JdbcDaoSupport {
 
 	public void check_addRootNode(String metadataSchema, String userId, ProjectType projectInfo, DBInfoType dbInfo) throws I2B2DAOException, I2B2Exception{
 
-		String entriesSql = "select c_name  from " +  metadataSchema +  "workplace_access where LOWER(c_user_id) = ? and LOWER(c_group_id) = ?"; 
+		String entriesSql = "select c_name  from " +  (metadataSchema != null ? ("\"" + metadataSchema + "\"." ) : "") +  "workplace_access where LOWER(c_user_id) = ? and LOWER(c_group_id) = ?";
 
 		/*
 		ParameterizedRowMapper<String> map = new ParameterizedRowMapper<String>() {

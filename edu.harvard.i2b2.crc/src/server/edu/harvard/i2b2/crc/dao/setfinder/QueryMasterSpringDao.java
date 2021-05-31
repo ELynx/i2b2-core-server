@@ -614,8 +614,7 @@ public class QueryMasterSpringDao extends CRCDAO implements IQueryMasterDao {
 				DataSourceLookup dataSourceLookup) {
 			super();
 			this.setDataSource(dataSource);
-			if (dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.ORACLE)) {
+			if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE)) {
 				this.setReturnGeneratedKeys(true);
 				INSERT_ORACLE = "INSERT INTO "
 						+ dbSchemaName
@@ -626,16 +625,14 @@ public class QueryMasterSpringDao extends CRCDAO implements IQueryMasterDao {
 				SEQUENCE_ORACLE = "select " + dbSchemaName
 						+ "QT_SQ_QM_QMID.nextval from dual";
 				declareParameter(new SqlParameter(Types.INTEGER));
-			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.SQLSERVER)) {
+			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)) {
 				INSERT_SQLSERVER = "INSERT INTO "
 						+ dbSchemaName
 						+ "QT_QUERY_MASTER "
 						+ "( NAME, USER_ID, GROUP_ID,MASTER_TYPE_CD,PLUGIN_ID,CREATE_DATE,DELETE_DATE,REQUEST_XML,DELETE_FLAG,GENERATED_SQL,I2B2_REQUEST_XML,PM_XML) "
 						+ "VALUES (?,?,?,?,?,?,?,?,?,?,?,?)";
 				this.setSql(INSERT_SQLSERVER);
-			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.POSTGRESQL)) {
+			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)) {
 				this.setReturnGeneratedKeys(true);
 				INSERT_POSTGRESQL = "INSERT INTO "
 						+ dbSchemaName
@@ -671,8 +668,7 @@ public class QueryMasterSpringDao extends CRCDAO implements IQueryMasterDao {
 			Object[] object = null;
 			int queryMasterIdentityId = 0;
 
-			if (dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.SQLSERVER)) {
+			if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)) {
 				object = new Object[] { queryMaster.getName(),
 						queryMaster.getUserId(), queryMaster.getGroupId(),
 						queryMaster.getMasterTypeCd(),
@@ -684,8 +680,7 @@ public class QueryMasterSpringDao extends CRCDAO implements IQueryMasterDao {
 				update(object);
 				queryMasterIdentityId = jdbc.queryForObject("SELECT @@IDENTITY", Integer.class);
 
-			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.ORACLE)) {
+			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE)) {
 				queryMasterIdentityId = jdbc.queryForObject(SEQUENCE_ORACLE, Integer.class);
 				object = new Object[] { queryMasterIdentityId,
 						queryMaster.getName(), queryMaster.getUserId(),
@@ -698,8 +693,7 @@ public class QueryMasterSpringDao extends CRCDAO implements IQueryMasterDao {
 						queryMaster.getGeneratedSql(), i2b2RequestXml, pmXml };
 				update(object);
 
-			}  else if (dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.POSTGRESQL)) {
+			}  else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)) {
 				queryMasterIdentityId = jdbc.queryForObject(SEQUENCE_POSTGRESQL, Integer.class);
 				object = new Object[] { queryMasterIdentityId,
 						queryMaster.getName(), queryMaster.getUserId(),
