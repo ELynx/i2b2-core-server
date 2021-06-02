@@ -132,6 +132,8 @@ public class QueryExecutorHelperDao extends CRCDAO {
 			ResultOutputOptionListType resultOutputList, String generatedSql, String pmXml
 			)
 					throws CRCTimeOutException, I2B2DAOException {
+		log.info("QueryExecutorHelperDao.class: executeQuery(int transactionTimeout, DataSourceLookup dsLookup, SetFinderDAOFactory sfDAOFactory, String requestXml," +
+				"String sqlString, String queryInstanceId, String patientSetId, ResultOutputOptionListType resultOutputList, String generatedSql, String pmXml)");
 		boolean errorFlag = false, timeOutErrorFlag = false;
 		Statement stmt = null;
 		ResultSet resultSet = null;
@@ -160,8 +162,8 @@ public class QueryExecutorHelperDao extends CRCDAO {
 			TEMP_TABLE = getDbSchemaName() + "QUERY_GLOBAL_TEMP";
 			TEMP_DX_TABLE = getDbSchemaName() + "DX";
 			TEMP_MASTER_TABLE = getDbSchemaName() + "MASTER_QUERY_GLOBAL_TEMP";
-		}  else if (dsLookup.getServerType().equalsIgnoreCase(
-				DAOFactoryHelper.POSTGRESQL) ) {
+		}  else if (dsLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
+						|| dsLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
 			TEMP_TABLE =  "QUERY_GLOBAL_TEMP";
 			TEMP_DX_TABLE =  "DX";
 			TEMP_MASTER_TABLE =   "MASTER_QUERY_GLOBAL_TEMP";
@@ -177,9 +179,9 @@ public class QueryExecutorHelperDao extends CRCDAO {
 			stmt = manualConnection.createStatement();
 			int count = 0;
 
-			if (dsLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.SQLSERVER)  || dsLookup.getServerType().equalsIgnoreCase(
-							DAOFactoryHelper.POSTGRESQL)) {
+			if (dsLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)
+					|| dsLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
+					|| dsLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
 				String checkDeleteGlobalTempTable = "drop table " + TEMP_TABLE;
 				String checkDeleteCountTable = "drop table " + TEMP_DX_TABLE;
 				String checkDeleteMasterTable = "drop table " + TEMP_MASTER_TABLE;
@@ -206,27 +208,38 @@ public class QueryExecutorHelperDao extends CRCDAO {
 						+ " PANEL_COUNT int, " + " fact_count int, "
 						+ " fact_panels int " + ")";
 
-				if (dsLookup.getServerType().equalsIgnoreCase(
-						DAOFactoryHelper.POSTGRESQL))
-					createSql =  "CREATE TEMP  TABLE " + TEMP_TABLE + " ( "
+				if (dsLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
+						|| dsLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
+					createSql = "CREATE " +
+							(dsLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL) ? "TEMP" : "GLOBAL TEMPORARY" ) +
+							" TABLE " + TEMP_TABLE + " ( "
 							+ " ENCOUNTER_NUM int, " + " PATIENT_NUM int, INSTANCE_NUM int, CONCEPT_CD varchar(50), START_DATE TIMESTAMP, PROVIDER_ID varchar(50), "
 							+ " PANEL_COUNT int, " + " fact_count int, "
 							+ " fact_panels int " + ")";
+					log.info("Script - createSql: " + createSql);
+				}
 				stmt.executeUpdate(createSql);
 				createSql = " CREATE  TABLE " + TEMP_DX_TABLE + "  ( "
 						+ " ENCOUNTER_NUM int, " + " PATIENT_NUM int, INSTANCE_NUM int, CONCEPT_CD varchar(50), START_DATE DATETIME, PROVIDER_ID varchar(50), temporal_start_date datetime, temporal_end_date DATETIME ) ";
-				if (dsLookup.getServerType().equalsIgnoreCase(
-						DAOFactoryHelper.POSTGRESQL))
-					createSql = " CREATE TEMP TABLE " + TEMP_DX_TABLE + "  ( "
+				if (dsLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
+						|| dsLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
+					createSql = " CREATE " +
+							(dsLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL) ? "TEMP" : "GLOBAL TEMPORARY" ) +
+							" TABLE " + TEMP_DX_TABLE + "  ( "
 							+ " ENCOUNTER_NUM int, " + " PATIENT_NUM int, INSTANCE_NUM int, CONCEPT_CD varchar(50), START_DATE TIMESTAMP, PROVIDER_ID varchar(50), temporal_start_date TIMESTAMP, temporal_end_date TIMESTAMP ) ";
-
+					log.info("Script - createSql: " + createSql);
+				}
 				stmt.executeUpdate(createSql);
 				createSql = " CREATE  TABLE " + TEMP_MASTER_TABLE + "  ( "
 						+ " ENCOUNTER_NUM int,  PATIENT_NUM int , INSTANCE_NUM int, CONCEPT_CD varchar(50), START_DATE DATETIME, PROVIDER_ID varchar(50), MASTER_ID varchar(50), LEVEL_NO int, temporal_start_date DATETIME, temporal_end_date DATETIME ) ";
-				if (dsLookup.getServerType().equalsIgnoreCase(
-						DAOFactoryHelper.POSTGRESQL))
-					createSql = " CREATE TEMP TABLE " + TEMP_MASTER_TABLE + "  ( "
+				if (dsLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
+				 		|| dsLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
+					createSql = " CREATE " +
+							(dsLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL) ? "TEMP" : "GLOBAL TEMPORARY" ) +
+							" TABLE " + TEMP_MASTER_TABLE + "  ( "
 							+ " ENCOUNTER_NUM int,  PATIENT_NUM int , INSTANCE_NUM int, CONCEPT_CD varchar(50), START_DATE TIMESTAMP, PROVIDER_ID varchar(50), MASTER_ID varchar(50), LEVEL_NO int, temporal_start_date TIMESTAMP, temporal_end_date TIMESTAMP ) ";
+					log.info("Script - createSql: " + createSql);
+				}
 				stmt.executeUpdate(createSql);
 
 				if (dsLookup.getServerType().equalsIgnoreCase(
@@ -379,9 +392,9 @@ public class QueryExecutorHelperDao extends CRCDAO {
 					TEMP_DX_TABLE, recordCount, obfuscatedRecordCount, transactionTimeout, pmXml);
 
 
-			if (dsLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.SQLSERVER) || dsLookup.getServerType().equalsIgnoreCase(
-							DAOFactoryHelper.POSTGRESQL)) {
+			if (dsLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)
+					|| dsLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
+					|| dsLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
 				//Delete temp table for Sqlsever 
 				String checkDeleteGlobalTempTable = "drop table " + TEMP_TABLE;
 				String checkDeleteCountTable = "drop table " + TEMP_DX_TABLE;

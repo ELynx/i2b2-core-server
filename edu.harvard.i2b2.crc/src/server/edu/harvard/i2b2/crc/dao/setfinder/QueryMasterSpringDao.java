@@ -607,6 +607,8 @@ public class QueryMasterSpringDao extends CRCDAO implements IQueryMasterDao {
 		private String SEQUENCE_ORACLE = "";
 		private String SEQUENCE_POSTGRESQL = "";
 		private String INSERT_POSTGRESQL = "";
+		private String INSERT_INTERSYSTEMS_IRIS = "";
+		private String SEQUENCE_INTERSYSTEMS_IRIS = "";
 
 		private DataSourceLookup dataSourceLookup = null;
 
@@ -642,6 +644,16 @@ public class QueryMasterSpringDao extends CRCDAO implements IQueryMasterDao {
 				setSql(INSERT_POSTGRESQL);
 				SEQUENCE_POSTGRESQL = "select " //+ dbSchemaName
 						+ " nextval('qt_query_master_query_master_id_seq') ";
+				declareParameter(new SqlParameter(Types.INTEGER));
+			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
+				this.setReturnGeneratedKeys(true);
+				INSERT_INTERSYSTEMS_IRIS = "INSERT INTO "
+						+ dbSchemaName
+						+ "QT_QUERY_MASTER "
+						+ "(QUERY_MASTER_ID, NAME, USER_ID, GROUP_ID,MASTER_TYPE_CD,PLUGIN_ID,CREATE_DATE,DELETE_DATE,REQUEST_XML,DELETE_FLAG,GENERATED_SQL,I2B2_REQUEST_XML, PM_XML) "
+						+ "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)";
+				setSql(INSERT_INTERSYSTEMS_IRIS);
+				SEQUENCE_INTERSYSTEMS_IRIS = "select I2B2.Utils_nextval('qt_query_master_query_master_id_seq')";
 				declareParameter(new SqlParameter(Types.INTEGER));
 			}
 			this.dataSourceLookup = dataSourceLookup;
@@ -695,6 +707,18 @@ public class QueryMasterSpringDao extends CRCDAO implements IQueryMasterDao {
 
 			}  else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)) {
 				queryMasterIdentityId = jdbc.queryForObject(SEQUENCE_POSTGRESQL, Integer.class);
+				object = new Object[] { queryMasterIdentityId,
+						queryMaster.getName(), queryMaster.getUserId(),
+						queryMaster.getGroupId(),
+						queryMaster.getMasterTypeCd(),
+						queryMaster.getPluginId(), queryMaster.getCreateDate(),
+						queryMaster.getDeleteDate(),
+						queryMaster.getRequestXml(),
+						queryMaster.getDeleteFlag(),
+						queryMaster.getGeneratedSql(), i2b2RequestXml, pmXml };
+				update(object);
+			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
+				queryMasterIdentityId = Math.abs((int) new Date().getTime()); //jdbc.queryForObject(SEQUENCE_INTERSYSTEMS_IRIS, Integer.class);
 				object = new Object[] { queryMasterIdentityId,
 						queryMaster.getName(), queryMaster.getUserId(),
 						queryMaster.getGroupId(),

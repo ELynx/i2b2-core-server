@@ -24,9 +24,9 @@ public class TempTableNameMap {
 			tempTableName = "#global_temp_table";
 			tempDxTableName = "#dx";
 			tempMasterTableName = "#master_global_temp_table";
-		} else if (serverType.equalsIgnoreCase(
-				DAOFactoryHelper.ORACLE) || serverType.equalsIgnoreCase(
-						DAOFactoryHelper.POSTGRESQL)) {
+		} else if (serverType.equalsIgnoreCase(DAOFactoryHelper.ORACLE)
+					|| serverType.equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
+					|| serverType.equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
 			tempTableName = "QUERY_GLOBAL_TEMP";
 			tempDxTableName = "DX";
 			tempMasterTableName = "MASTER_QUERY_GLOBAL_TEMP";

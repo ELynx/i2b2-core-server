@@ -701,9 +701,9 @@ public class TemporalPanel implements Comparable<Object> {
 				}
 			}
 
-			if (parent.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.ORACLE) || parent.getServerType()
-					.equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)) {
+			if (parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE)
+					|| parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
+					|| parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
 				firstPanelItemSql = "insert into "
 						+ parent.getTempTableName() + " ("
 						+ insertValuesClause + ")" + "\n"

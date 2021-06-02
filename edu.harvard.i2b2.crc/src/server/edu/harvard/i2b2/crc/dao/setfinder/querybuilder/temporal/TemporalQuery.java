@@ -133,7 +133,8 @@ public class TemporalQuery {
 			else 
 				options.setQueryConstraintLogic(QueryConstraintStrategy.WITH_STATEMENT);
 		}
-		else if (getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)){
+		else if (getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
+					|| getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)){
 			options.setQueryConstraintLogic(QueryConstraintStrategy.WITH_STATEMENT);
 		}
 		else if (getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE)){
@@ -175,7 +176,8 @@ public class TemporalQuery {
 			else 
 				options.setQueryConstraintLogic(QueryConstraintStrategy.WITH_STATEMENT);
 		}
-		else if (getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)){
+		else if (getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
+					|| getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)){
 				//no default options at this time
 				
 			options.setQueryConstraintLogic(QueryConstraintStrategy.WITH_STATEMENT);

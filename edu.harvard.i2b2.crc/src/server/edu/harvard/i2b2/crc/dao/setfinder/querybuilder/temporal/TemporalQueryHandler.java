@@ -66,9 +66,9 @@ public class TemporalQueryHandler extends CRCDAO {
 			noLockSqlServer = " WITH(NOLOCK) ";
 			tempTableName = "#global_temp_table";
 			tempDxTableName = "#dx";
-		} else if (this.dataSourceLookup.getServerType().equalsIgnoreCase(
-				DAOFactoryHelper.ORACLE) || this.dataSourceLookup.getServerType().equalsIgnoreCase(
-						DAOFactoryHelper.POSTGRESQL)) {
+		} else if (this.dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE)
+					|| this.dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
+					|| this.dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
 			tempTableName = "QUERY_GLOBAL_TEMP";
 			tempDxTableName = "DX";
 		}

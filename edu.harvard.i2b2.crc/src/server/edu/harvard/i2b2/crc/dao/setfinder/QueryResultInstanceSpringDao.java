@@ -382,6 +382,8 @@ IQueryResultInstanceDao {
 		private String SEQUENCE_ORACLE = "";
 		private String SEQUENCE_POSTGRESQL = "";
 		private String INSERT_POSTGRESQL = "";
+		private String INSERT_INTERSYSTEMS_IRIS = "";
+		private String SEQUENCE_INTERSYSTEMS_IRIS = "";
 		DataSourceLookup dataSourceLookup = null;
 
 		public SavePatientSetResult(DataSource dataSource, String dbSchemaName,
@@ -419,8 +421,15 @@ IQueryResultInstanceDao {
 				SEQUENCE_POSTGRESQL = "select " //+ dbSchemaName
 						+ "nextval('qt_query_result_instance_result_instance_id_seq') ";
 				declareParameter(new SqlParameter(Types.INTEGER));
-
-
+			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
+				INSERT_INTERSYSTEMS_IRIS = "INSERT INTO "
+						+ dbSchemaName
+						+ "QT_QUERY_RESULT_INSTANCE "
+						+ "(RESULT_INSTANCE_ID, QUERY_INSTANCE_ID, RESULT_TYPE_ID, SET_SIZE,START_DATE,END_DATE,STATUS_TYPE_ID,DELETE_FLAG) "
+						+ "VALUES (?,?,?,?,?,?,?,?)";
+				setSql(INSERT_INTERSYSTEMS_IRIS);
+				SEQUENCE_INTERSYSTEMS_IRIS = "select I2B2.Utils_nextval('qt_query_result_instance_result_instance_id_seq')";
+				declareParameter(new SqlParameter(Types.INTEGER));
 			}
 
 			declareParameter(new SqlParameter(Types.INTEGER));
@@ -480,6 +489,21 @@ IQueryResultInstanceDao {
 						resultInstance.getResultInstanceId(),
 						resultInstance.getQtQueryInstance()
 						.getQueryInstanceId(),
+						resultInstance.getQtQueryResultType().getResultTypeId(),
+						resultInstance.getSetSize(),
+						resultInstance.getStartDate(),
+						resultInstance.getEndDate(),
+						resultInstance.getQtQueryStatusType().getStatusTypeId(),
+						resultInstance.getDeleteFlag()
+
+				};
+			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
+				resultInstanceId = Math.abs((int) new Date().getTime()); //jdbc.queryForObject(SEQUENCE_INTERSYSTEMS_IRIS, Integer.class);
+				resultInstance.setResultInstanceId(String.valueOf(resultInstanceId));
+				object = new Object[] {
+						resultInstance.getResultInstanceId(),
+						resultInstance.getQtQueryInstance()
+								.getQueryInstanceId(),
 						resultInstance.getQtQueryResultType().getResultTypeId(),
 						resultInstance.getSetSize(),
 						resultInstance.getStartDate(),

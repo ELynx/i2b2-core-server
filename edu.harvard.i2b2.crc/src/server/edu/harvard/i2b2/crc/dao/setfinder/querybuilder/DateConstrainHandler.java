@@ -42,9 +42,9 @@ public class DateConstrainHandler {
 		if (dataSourceLookup.getServerType().equalsIgnoreCase(
 				DAOFactoryHelper.ORACLE)) {
 			dateFormat = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss");
-		} else if (dataSourceLookup.getServerType().equalsIgnoreCase(
-				DAOFactoryHelper.SQLSERVER) || dataSourceLookup.getServerType().equalsIgnoreCase(
-						DAOFactoryHelper.POSTGRESQL)) {
+		} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)
+					|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
+					|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
 			// ISO 8601
 			dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
 		}
@@ -78,8 +78,8 @@ public class DateConstrainHandler {
 				// {ts '2005-06-27 00:00:00'}
 				dateConstrainSql = fromDateField + sqlOperator + " '"
 						+ fromDateString + "'";
-			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(
-							DAOFactoryHelper.POSTGRESQL)) {
+			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
+						|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
 				// {ts '2005-06-27 00:00:00'}
 				dateConstrainSql = fromDateField + sqlOperator + " '"
 						+ fromDateString + ".00'";
@@ -115,8 +115,8 @@ public class DateConstrainHandler {
 					DAOFactoryHelper.SQLSERVER) ) {
 				dateConstrainSql += (toDateField + sqlOperator + " '"
 						+ toDateString + "'");
-			} else if ( dataSourceLookup.getServerType().equalsIgnoreCase(
-							DAOFactoryHelper.POSTGRESQL)) {
+			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
+						|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
 				dateConstrainSql += (toDateField + sqlOperator + " '"
 						+ toDateString + ".99'");
 			}
