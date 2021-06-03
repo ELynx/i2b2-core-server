@@ -793,32 +793,52 @@ public class QueryExecutorHelperDao extends CRCDAO {
 			throw new I2B2DAOException("Could not find result name ["
 					+ resultName + "] in the config file");
 		}
-		Class generatorClass;
-		IResultGenerator resultGenerator;
+		//Class generatorClass;
+		IResultGenerator resultGenerator = null;
 		try {
-			generatorClass = Class.forName(generatorClassName, true, Thread
-					.currentThread().getContextClassLoader());
-			if (generatorClass == null) {
-				throw new I2B2DAOException(
-						"Generator class not configured for result name["
-								+ resultName + "] ");
+			//TODO: make refactoring
+			switch (resultName) {
+				case "PATIENTSET" : resultGenerator = new QueryResultPatientSetGenerator();
+					break;
+				case "PATIENT_ENCOUNTER_SET" : resultGenerator = new QueryResultEncounterSetGenerator();
+					break;
+				case "PATIENT_COUNT_XML" : resultGenerator = new QueryResultPatientCountGenerator();
+					break;
+				case "PATIENT_GENDER_COUNT_XML" :
+				case "PATIENT_VITALSTATUS_COUNT_XML" :
+				case "PATIENT_AGE_COUNT_XML" : resultGenerator = new QueryResultGenerator();
+					break;
+				case "PATIENT_LOS_XML" :
+				case "PATIENT_TOP20MEDS_XML" :
+				case "PATIENT_TOP20DIAG_XML" :
+				case "PATIENT_INOUT_XML" : resultGenerator = new QueryResultPatientSQLCountGenerator();
+					break;
 			}
-			resultGenerator = (IResultGenerator) generatorClass.newInstance();
-			log.debug("Running " + resultName + "'s class "
-					+ generatorClassName);
 			resultGenerator.generateResult(param);
-		} catch (ClassNotFoundException e) {
+//			generatorClass = Class.forName(generatorClassName, true, Thread
+//					.currentThread().getContextClassLoader());
+//			if (generatorClass == null) {
+//				throw new I2B2DAOException(
+//						"Generator class not configured for result name["
+//								+ resultName + "] ");
+//			}
+//			resultGenerator = (IResultGenerator) generatorClass.newInstance();
+//			log.debug("Running " + resultName + "'s class "
+//					+ generatorClassName);
+//			resultGenerator.generateResult(param);
+		} catch (Exception e) {
 			throw new I2B2DAOException(
 					"Class not found for the generator class["
 							+ generatorClassName + "] ", e);
-		} catch (InstantiationException e) {
-			throw new I2B2DAOException("Could not initialize generator class["
-					+ generatorClassName + "] ", e);
-		} catch (IllegalAccessException e) {
-			throw new I2B2DAOException(
-					"Illegal Access Exception for generator class["
-							+ generatorClassName + "] ", e);
 		}
+//		catch (InstantiationException e) {
+//			throw new I2B2DAOException("Could not initialize generator class["
+//					+ generatorClassName + "] ", e);
+//		} catch (IllegalAccessException e) {
+//			throw new I2B2DAOException(
+//					"Illegal Access Exception for generator class["
+//							+ generatorClassName + "] ", e);
+//		}
 	}
 
 	private String getQueryResultInstanceId(SetFinderDAOFactory sfDAOFactory,

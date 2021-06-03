@@ -17,6 +17,7 @@ package edu.harvard.i2b2.crc.dao.setfinder;
 import java.io.StringWriter;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Date;
 import java.util.List;
 
 import javax.sql.DataSource;
@@ -90,9 +91,12 @@ public class XmlResultSpringDao extends CRCDAO implements IXmlResultDao  {
 			xmlResultId = jdbcTemplate.queryForObject("SELECT @@IDENTITY", Integer.class);
 		} else 	if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
 						|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS) ) {
-			xmlResultId = jdbcTemplate.queryForObject(
-					dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL) ? SEQUENCE_POSTGRESQL : SEQUENCE_INTERSYSTEMS_IRIS,
-					Integer.class);
+			//TODO: Fix sequence function for IRIS
+			xmlResultId = (int) Math.abs(new Date().getTime());
+//			xmlResultId = jdbcTemplate.queryForObject(
+//					dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL) ?
+//							SEQUENCE_POSTGRESQL :  SEQUENCE_INTERSYSTEMS_IRIS,
+//					Integer.class);
 			jdbcTemplate.update(POSTGRESQL_SQL, new Object[]{xmlResultId,Integer.parseInt(resultInstanceId),xmlValue});
 
 		}
