@@ -19,8 +19,7 @@ public class TempTableNameMap {
 	
 	
 	public TempTableNameMap(String serverType) { 
-		if (serverType.equalsIgnoreCase(
-				DAOFactoryHelper.SQLSERVER) ) {
+		if (serverType.equalsIgnoreCase(DAOFactoryHelper.SQLSERVER) ) {
 			tempTableName = "#global_temp_table";
 			tempDxTableName = "#dx";
 			tempMasterTableName = "#master_global_temp_table";

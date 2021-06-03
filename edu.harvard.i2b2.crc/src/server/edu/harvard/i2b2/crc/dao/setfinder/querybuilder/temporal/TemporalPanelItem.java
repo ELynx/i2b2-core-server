@@ -677,13 +677,12 @@ public abstract class TemporalPanelItem {
 					&& totalOccur.getValue() == 1) {
 			} else {
 				String countDistinct = "*";
-				if (parent.getServerType().equalsIgnoreCase(
-						DAOFactoryHelper.SQLSERVER) ) {
+				if (parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.SQLSERVER) ) {
 					countDistinct = " distinct cast(" + tableAlias + "patient_num as varchar) + '|' +  cast(" + tableAlias + "encounter_num as varchar) + '|' + "
 							+ " " + tableAlias + "provider_id + '|' + cast(" + tableAlias + "start_date as varchar) + '|' + cast(" + tableAlias + "instance_num as varchar) + '|' + " + tableAlias + "concept_cd";
-				} else if (parent.getServerType().equalsIgnoreCase(
-						DAOFactoryHelper.ORACLE) || parent.getServerType().equalsIgnoreCase(
-								DAOFactoryHelper.POSTGRESQL)) {
+				} else if (parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE)
+						|| parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
+						|| parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
 					countDistinct = " distinct " + tableAlias + "patient_num || '|' || " + tableAlias + "encounter_num || '|' || " 
 							+ tableAlias + "provider_id || '|' || " + tableAlias + "instance_num || '|' ||" + tableAlias + "concept_cd || '|' ||cast(" + tableAlias + "start_date as varchar(50))";
 				}
@@ -719,13 +718,12 @@ public abstract class TemporalPanelItem {
 				log.debug("Setfinder query total occurrences operator value ["
 						+ totalOccur.getOperator().value() + "]");
 				String countDistinct = "*";
-				if (parent.getServerType().equalsIgnoreCase(
-						DAOFactoryHelper.SQLSERVER) ) {
+				if (parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.SQLSERVER) ) {
 					countDistinct = " distinct cast(" + tableAlias + "patient_num as varchar) + '|' +  cast(" + tableAlias + "encounter_num as varchar) + '|' + "
 							+ " " + tableAlias + "provider_id + '|' + cast(" + tableAlias + "start_date as varchar) + '|' + cast(" + tableAlias + "instance_num as varchar) + '|' + " + tableAlias + "concept_cd";
-				} else if (parent.getServerType().equalsIgnoreCase(
-						DAOFactoryHelper.ORACLE) || parent.getServerType().equalsIgnoreCase(
-								DAOFactoryHelper.POSTGRESQL)) {
+				} else if (parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE)
+						|| parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
+						|| parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
 					countDistinct = " distinct " + tableAlias + "patient_num || '|' || " + tableAlias + "encounter_num || '|' || " 
 							+ tableAlias + "provider_id || '|' || " + tableAlias + "instance_num || '|' ||" + tableAlias + "concept_cd || '|' ||cast(" + tableAlias + "start_date as varchar(50))";
 				} 

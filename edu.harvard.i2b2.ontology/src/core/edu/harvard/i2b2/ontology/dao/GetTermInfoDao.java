@@ -189,7 +189,8 @@ class GetTermInfoConcept implements RowMapper<ConceptType> {
 				self.setComment(null);
 			else {
 				try {
-					if (dbType.equals("POSTGRESQL"))
+					if (dbType.equals("POSTGRESQL")
+							|| dbType.equalsIgnoreCase("InterSystems IRIS"))
 						self.setComment(rs.getString("c_comment"));
 					else
 						self.setComment(JDBCUtil.getClobString(rs.getClob("c_comment")));
@@ -202,7 +203,8 @@ class GetTermInfoConcept implements RowMapper<ConceptType> {
 			}else {
 				String c_xml = null;
 				try {
-					if (dbType.equals("POSTGRESQL"))
+					if (dbType.equals("POSTGRESQL")
+							|| dbType.equalsIgnoreCase("InterSystems IRIS"))
 						c_xml = rs.getString("c_metadataxml");
 					else
 						c_xml = JDBCUtil.getClobString(rs.getClob("c_metadataxml"));

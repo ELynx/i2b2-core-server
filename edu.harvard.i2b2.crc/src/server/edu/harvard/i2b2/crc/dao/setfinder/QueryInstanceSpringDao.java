@@ -255,8 +255,7 @@ public class QueryInstanceSpringDao extends CRCDAO implements IQueryInstanceDao 
 		String messageUpdate = "";
 		if (appendMessageFlag) {
 			String concatOperator = "";
-			if (dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.ORACLE)  ) {
+			if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE)  ) {
 				concatOperator = "||";
 				messageUpdate = " MESSAGE = nvl(MESSAGE,'') " + concatOperator
 						+ " ? ";

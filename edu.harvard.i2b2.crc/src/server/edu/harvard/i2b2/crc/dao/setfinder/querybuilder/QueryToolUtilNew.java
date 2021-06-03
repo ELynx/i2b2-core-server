@@ -60,14 +60,13 @@ public class QueryToolUtilNew extends CRCDAO {
 			log.error("Error creating ProcessTimingReportUtil [" + e.getMessage() + "]");
 		}
 
-		if (this.dataSourceLookup.getServerType().equalsIgnoreCase(
-				DAOFactoryHelper.SQLSERVER)) {
+		if (this.dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)) {
 			noLockSqlServer = " WITH(NOLOCK) ";
 			tempTableName = "#global_temp_table";
 			tempDxTableName = "#dx";
-		} else if (this.dataSourceLookup.getServerType().equalsIgnoreCase(
-				DAOFactoryHelper.ORACLE) || this.dataSourceLookup.getServerType().equalsIgnoreCase(
-						DAOFactoryHelper.POSTGRESQL)) {
+		} else if (this.dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE)
+				 	|| this.dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
+					|| this.dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
 			tempTableName = "QUERY_GLOBAL_TEMP";
 			tempDxTableName = "DX";
 		}

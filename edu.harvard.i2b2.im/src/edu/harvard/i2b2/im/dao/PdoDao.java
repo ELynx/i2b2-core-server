@@ -274,7 +274,8 @@ public class PdoDao  extends JdbcDaoSupport {
 					"PROJECT_ID       VARCHAR(50) NULL "+
 					")";
 			jt.update(sql); 
-		} else 	if (dbInfo.getDb_serverType().toUpperCase().equals("POSTGRESQL"))
+		} else 	if (dbInfo.getDb_serverType().toUpperCase().equals("POSTGRESQL")
+						|| dbInfo.getDb_serverType().equalsIgnoreCase("InterSystems IRIS"))
 		{
 
 			// Drop if already exists
@@ -368,7 +369,8 @@ public class PdoDao  extends JdbcDaoSupport {
 			if (dbInfo.getDb_serverType().toUpperCase().equals("SQLSERVER") )	{
 				String sql = "DROP TABLE " + tempTable;
 				jt.update(sql); 
-			} else if (dbInfo.getDb_serverType().toUpperCase().equals("POSTGRESQL"))
+			} else if (dbInfo.getDb_serverType().toUpperCase().equals("POSTGRESQL")
+						|| dbInfo.getDb_serverType().equalsIgnoreCase("InterSystems IRIS"))
 			{
 				String sql = "DISCARD TEMP ";
 				jt.update(sql); 				
@@ -455,7 +457,9 @@ public class PdoDao  extends JdbcDaoSupport {
 
 
 
-		} else 	if (dbInfo.getDb_serverType().equals("SQLSERVER") || (dbInfo.getDb_serverType().equals("POSTGRESQL"))) {
+		} else 	if (dbInfo.getDb_serverType().equals("SQLSERVER")
+				|| dbInfo.getDb_serverType().equals("POSTGRESQL")
+				|| dbInfo.getDb_serverType().equalsIgnoreCase("InterSystems IRIS")) {
 			tablesSql =	"SELECT * FROM ( " +
 					"    SELECT ROW_NUMBER() OVER ( ORDER BY query_date ) AS RowNum, * " +
 					"       FROM " +  metadataSchema +  "im_audit WHERE ";

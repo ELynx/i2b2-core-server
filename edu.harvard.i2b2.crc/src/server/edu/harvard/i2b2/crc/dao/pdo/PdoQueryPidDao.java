@@ -116,7 +116,9 @@ public class PdoQueryPidDao extends CRCDAO implements IPdoQueryPidDao {
 				log.debug("creating temp table");
 				java.sql.Statement tempStmt = conn.createStatement();
 
-				uploadTempTable(tempStmt, patientNumList, dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL));
+				uploadTempTable(tempStmt, patientNumList,
+						dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL),
+						dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS));
 				String finalSql = "SELECT "
 						+ selectClause
 						+ " FROM "
@@ -128,17 +130,17 @@ public class PdoQueryPidDao extends CRCDAO implements IPdoQueryPidDao {
 
 				query = conn.prepareStatement(finalSql);
 				resultSet = query.executeQuery();
-			} else  if 
-			(dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.POSTGRESQL))
-			{
+			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
+						|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
 				// create temp table
 				// load to temp table
 				// execute sql
 				log.debug("creating temp table");
 				java.sql.Statement tempStmt = conn.createStatement();
 
-				uploadTempTable(tempStmt, patientNumList,dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL));
+				uploadTempTable(tempStmt, patientNumList,
+						dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL),
+						dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS));
 				String finalSql = "SELECT "
 						+ selectClause
 						+ " FROM "
@@ -282,11 +284,10 @@ public class PdoQueryPidDao extends CRCDAO implements IPdoQueryPidDao {
 		PreparedStatement query = null;
 		PidSet pidSet = new PidSet();
 		String tempTableName = this.getDbSchemaName() + FactRelatedQueryHandler.TEMP_PARAM_TABLE;
-		if (dataSourceLookup.getServerType().equalsIgnoreCase(
-				DAOFactoryHelper.SQLSERVER)) {
+		if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)) {
 			tempTableName = this.getDbSchemaName() + SQLServerFactRelatedQueryHandler.TEMP_PDO_INPUTLIST_TABLE;
-		} else if (dataSourceLookup.getServerType().equalsIgnoreCase(
-				DAOFactoryHelper.POSTGRESQL)) {
+		} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
+					|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
 			tempTableName =  SQLServerFactRelatedQueryHandler.TEMP_PDO_INPUTLIST_TABLE.substring(1);
 		}
 		try {
@@ -418,24 +419,26 @@ public class PdoQueryPidDao extends CRCDAO implements IPdoQueryPidDao {
 		return pidSet;
 	}
 
-	private void uploadTempTable(Statement tempStmt, List<String> patientNumList,  boolean isPostgresql) 
+	private void uploadTempTable(Statement tempStmt, List<String> patientNumList, boolean isPostgresql, boolean isIris)
 			throws SQLException {
 		String temp_pdo = SQLServerFactRelatedQueryHandler.TEMP_PDO_INPUTLIST_TABLE;
-		if (dataSourceLookup.getServerType().equalsIgnoreCase(
-				DAOFactoryHelper.POSTGRESQL))
+		if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
+				|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS))
 			temp_pdo = temp_pdo.substring(1);
 
 		String createTempInputListTable =  "create "
-				 + (isPostgresql ? " temp ": "" ) 
+				 + (isPostgresql ? " temp ": (isIris ? " GLOBAL TEMPORARY " : ""))
 				 + " table " 
 				+ temp_pdo
 				+ " ( char_param1 varchar(100) )";
 	
-		if (dataSourceLookup.getServerType().equalsIgnoreCase(
-				DAOFactoryHelper.POSTGRESQL))
-		 createTempInputListTable = "create temp table "
-				+ temp_pdo
-				+ " ( char_param1 varchar(100) )";
+//		if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
+//				|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS))
+//		 createTempInputListTable = "create "
+//				 + (isPostgresql ? " temp ": (isIris ? " GLOBAL TEMPORARY " : ""))
+//				 + " table "
+//				 + temp_pdo
+//				 + " ( char_param1 varchar(100) )";
 
 		
 		tempStmt.executeUpdate(createTempInputListTable);
@@ -489,15 +492,17 @@ public class PdoQueryPidDao extends CRCDAO implements IPdoQueryPidDao {
 
 		// create temp table
 		java.sql.Statement tempStmt = conn.createStatement();
-		if (dataSourceLookup.getServerType().equalsIgnoreCase(
-				DAOFactoryHelper.SQLSERVER)) {
+		if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)) {
 			String createTempInputListTable = "create table "
 					+ tempTableName
 					+ " (set_index int, char_param1 varchar(200), char_param2 varchar(200) )";
 			tempStmt.executeUpdate(createTempInputListTable);
-		} else if (dataSourceLookup.getServerType().equalsIgnoreCase(
-				DAOFactoryHelper.POSTGRESQL)) {
-			String createTempInputListTable = "create temp table "
+		} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
+					|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
+			String createTempInputListTable = "create "
+					+ (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL) ? " temp "
+					: (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS) ? " GLOBAL TEMPORARY " : ""))
+					+ " table "
 					+ tempTableName
 					+ " (set_index int, char_param1 varchar(200), char_param2 varchar(200) )";
 			tempStmt.executeUpdate(createTempInputListTable);

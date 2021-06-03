@@ -140,8 +140,8 @@ public class QueryMasterSpringDao extends CRCDAO implements IQueryMasterDao {
 
 
 		if (fetchSize > 0
-				&& dataSourceLookup.getServerType().equalsIgnoreCase(
-						DAOFactoryHelper.SQLSERVER)) {
+				&& (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)
+					|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS))) {
 			sql += " top " + fetchSize;
 		}
 		if ((findChildType.getCategory().toLowerCase().equals("top")) ||
@@ -190,12 +190,10 @@ public class QueryMasterSpringDao extends CRCDAO implements IQueryMasterDao {
 		if ((findChildType.getCategory().equals("@")))
 		{
 			if (fetchSize > 0) {
-				if ( dataSourceLookup.getServerType().equalsIgnoreCase(
-						DAOFactoryHelper.ORACLE)) 
+				if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE))
 					sql = "select * from ( " + sql + " ) where " + "  rownum <= "
 							+ fetchSize;
-				else if ( dataSourceLookup.getServerType().equalsIgnoreCase(
-						DAOFactoryHelper.POSTGRESQL)) 
+				else if ( dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL))
 					sql += " limit " + fetchSize;
 			}
 
@@ -211,8 +209,8 @@ public class QueryMasterSpringDao extends CRCDAO implements IQueryMasterDao {
 
 			sql = "select ";
 			if (fetchSize > 0
-					&& dataSourceLookup.getServerType().equalsIgnoreCase(
-							DAOFactoryHelper.SQLSERVER)) {
+					&& (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)
+						|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS))) {
 				sql += " top " + fetchSize;
 			}
 		}
@@ -262,14 +260,11 @@ public class QueryMasterSpringDao extends CRCDAO implements IQueryMasterDao {
 		{
 
 			if (fetchSize > 0) {
-				if ( dataSourceLookup.getServerType().equalsIgnoreCase(
-						DAOFactoryHelper.ORACLE)) 
+				if ( dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE))
 					sql = "select * from ( " + sql + " ) where " + "  rownum <= "
 							+ fetchSize;
-				else if ( dataSourceLookup.getServerType().equalsIgnoreCase(
-						DAOFactoryHelper.POSTGRESQL)) 
+				else if ( dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL))
 					sql += " limit " + fetchSize;
-
 			}
 
 			if (roles != null && roles.contains("MANAGER"))
@@ -281,8 +276,8 @@ public class QueryMasterSpringDao extends CRCDAO implements IQueryMasterDao {
 
 			sql = " select ";
 			if (fetchSize > 0
-					&& dataSourceLookup.getServerType().equalsIgnoreCase(
-							DAOFactoryHelper.SQLSERVER)) {
+					&& (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)
+						|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS))) {
 				sql += " distinct top " + fetchSize;
 			} else
 			{
@@ -305,8 +300,8 @@ public class QueryMasterSpringDao extends CRCDAO implements IQueryMasterDao {
 					+ "qri.RESULT_INSTANCE_ID = qp.RESULT_INSTANCE_ID and ";
 			if (roles != null && !roles.contains("MANAGER"))
 				sql += "  qm.user_id = ? and ";
-			if ( dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.POSTGRESQL)) 
+			if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
+					|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS))
 				sql += " CAST(qp.patient_num AS TEXT) like ? and qm.delete_flag = ? "; 
 			else 
 				sql += " qp.patient_num like ? and qm.delete_flag = ? "; 
@@ -341,14 +336,11 @@ public class QueryMasterSpringDao extends CRCDAO implements IQueryMasterDao {
 		} 
 
 		if (fetchSize > 0) {
-			if (dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.ORACLE)) 
+			if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE))
 				sql = "select * from ( " + sql + " ) where " + "  rownum <= "
 						+ fetchSize;
-			else if ( dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.POSTGRESQL)) 
+			else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL))
 				sql += " limit " + fetchSize;
-
 		}
 
 
@@ -394,9 +386,9 @@ public class QueryMasterSpringDao extends CRCDAO implements IQueryMasterDao {
 
 		String sql = "select ";
 
-		if (fetchSize > 0
-				&& dataSourceLookup.getServerType().equalsIgnoreCase(
-						DAOFactoryHelper.SQLSERVER)) {
+		if (fetchSize > 0 &&
+				(dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)
+						|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS))) {
 			sql += " top " + fetchSize;
 		}
 		sql += " query_master_id,name,user_id,group_id,create_date,delete_date,null as request_xml,delete_flag,generated_sql, null as i2b2_request_xml,  master_type_cd, null as plugin_id from "
@@ -407,14 +399,11 @@ public class QueryMasterSpringDao extends CRCDAO implements IQueryMasterDao {
 		sql += " order by create_date desc  ";
 
 		if (fetchSize > 0) {
-			if ( dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.ORACLE)) 
+			if ( dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE))
 				sql = "select * from ( " + sql + " ) where " + "  rownum <= "
 						+ fetchSize;
-			else if ( dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.POSTGRESQL)) 
+			else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL))
 				sql += " limit " + fetchSize;
-
 		}
 
 		List<QtQueryMaster> queryMasterList = jdbcTemplate.query(sql,
@@ -459,8 +448,8 @@ public class QueryMasterSpringDao extends CRCDAO implements IQueryMasterDao {
 
 		String sql = "select ";
 		if (fetchSize > 0
-				&& dataSourceLookup.getServerType().equalsIgnoreCase(
-						DAOFactoryHelper.SQLSERVER)) {
+				&& (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)
+					|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS))) {
 			sql += " top " + fetchSize;
 		}
 		sql += " query_master_id,name,user_id,group_id,create_date,delete_date,null as request_xml,delete_flag,generated_sql,null as i2b2_request_xml, master_type_cd, null as plugin_id from "
@@ -471,12 +460,10 @@ public class QueryMasterSpringDao extends CRCDAO implements IQueryMasterDao {
 		sql += " order by create_date desc  ";
 
 		if (fetchSize > 0) {
-			if ( dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.ORACLE)) 
+			if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE))
 				sql = " select * from (  " + sql + " ) where  rownum <= "
 						+ fetchSize;
-			else if ( dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.POSTGRESQL)) 
+			else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL))
 				sql += " limit " + fetchSize;
 
 		}
@@ -564,8 +551,7 @@ public class QueryMasterSpringDao extends CRCDAO implements IQueryMasterDao {
 			+ " delete_flag=? where query_instance_id in (select "
 			+ "query_instance_id from " + getDbSchemaName()
 			+ "qt_query_instance where query_master_id=?) ";
-			if (dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.SQLSERVER)) {
+			if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)) {
 				resultInstanceSql = " update " + getDbSchemaName()
 				+ "qt_query_result_instance set  delete_flag=? " + " from "
 				+ getDbSchemaName()
@@ -584,8 +570,9 @@ public class QueryMasterSpringDao extends CRCDAO implements IQueryMasterDao {
 			int queryMasterCount = jdbcTemplate.update(queryMasterSql,
 					new Object[] { DELETE_YES_FLAG, deleteDate, Integer.parseInt(masterId),
 							DELETE_NO_FLAG });
-			if (queryMasterCount < 1 && !dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.POSTGRESQL)) {
+			if (queryMasterCount < 1 &&
+					!(dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
+							|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS))) {
 				throw new I2B2DAOException("Query not found with masterid =["
 						+ masterId + "]");
 			}

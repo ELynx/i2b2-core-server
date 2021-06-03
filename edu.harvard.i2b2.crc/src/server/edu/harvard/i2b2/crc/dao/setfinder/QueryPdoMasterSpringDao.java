@@ -76,6 +76,8 @@ public class QueryPdoMasterSpringDao extends CRCDAO implements
 		private String SEQUENCE_ORACLE = "";
 		private String SEQUENCE_POSTGRESQL = "";
 		private String INSERT_POSTGRESQL = "";
+		private String INSERT_INTERSYSTEMS_IRIS = "";
+		private String SEQUENCE_INTERSYSTEMS_IRIS = "";
 
 		private DataSourceLookup dataSourceLookup = null;
 
@@ -83,8 +85,7 @@ public class QueryPdoMasterSpringDao extends CRCDAO implements
 				DataSourceLookup dataSourceLookup) {
 			super();
 			this.setDataSource(dataSource);
-			if (dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.ORACLE)) {
+			if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE)) {
 				this.setReturnGeneratedKeys(true);
 				INSERT_ORACLE = "INSERT INTO "
 						+ dbSchemaName
@@ -95,16 +96,14 @@ public class QueryPdoMasterSpringDao extends CRCDAO implements
 				SEQUENCE_ORACLE = "select " + dbSchemaName
 						+ "QT_SQ_PQM_QMID.nextval from dual";
 				declareParameter(new SqlParameter(Types.INTEGER));
-			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.SQLSERVER) ) {
+			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.SQLSERVER) ) {
 				INSERT_SQLSERVER = "INSERT INTO "
 						+ dbSchemaName
 						+ "QT_PDO_QUERY_MASTER "
 						+ "( USER_ID, GROUP_ID,CREATE_DATE,REQUEST_XML,I2B2_REQUEST_XML) "
 						+ "VALUES (?,?,?,?,?)";
 				this.setSql(INSERT_SQLSERVER);
-			} else if ( dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.POSTGRESQL)) {
+			} else if ( dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)) {
 				this.setReturnGeneratedKeys(true);
 				INSERT_POSTGRESQL = "INSERT INTO "
 						+ dbSchemaName
@@ -114,6 +113,16 @@ public class QueryPdoMasterSpringDao extends CRCDAO implements
 				setSql(INSERT_POSTGRESQL);
 				SEQUENCE_POSTGRESQL = "select "// + dbSchemaName
 						+ "nextval('qt_pdo_query_master_query_master_id_seq') ";
+				declareParameter(new SqlParameter(Types.INTEGER));
+			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
+				this.setReturnGeneratedKeys(true);
+				INSERT_INTERSYSTEMS_IRIS = "INSERT INTO "
+						+ dbSchemaName
+						+ "QT_PDO_QUERY_MASTER "
+						+ "(QUERY_MASTER_ID,  USER_ID, GROUP_ID,CREATE_DATE,REQUEST_XML,I2B2_REQUEST_XML) "
+						+ "VALUES (?,?,?,?,?,?)";
+				setSql(INSERT_INTERSYSTEMS_IRIS);
+				SEQUENCE_INTERSYSTEMS_IRIS = "select I2B2.Utils_nextval('qt_pdo_query_master_query_master_id_seq')";
 				declareParameter(new SqlParameter(Types.INTEGER));
 			}
 			this.dataSourceLookup = dataSourceLookup;
@@ -137,16 +146,14 @@ public class QueryPdoMasterSpringDao extends CRCDAO implements
 			Matcher m = p.matcher(queryMaster.getRequestXml());
 			String getRequestXmlNoPass = m.replaceAll("<password>*********</password>");
 
-			if (dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.SQLSERVER)) {
+			if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)) {
 				object = new Object[] { queryMaster.getUserId(),
 						queryMaster.getGroupId(), queryMaster.getCreateDate(),
 						getRequestXmlNoPass, i2b2RequestXml };
 				update(object);
 				queryMasterIdentityId = jdbc.queryForObject("SELECT @@IDENTITY", Integer.class);
 
-			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.ORACLE)) {
+			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE)) {
 				queryMasterIdentityId = jdbc.queryForObject(SEQUENCE_ORACLE, Integer.class);
 				object = new Object[] { queryMasterIdentityId,
 						queryMaster.getUserId(), queryMaster.getGroupId(),
@@ -154,15 +161,20 @@ public class QueryPdoMasterSpringDao extends CRCDAO implements
 						getRequestXmlNoPass, i2b2RequestXml };
 				update(object);
 
-			} else  if (dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.POSTGRESQL)) {
+			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)) {
 				queryMasterIdentityId = jdbc.queryForObject(SEQUENCE_POSTGRESQL, Integer.class);
 				object = new Object[] { queryMasterIdentityId,
 						queryMaster.getUserId(), queryMaster.getGroupId(),
 						queryMaster.getCreateDate(),
 						getRequestXmlNoPass, i2b2RequestXml };
 				update(object);
-
+			}  else  if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
+				queryMasterIdentityId = jdbc.queryForObject(SEQUENCE_INTERSYSTEMS_IRIS, Integer.class);
+				object = new Object[] { queryMasterIdentityId,
+						queryMaster.getUserId(), queryMaster.getGroupId(),
+						queryMaster.getCreateDate(),
+						getRequestXmlNoPass, i2b2RequestXml };
+				update(object);
 			}
 
 			queryMaster.setQueryMasterId(String.valueOf(queryMasterIdentityId));

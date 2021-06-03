@@ -157,7 +157,8 @@ public class I2B2PdoFactory {
 			}
 
 			if (obsFactBlobFlag) {
-				if (dbType.equalsIgnoreCase("POSTGRESQL"))
+				if (dbType.equalsIgnoreCase("POSTGRESQL")
+						|| dbType.equalsIgnoreCase("InterSystems IRIS"))
 				{
 					String clob = rowSet.getString("obs_observation_blob");
 					if (clob !=null)
@@ -266,7 +267,8 @@ public class I2B2PdoFactory {
 
 
 			if (patientBlobFlag) {
-				if (dbType.equalsIgnoreCase("POSTGRESQL"))
+				if (dbType.equalsIgnoreCase("POSTGRESQL")
+						|| dbType.equalsIgnoreCase("InterSystems IRIS"))
 				{
 					String clob = rowSet.getString("patient_patient_blob");
 					if (clob !=null)
@@ -364,7 +366,8 @@ public class I2B2PdoFactory {
 			}
 
 			if (providerBlobFlag) {
-				if (dbType.equalsIgnoreCase("POSTGRESQL"))
+				if (dbType.equalsIgnoreCase("POSTGRESQL")
+						|| dbType.equalsIgnoreCase("InterSystems IRIS"))
 				{
 					String clob = rowSet.getString("provider_provider_blob");
 					if (clob !=null)
@@ -464,7 +467,8 @@ public class I2B2PdoFactory {
 			}
 
 			if (conceptBlobFlag) {
-				if (dbType.equalsIgnoreCase("POSTGRESQL"))
+				if (dbType.equalsIgnoreCase("POSTGRESQL")
+						|| dbType.equalsIgnoreCase("InterSystems IRIS"))
 				{
 					String clob = rowSet.getString("concept_concept_blob");
 					if (clob !=null)
@@ -567,7 +571,8 @@ public class I2B2PdoFactory {
 			}
 
 			if (modifierBlobFlag) {
-				if (dbType.equalsIgnoreCase("POSTGRESQL"))
+				if (dbType.equalsIgnoreCase("POSTGRESQL")
+						|| dbType.equalsIgnoreCase("InterSystems IRIS"))
 				{
 					String clob = rowSet.getString("modifier_modifier_blob");
 					if (clob !=null)
@@ -681,7 +686,8 @@ public class I2B2PdoFactory {
 			}
 
 			if (eventBlobFlag) {
-				if (dbType.equalsIgnoreCase("POSTGRESQL"))
+				if (dbType.equalsIgnoreCase("POSTGRESQL")
+						|| dbType.equalsIgnoreCase("InterSystems IRIS"))
 				{
 					String clob = rowSet.getString("visit_visit_blob");
 					if (clob !=null)

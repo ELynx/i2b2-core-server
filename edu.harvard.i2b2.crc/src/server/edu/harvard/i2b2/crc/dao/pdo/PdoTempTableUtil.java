@@ -17,8 +17,9 @@ import edu.harvard.i2b2.crc.dao.DAOFactoryHelper;
 public class PdoTempTableUtil {
 
 	public void clearTempTable(String serverType, Connection conn, String tableName) { 
-		if (serverType.equalsIgnoreCase(DAOFactoryHelper.SQLSERVER) ||
-				serverType.equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)) { 
+		if (serverType.equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)
+				|| serverType.equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
+				|| serverType.equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
 			this.deleteTempTableSqlServer(conn, tableName);
 		} else if (serverType.equalsIgnoreCase(DAOFactoryHelper.ORACLE)) { 
 			this.deleteTempTableOracle(conn, tableName);

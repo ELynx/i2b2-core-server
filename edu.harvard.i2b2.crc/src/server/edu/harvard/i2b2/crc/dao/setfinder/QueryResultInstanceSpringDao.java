@@ -270,8 +270,7 @@ IQueryResultInstanceDao {
 		int returnSetSize = 0;
 		String queryCountSql = "";
 
-		if (dataSourceLookup.getServerType().equalsIgnoreCase(
-				DAOFactoryHelper.ORACLE) ) {
+		if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE) ) {
 			queryCountSql = " select count(r1.result_instance_id) result_count,r1.real_set_size "
 					+ " from " + this.getDbSchemaName() + "qt_query_result_instance r1 inner join " + this.getDbSchemaName()+ "qt_query_result_instance r2 on "
 					+ " r1.real_set_size = r2.real_set_size, "
@@ -291,8 +290,8 @@ IQueryResultInstanceDao {
 					+ " and r1.real_set_size = ? "
 					+ " group by r1.real_set_size "
 					+ " having count(r1.result_instance_id) > ? ";
-		} else if (dataSourceLookup.getServerType().equalsIgnoreCase(
-				DAOFactoryHelper.POSTGRESQL) ) {
+		} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
+					|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
 			queryCountSql = " select count(r1.result_instance_id) result_count,r1.real_set_size "
 					+ " from " + this.getDbSchemaName() + "qt_query_result_instance r1 inner join " + this.getDbSchemaName()+ "qt_query_result_instance r2 on "
 					+ " r1.real_set_size = r2.real_set_size, "
@@ -312,8 +311,7 @@ IQueryResultInstanceDao {
 					+ " and r1.real_set_size = ? "
 					+ " group by r1.real_set_size "
 					+ " having count(r1.result_instance_id) > ? ";
-		} 	else if (dataSourceLookup.getServerType().equalsIgnoreCase(
-				DAOFactoryHelper.SQLSERVER)) {
+		} 	else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)) {
 			queryCountSql = " select count(r1.result_instance_id) result_count,r1.real_set_size "
 					+ " from " + this.getDbSchemaName() + "qt_query_result_instance r1 inner join " + this.getDbSchemaName() + "qt_query_result_instance r2 on "
 					+ " r1.real_set_size = r2.real_set_size, "
@@ -390,8 +388,7 @@ IQueryResultInstanceDao {
 				DataSourceLookup dataSourceLookup) {
 			super();
 			setDataSource(dataSource);
-			if (dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.ORACLE)) {
+			if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE)) {
 				INSERT_ORACLE = "INSERT INTO "
 						+ dbSchemaName
 						+ "QT_QUERY_RESULT_INSTANCE "
@@ -402,16 +399,14 @@ IQueryResultInstanceDao {
 						+ "QT_SQ_QRI_QRIID.nextval from dual";
 				declareParameter(new SqlParameter(Types.INTEGER));
 
-			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.SQLSERVER)) {
+			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)) {
 				INSERT_SQLSERVER = "INSERT INTO "
 						+ dbSchemaName
 						+ "QT_QUERY_RESULT_INSTANCE "
 						+ "( QUERY_INSTANCE_ID, RESULT_TYPE_ID, SET_SIZE,START_DATE,END_DATE,STATUS_TYPE_ID,DELETE_FLAG) "
 						+ "VALUES (?,?,?,?,?,?,?)";
 				setSql(INSERT_SQLSERVER);
-			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.POSTGRESQL)) {
+			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)) {
 				INSERT_POSTGRESQL = "INSERT INTO "
 						+ dbSchemaName
 						+ "QT_QUERY_RESULT_INSTANCE "

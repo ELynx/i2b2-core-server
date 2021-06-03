@@ -334,17 +334,14 @@ public class PdoQueryHandler {
 				|| patientFromFact || visitFromFact || pidFromFact
 				|| eidFromFact || modifierSelected) {
 
-			DataSourceLookup dataSourceLookup = pdoDaoFactory
-					.getDataSourceLookup();
-			if (dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.ORACLE) ||
-					dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.POSTGRESQL)) {
+			DataSourceLookup dataSourceLookup = pdoDaoFactory.getDataSourceLookup();
+			if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE)
+					|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
+					|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
 				factRelatedQry = new FactRelatedQueryHandler(pdoDaoFactory
 						.getDataSourceLookup(), inputList, filterList,
 						outputOptionList);
-			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.SQLSERVER)) {
+			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)) {
 				factRelatedQry = new SQLServerFactRelatedQueryHandler(
 						pdoDaoFactory.getDataSourceLookup(), inputList,
 						filterList, outputOptionList);

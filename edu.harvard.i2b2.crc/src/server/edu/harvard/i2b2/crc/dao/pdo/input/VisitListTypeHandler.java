@@ -147,8 +147,7 @@ public class VisitListTypeHandler extends CRCDAO implements
 				minIndex = 0;
 				maxIndex = 100;
 			}
-			if (dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.ORACLE)) {
+			if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE)) {
 				// do nothing
 				sqlString = " select encounter_num from (select a.*, ROWNUM rnum from ( select encounter_num from "
 						+ this.getDbSchemaName()
@@ -157,9 +156,9 @@ public class VisitListTypeHandler extends CRCDAO implements
 						+ maxIndex
 						+ " ) where  rnum>="
 						+ minIndex;
-			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.SQLSERVER) || dataSourceLookup.getServerType().equalsIgnoreCase(
-							DAOFactoryHelper.POSTGRESQL)) {
+			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)
+						|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
+						|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
 				sqlString = " select encounter_num from ( select encounter_num,row_number() over(order by encounter_num) as rnum  from "
 						+ this.getDbSchemaName()
 						+ "visit_dimension ) as v "
@@ -340,15 +339,14 @@ public class VisitListTypeHandler extends CRCDAO implements
 		try {
 			deleteStmt = conn.createStatement();
 
-			if (dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.SQLSERVER) || dataSourceLookup.getServerType().equalsIgnoreCase(
-							DAOFactoryHelper.POSTGRESQL)) {
+			if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)
+					|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
+					|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
 			//	conn.createStatement().executeUpdate(
 			//			"drop table " + getTempTableName());
 				deleteStmt.executeUpdate(
 						"drop table " + getTempTableName());
-			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.ORACLE)) {
+			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE)) {
 			///	System.out.println("delete table " + getTempTableName());
 			//	conn.createStatement().executeUpdate(
 			//			"delete  " + getTempTableName());

@@ -315,6 +315,10 @@ public class ConceptDao extends JdbcDaoSupport {
 			searchPath = StringUtil.escapePOSTGRESQL(path); 
 			searchPath += "%";
 		}
+//		else if(dbInfo.getDb_serverType().toUpperCase().equals("InterSystems IRIS")){
+//			//searchPath = StringUtil.escapePOSTGRESQL(path);
+//			searchPath += "%";
+//		}
 		log.info("Script: " + sql);
 		List<ConceptType> queryResult = null;
 		try {
@@ -1980,8 +1984,7 @@ public class ConceptDao extends JdbcDaoSupport {
 			searchPath = StringUtil.escapeORACLE(path); 
 			searchPath += "%";
 		}
-		else if(dbInfo.getDb_serverType().toUpperCase().equals("POSTGRESQL") ||
-				dbInfo.getDb_serverType().toUpperCase().equals("INTERSYSTEMS IRIS")){
+		else if(dbInfo.getDb_serverType().toUpperCase().equals("POSTGRESQL")){
 			searchPath = StringUtil.escapePOSTGRESQL(path); 
 			searchPath += "%";
 		}

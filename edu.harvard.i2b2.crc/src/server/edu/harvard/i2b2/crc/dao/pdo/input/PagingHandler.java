@@ -103,13 +103,12 @@ public class PagingHandler extends CRCDAO {
 		IFactRelatedQueryHandler factRelatedHandler = null;
 		String countSqlFrom = " ";
 		String countClause = " COUNT(*) ";
-		if (dataSourceLookup.getServerType().equalsIgnoreCase(
-				DAOFactoryHelper.ORACLE) || dataSourceLookup.getServerType().equalsIgnoreCase(
-						DAOFactoryHelper.POSTGRESQL)) {
+		if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE)
+				|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
+				|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
 			factRelatedHandler = new FactRelatedQueryHandler(dataSourceLookup,
 					inputList, filterList, outputOptionList);
-		} else if (dataSourceLookup.getServerType().equalsIgnoreCase(
-				DAOFactoryHelper.SQLSERVER)) {
+		} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)) {
 			countSqlFrom = "as";
 			countClause = " COUNT_BIG(*) ";
 			factRelatedHandler = new SQLServerFactRelatedQueryHandler(
@@ -219,13 +218,12 @@ public class PagingHandler extends CRCDAO {
 		// iterate the panel and call total
 		IFactRelatedQueryHandler factRelatedHandler = null;
 		String countSqlFrom = " ";
-		if (dataSourceLookup.getServerType().equalsIgnoreCase(
-				DAOFactoryHelper.ORACLE) || dataSourceLookup.getServerType().equalsIgnoreCase(
-						DAOFactoryHelper.POSTGRESQL)) {
+		if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE)
+				|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
+				|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
 			factRelatedHandler = new FactRelatedQueryHandler(dataSourceLookup,
 					inputList, filterList, outputOptionList);
-		} else if (dataSourceLookup.getServerType().equalsIgnoreCase(
-				DAOFactoryHelper.SQLSERVER)) {
+		} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)) {
 			countSqlFrom = "as";
 			factRelatedHandler = new SQLServerFactRelatedQueryHandler(
 					dataSourceLookup, inputList, filterList, outputOptionList);

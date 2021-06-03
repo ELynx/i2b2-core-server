@@ -565,8 +565,8 @@ public class TemporalPanel implements Comparable<Object> {
 
 			String firstPanelItemSql = "";
 
-			String innerSelectClause = buildInnerSelectClause();
-			String innerGroupByClause = buildInnerGroupByClause();
+			String innerSelectClause = buildInnerSelectClause("t");
+			String innerGroupByClause = buildInnerGroupByClause("t");
 
 			String itemStatement = "";
 			StringBuilder tableStatement = new StringBuilder(itemSql);
@@ -583,6 +583,13 @@ public class TemporalPanel implements Comparable<Object> {
 
 			String tSelect = "select " + innerSelectClause + " " + "from "
 					+ (useTempTables ? "#t" + suffix + " " : "") + "t ";
+
+			//TODO: IRIS - fix for useTempTables = true
+			String innerSelectClause1 = buildInnerSelectClause("");
+			String innerGroupByClause1 = buildInnerGroupByClause("");
+
+			String select = "select " + innerSelectClause1;
+			String itemSql1 = select + itemSql.substring(itemSql.indexOf("\nfrom "), itemSql.length());
 
 			String schema = getDatabaseSchema();
 			if (schema == null)
@@ -683,7 +690,7 @@ public class TemporalPanel implements Comparable<Object> {
 				}
 			} else if (parent.getQueryOptions().getQueryConstraintLogic() == QueryConstraintStrategy.DERIVED_TABLES) {
 				withItemSql = new StringBuilder();
-				innerSelectClause = buildInnerSelectClause();
+				innerSelectClause = buildInnerSelectClause("t");
 				tSelect = "select " + innerSelectClause + " " + "from ("
 						+ tableStatement.toString() + ") t ";
 			} else {
@@ -702,12 +709,16 @@ public class TemporalPanel implements Comparable<Object> {
 			}
 
 			if (parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE)
-					|| parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
-					|| parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
+					|| parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)) {
 				firstPanelItemSql = "insert into "
 						+ parent.getTempTableName() + " ("
 						+ insertValuesClause + ")" + "\n"
 						+ withItemSql.toString() + tSelect;
+			} else if (parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
+				firstPanelItemSql = "insert into "
+						+ parent.getTempTableName() + " ("
+						+ insertValuesClause + ")" + "\n"
+						+ itemSql1; //withItemSql.toString() + tSelect;
 			} else {
 				firstPanelItemSql = withItemSql.toString() + "insert into "
 						+ parent.getTempTableName() + " ("
@@ -789,8 +800,8 @@ public class TemporalPanel implements Comparable<Object> {
 		String invertSql = "";
 		String replaceString = "<!***PLACEHOLDER****!>";
 
-		String innerSelectClause = buildInnerSelectClause();
-		String innerGroupByClause = buildInnerGroupByClause();
+		String innerSelectClause = buildInnerSelectClause("t");
+		String innerGroupByClause = buildInnerGroupByClause("t");
 		String itemSql = unionItemSql(itemSqlList);
 		String itemStatement = "";
 		StringBuilder tableStatement = new StringBuilder(itemSql);
@@ -1018,13 +1029,13 @@ public class TemporalPanel implements Comparable<Object> {
 						") i \n");
 			}
 			
-			innerSelectClause = buildInnerSelectClause();
+			innerSelectClause = buildInnerSelectClause("t");
 			tSelect = "select " + innerSelectClause + " " + "from ("
 					+ withItemSql.toString() + ") t ";
 
-			if (parent.getServerType()
-					.equalsIgnoreCase(DAOFactoryHelper.ORACLE) || parent.getServerType()
-					.equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)) {
+			if (parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE)
+					|| parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
+					|| parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
 				invertSql = "insert into " + parent.getTempTableName() + " ("
 						+ insertValuesClause + ")" + "\n"
 						+ tSelect;
@@ -1066,9 +1077,9 @@ public class TemporalPanel implements Comparable<Object> {
 						+ invertInsertSql + " from i " + "\n" + " ) " + "\n");
 			}
 	
-			if (parent.getServerType()
-					.equalsIgnoreCase(DAOFactoryHelper.ORACLE) || parent.getServerType()
-					.equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)) {
+			if (parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE)
+					|| parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
+					|| parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
 				invertSql = "insert into " + parent.getTempTableName() + " ("
 						+ insertValuesClause + ")" + "\n"
 						+ withItemSql.toString() + tSelect;
@@ -1108,7 +1119,7 @@ public class TemporalPanel implements Comparable<Object> {
 		String insertValuesClause = buildInsertValuesClause();
 
 		String innerSelectClause = buildInnerSelectClause("");
-		String innerGroupByClause = buildInnerGroupByClause();
+		String innerGroupByClause = buildInnerGroupByClause("t");
 
 		TotalItemOccurrenceHandler totalItemOccurrencHandler = new TotalItemOccurrenceHandler();
 		String totalItemOccurrenceClause = totalItemOccurrencHandler
@@ -1259,8 +1270,9 @@ public class TemporalPanel implements Comparable<Object> {
 							+ totalItemOccurrenceClause + ") " + ") \n");
 		}
 
-		if (parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE) || parent.getServerType()
-				.equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)) {
+		if (parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE)
+				|| parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
+				|| parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
 			firstPanelItemSql = "insert into " + parent.getTempTableName()
 					+ " (" + insertValuesClause + ")" + "\n" + withItemSql
 					+ tSelect;
@@ -1312,9 +1324,9 @@ public class TemporalPanel implements Comparable<Object> {
 	 * @return String sql statement that specifies the columns that should be
 	 *         returned from the item sql
 	 */
-	public String buildInnerSelectClause() {
-		return buildInnerSelectClause("t");
-	}
+//	public String buildInnerSelectClause() {
+//		return buildInnerSelectClause("t");
+//	}
 
 	/**
 	 * Build Inner Select Clause
@@ -1365,9 +1377,9 @@ public class TemporalPanel implements Comparable<Object> {
 	 * 
 	 * @return String sql statement that specifies the columns that should be used to group the results
 	 */
-	public String buildInnerGroupByClause() {
-		return buildInnerGroupByClause("t");
-	}
+//	public String buildInnerGroupByClause() {
+//		return buildInnerGroupByClause("t");
+//	}
 
 	/**
 	 * Build Inner Group By Clause
@@ -1467,8 +1479,9 @@ public class TemporalPanel implements Comparable<Object> {
 		String withItemSql = "with sub_t as ( " + "\n" + itemSql + "\n"
 				+ " ) \n";
 
-		if (parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE) || parent.getServerType()
-				.equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)) {
+		if (parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE)
+				|| parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
+				|| parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
 			nonFirstPanelItemSql += "update "
 					+ tempTableName
 					+ " set panel_count ="

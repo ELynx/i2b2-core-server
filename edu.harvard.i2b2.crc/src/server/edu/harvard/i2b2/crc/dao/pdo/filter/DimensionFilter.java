@@ -81,7 +81,6 @@ public class DimensionFilter {
 					}
 					if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL))
 						dimCode = dimCode.replaceAll("\\\\", "\\\\\\\\");
-
 				}
 			}
 			

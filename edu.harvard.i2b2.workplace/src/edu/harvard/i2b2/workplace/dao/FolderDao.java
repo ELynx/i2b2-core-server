@@ -1825,7 +1825,7 @@ class GetFolderMapper implements RowMapper<FolderType> {
 
 			String c_xml = null;
 			try {
-				if (dbType.equals("POSTGRESQL"))
+				if (dbType.equals("POSTGRESQL") || dbType.equalsIgnoreCase("InterSystems IRIS"))
 				{
 					c_xml = rs.getString("c_work_xml");
 				} else

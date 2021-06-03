@@ -125,7 +125,8 @@ public class OntProcessStatusDao extends JdbcDaoSupport {
 					}
 				});*/
 			} else if (this.dbInfoType.getDb_serverType().equals("SQLSERVER")
-					|| this.dbInfoType.getDb_serverType().equals("POSTGRESQL")) {
+					|| this.dbInfoType.getDb_serverType().equals("POSTGRESQL")
+					|| this.dbInfoType.getDb_serverType().equalsIgnoreCase("InterSystems IRIS")) {
 				addSql = "insert into "
 						+ this.dbInfoType.getDb_fullSchema()
 						+ "ONT_PROCESS_STATUS"
@@ -252,7 +253,8 @@ public class OntProcessStatusDao extends JdbcDaoSupport {
 		}
 		sql += " order by process_id ";
 
-		if (this.dbInfoType.getDb_serverType().equalsIgnoreCase("POSTGRESQL")) { 
+		if (this.dbInfoType.getDb_serverType().equalsIgnoreCase("POSTGRESQL")
+				|| this.dbInfoType.getDb_serverType().equalsIgnoreCase("InterSystems IRIS")) {
 			sql += " limit " + maxReturnRow ;
 		}
 		if (this.dbInfoType.getDb_serverType().equalsIgnoreCase("ORACLE")) { 
@@ -365,7 +367,8 @@ public class OntProcessStatusDao extends JdbcDaoSupport {
 				"and start_date > to_date('" + sqlFormatedStartDate +  "', 'DD-MM-YYYY HH24:MI:SS') ";
 			}
 			else if(dbInfoType.getDb_serverType().equalsIgnoreCase("SQLSERVER")
-					|| dbInfoType.getDb_serverType().equalsIgnoreCase("POSTGRESQL")){ 
+					|| dbInfoType.getDb_serverType().equalsIgnoreCase("POSTGRESQL")
+					|| dbInfoType.getDb_serverType().equalsIgnoreCase("InterSystems IRIS")){
 				SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
 
 				String sqlFormatedStartDate = dateFormat.format(date2.getTime());
@@ -415,8 +418,9 @@ public class OntProcessStatusDao extends JdbcDaoSupport {
 				+ "ONT_PROCESS_STATUS where process_type_cd = ? and start_date > " +
 				" to_date('" + sqlFormatedStartDate +  "', 'DD-MM-YYYY HH24:MI:SS') ";
 			}
-			else if(dbInfoType.getDb_serverType().equalsIgnoreCase("SQLSERVER") ||
-					dbInfoType.getDb_serverType().equalsIgnoreCase("POSTGRESQL")){ 
+			else if(dbInfoType.getDb_serverType().equalsIgnoreCase("SQLSERVER")
+					|| dbInfoType.getDb_serverType().equalsIgnoreCase("POSTGRESQL")
+					|| dbInfoType.getDb_serverType().equalsIgnoreCase("InterSystems IRIS")) {
 				SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
 
 				String sqlFormatedStartDate = dateFormat.format(date2.getTime());
@@ -452,8 +456,9 @@ public class OntProcessStatusDao extends JdbcDaoSupport {
 
 				numRowsAdded = jt.update(addSql, String.valueOf(processId), ontProcessType, 
 						today, userId, "COMPLETED", "C", today, today);
-			} else if (this.dbInfoType.getDb_serverType().equals("SQLSERVER") ||
-					dbInfoType.getDb_serverType().equalsIgnoreCase("POSTGRESQL")) {
+			} else if (this.dbInfoType.getDb_serverType().equals("SQLSERVER")
+						|| dbInfoType.getDb_serverType().equalsIgnoreCase("POSTGRESQL")
+						|| dbInfoType.getDb_serverType().equalsIgnoreCase("InterSystems IRIS")) {
 				addSql = "insert into "
 						+ this.dbInfoType.getDb_fullSchema()
 						+ "ONT_PROCESS_STATUS"
@@ -503,8 +508,9 @@ public class OntProcessStatusDao extends JdbcDaoSupport {
 						+ "ONT_SQ_PS_PRID.nextval from dual";
 				declareParameter(new SqlParameter(Types.INTEGER));
 
-			} else if (dbInfo.getDb_serverType().equalsIgnoreCase(
-					"SQLSERVER") || dbInfo.getDb_serverType().equalsIgnoreCase("POSTGRESQL")) {
+			} else if (dbInfo.getDb_serverType().equalsIgnoreCase("SQLSERVER")
+						|| dbInfo.getDb_serverType().equalsIgnoreCase("POSTGRESQL")
+						|| dbInfo.getDb_serverType().equalsIgnoreCase("InterSystems IRIS")) {
 				INSERT_SQLSERVER = "insert into "
 						+ dbInfo.getDb_fullSchema()
 						+ "ONT_PROCESS_STATUS"
@@ -532,7 +538,6 @@ public class OntProcessStatusDao extends JdbcDaoSupport {
 			if (dbInfo.getDb_serverType().equalsIgnoreCase(
 					"SQLSERVER")) {
 				object = new Object[] {
-
 						ontProcessStatusType
 						.getProcessTypeCd(), ontProcessStatusType
 						.getProcessStepCd(), new Date(System.currentTimeMillis()), "PROCESSING", userId,

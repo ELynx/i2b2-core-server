@@ -578,7 +578,8 @@ public class TemporalSubQuery implements Comparable{
 											sqlUnits = "ADD_MONTHS(" + spanFirstPrefix + "." + spanFirstColumn + ", (12 * " + span  + "))";
 										else if (parent.getServerType().equals(DAOFactoryHelper.SQLSERVER))
 											sqlUnits = "DATEADD(YEAR, (" + span + "), " + spanFirstPrefix + "." + spanFirstColumn + ")";
-										else if (parent.getServerType().equals(DAOFactoryHelper.POSTGRESQL))
+										else if (parent.getServerType().equals(DAOFactoryHelper.POSTGRESQL)
+													|| parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS))
 											sqlUnits = " " + spanFirstPrefix + "." + spanFirstColumn + " + cast('" + span + " years' as interval) ";
 
 									}
@@ -587,7 +588,8 @@ public class TemporalSubQuery implements Comparable{
 											sqlUnits = "ADD_MONTHS(" + spanFirstPrefix + "." + spanFirstColumn + ", (" + span  + "))";
 										else if (parent.getServerType().equals(DAOFactoryHelper.SQLSERVER))
 											sqlUnits = "DATEADD(MONTH, (" + span + "), " + spanFirstPrefix + "." + spanFirstColumn + ")";
-										else if (parent.getServerType().equals(DAOFactoryHelper.POSTGRESQL))
+										else if (parent.getServerType().equals(DAOFactoryHelper.POSTGRESQL)
+													|| parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS))
 											sqlUnits = " " + spanFirstPrefix + "." + spanFirstColumn + " + cast('" + span + " months' as interval) ";
 									}
 									else if (TemporalQuerySpanUnits.valueOf(units)==TemporalQuerySpanUnits.DAY){
@@ -595,7 +597,8 @@ public class TemporalSubQuery implements Comparable{
 											sqlUnits = "(" + spanFirstPrefix + "." + spanFirstColumn + " + (" + span  + "))";
 										else if (parent.getServerType().equals(DAOFactoryHelper.SQLSERVER))
 											sqlUnits = "DATEADD(DAY, (" + span  + "), " + spanFirstPrefix + "." + spanFirstColumn + ")";
-										else if (parent.getServerType().equals(DAOFactoryHelper.POSTGRESQL))
+										else if (parent.getServerType().equals(DAOFactoryHelper.POSTGRESQL)
+													|| parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS))
 											sqlUnits = " " + spanFirstPrefix + "." + spanFirstColumn + " + cast('" + span + " days' as interval) ";
 									}
 									else if (TemporalQuerySpanUnits.valueOf(units)==TemporalQuerySpanUnits.HOUR){
@@ -603,7 +606,8 @@ public class TemporalSubQuery implements Comparable{
 											sqlUnits = "(" + spanFirstPrefix + "." + spanFirstColumn + " + (1/24 * " + span  + "))";
 										else if (parent.getServerType().equals(DAOFactoryHelper.SQLSERVER))
 											sqlUnits = "DATEADD(HOUR, (" + span  + "), " + spanFirstPrefix + "." + spanFirstColumn + ")";	
-										else if (parent.getServerType().equals(DAOFactoryHelper.POSTGRESQL))
+										else if (parent.getServerType().equals(DAOFactoryHelper.POSTGRESQL)
+													|| parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS))
 											sqlUnits = " " + spanFirstPrefix + "." + spanFirstColumn + " + cast('" + span + " hours' as interval) ";
 									}
 									else if (TemporalQuerySpanUnits.valueOf(units)==TemporalQuerySpanUnits.MINUTE){
@@ -611,7 +615,8 @@ public class TemporalSubQuery implements Comparable{
 											sqlUnits = "(" + spanFirstPrefix + "." + spanFirstColumn + " + (1/1440 * " + span  + "))";
 										else if (parent.getServerType().equals(DAOFactoryHelper.SQLSERVER))
 											sqlUnits = "DATEADD(MINUTE, (" + span  + "), " + spanFirstPrefix + "." + spanFirstColumn + ")";	
-										else if (parent.getServerType().equals(DAOFactoryHelper.POSTGRESQL))
+										else if (parent.getServerType().equals(DAOFactoryHelper.POSTGRESQL)
+													|| parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS))
 											sqlUnits = " " + spanFirstPrefix + "." + spanFirstColumn + " + cast('" + span + " minutes' as interval) ";
 									}
 									else if (TemporalQuerySpanUnits.valueOf(units)==TemporalQuerySpanUnits.SECOND){
@@ -619,7 +624,8 @@ public class TemporalSubQuery implements Comparable{
 											sqlUnits = "(" + spanFirstPrefix + "." + spanFirstColumn + " + (1/86400 * " + span  + "))";
 										else if (parent.getServerType().equals(DAOFactoryHelper.SQLSERVER))
 											sqlUnits = "DATEADD(SECOND, (" + span  + "), " + spanFirstPrefix + "." + spanFirstColumn + ")";	
-										else if (parent.getServerType().equals(DAOFactoryHelper.POSTGRESQL))
+										else if (parent.getServerType().equals(DAOFactoryHelper.POSTGRESQL)
+													|| parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS))
 											sqlUnits = " " + spanFirstPrefix + "." + spanFirstColumn + " + cast('" + span + " seconds' as interval) ";
 									}
 								}
@@ -1011,7 +1017,8 @@ public class TemporalSubQuery implements Comparable{
 			return "truncate table "+ tempTableName;
 		else
 			return "delete  "+
-					(parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)? " from " : "") + tempTableName;
+					(parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
+						|| parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS) ? " from " : "") + tempTableName;
 	}
 	
 	protected String getDeleteDxTempTableSql()  { 
@@ -1021,7 +1028,8 @@ public class TemporalSubQuery implements Comparable{
 			return "truncate table "+ tempTableName;
 		else
 			return "delete  "+
-					(parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)? " from " : "") + tempTableName;
+					(parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
+						|| parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS) ? " from " : "") + tempTableName;
 	}
 	
 	protected String getDeleteTempMasterSql(String masterId, int level) {
@@ -1035,7 +1043,8 @@ public class TemporalSubQuery implements Comparable{
 		}
 		else
 			return "delete " +
-			(parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)? " from " : "") +
+			(parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
+				|| parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS) ? " from " : "") +
 			masterTableName + " " +
 					"where master_id = '" + masterId + "' " + 
 					"and level_no >= " + String.valueOf(level);

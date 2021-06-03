@@ -85,8 +85,9 @@ public class BuildTotalOccuranceSql {
 				if (this.dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)) { 
 					countDistinct = " distinct cast(patient_num as varchar) + '|' +  cast(encounter_num as varchar) + '|' + " + 
 							" provider_id + '|' + cast(start_date as varchar) + '|' + cast(instance_num as varchar) + '|' +concept_cd"; 
-				} else if (this.dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE)  ||
-						this.dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)	) { 
+				} else if (this.dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE)
+							|| this.dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
+							|| this.dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
 					countDistinct = " distinct patient_num || '|' || encounter_num || '|' || provider_id || '|' || instance_num || '|' ||concept_cd || '|' ||cast(start_date as  varchar(50) ) ";
 				}
 				totalOccuranceSql +=  " having count("+countDistinct+") " + totalItemOccurrenceClause;//  + " group by " + selectClause;

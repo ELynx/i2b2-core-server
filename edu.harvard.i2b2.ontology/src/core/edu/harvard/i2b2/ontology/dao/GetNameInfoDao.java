@@ -210,7 +210,8 @@ class GetNamesInfoMapper implements RowMapper<ConceptType> {
 				entry.setComment(null);
 			else {
 				try {
-					if (dbType.equals("POSTGRESQL"))
+					if (dbType.equals("POSTGRESQL")
+							|| dbType.equalsIgnoreCase("InterSystems IRIS"))
 						entry.setComment(rs.getString("c_comment"));
 					else
 						entry.setComment(JDBCUtil.getClobString(rs.getClob("c_comment")));
@@ -223,7 +224,8 @@ class GetNamesInfoMapper implements RowMapper<ConceptType> {
 			}else {
 				String c_xml = null;
 				try {
-					if (dbType.equals("POSTGRESQL"))
+					if (dbType.equals("POSTGRESQL")
+							|| dbType.equalsIgnoreCase("InterSystems IRIS"))
 						c_xml = rs.getString("c_comment");
 					else
 						c_xml = JDBCUtil.getClobString(rs.getClob("c_metadataxml"));

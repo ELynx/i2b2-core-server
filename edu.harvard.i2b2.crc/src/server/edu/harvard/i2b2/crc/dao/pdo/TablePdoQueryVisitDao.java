@@ -124,8 +124,9 @@ public class TablePdoQueryVisitDao extends CRCDAO implements
 				oracle.sql.ARRAY paramArray = new oracle.sql.ARRAY(desc, conn1,
 						encounterNumList.toArray(new String[] {}));
 				query.setArray(1, paramArray);
-			} else if (serverType.equalsIgnoreCase(DAOFactoryHelper.SQLSERVER) ||
-					serverType.equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)) {
+			} else if (serverType.equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)
+						|| serverType.equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
+						|| serverType.equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
 				log.debug("creating temp table");
 				java.sql.Statement tempStmt = conn.createStatement();
 				tempTableName = getDbSchemaName()
@@ -482,8 +483,9 @@ public class TablePdoQueryVisitDao extends CRCDAO implements
 			if (serverType.equalsIgnoreCase(DAOFactoryHelper.ORACLE)) {
 				factTempTable = getDbSchemaName()
 						+ FactRelatedQueryHandler.TEMP_FACT_PARAM_TABLE;
-			} else if (serverType.equalsIgnoreCase(DAOFactoryHelper.SQLSERVER) ||
-					serverType.equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)) {
+			} else if (serverType.equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)
+						|| serverType.equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
+						|| serverType.equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
 				log.debug("creating temp table");
 				java.sql.Statement tempStmt = conn.createStatement();
 				factTempTable = getDbSchemaName()

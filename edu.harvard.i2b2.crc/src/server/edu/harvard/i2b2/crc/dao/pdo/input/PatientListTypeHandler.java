@@ -122,13 +122,12 @@ public class PatientListTypeHandler extends CRCDAO implements
 
 			String tempTableName = "";
 			String asClause = "as";
-			if (dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.ORACLE)) {
+			if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE)) {
 				tempTableName = FactRelatedQueryHandler.TEMP_PARAM_TABLE;
 				asClause = " ";
-			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.SQLSERVER) || dataSourceLookup.getServerType().equalsIgnoreCase(
-							DAOFactoryHelper.POSTGRESQL)) {
+			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)
+						|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
+						|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
 				tempTableName = SQLServerFactRelatedQueryHandler.TEMP_PDO_INPUTLIST_TABLE;
 			}
 			sqlString = " select min(set_index), count(*) from "
@@ -151,8 +150,7 @@ public class PatientListTypeHandler extends CRCDAO implements
 				maxIndex = 100;
 			}
 
-			if (dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.ORACLE)) {
+			if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE)) {
 				// do nothing
 				sqlString = " select patient_num from (select p.*, ROWNUM rnum from ( select patient_num from "
 						+ this.getDbSchemaName()
@@ -161,9 +159,9 @@ public class PatientListTypeHandler extends CRCDAO implements
 						+ maxIndex
 						+ " ) where  rnum>="
 						+ minIndex;
-			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.SQLSERVER) || dataSourceLookup.getServerType().equalsIgnoreCase(
-							DAOFactoryHelper.POSTGRESQL)) {
+			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)
+						|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
+						|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
 				sqlString = "	select patient_num from (select *, ROW_number() over (order by patient_num asc) as  rnum "
 						+ " from "
 						+ this.getDbSchemaName()
@@ -201,8 +199,8 @@ public class PatientListTypeHandler extends CRCDAO implements
 			// this.getEnumerationList();
 			String tempTableName = this.getTempTableName();
 
-			if (dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.POSTGRESQL))
+			if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
+					|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS))
 			{
 			sqlString = " select cast(char_param1 as integer) from " + tempTableName + "  ";
 			}
@@ -217,8 +215,7 @@ public class PatientListTypeHandler extends CRCDAO implements
 				maxIndex = 100;
 			}
 
-			if (dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.ORACLE)) {
+			if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE)) {
 				// do nothing
 				sqlString = " select patient_num from (select p.*, ROWNUM rnum from ( select patient_num from "
 						+ this.getDbSchemaName()
@@ -227,9 +224,9 @@ public class PatientListTypeHandler extends CRCDAO implements
 						+ maxIndex
 						+ " ) where  rnum>="
 						+ minIndex;
-			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.SQLSERVER) || dataSourceLookup.getServerType().equalsIgnoreCase(
-							DAOFactoryHelper.POSTGRESQL)) {
+			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)
+						|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
+						|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
 				sqlString = "	select patient_num from (select *, ROW_number() over (order by patient_num asc) as  rnum "
 						+ " from "
 						+ this.getDbSchemaName()
@@ -367,16 +364,18 @@ public class PatientListTypeHandler extends CRCDAO implements
 		deleteTempTable(conn);
 		// create temp table
 		java.sql.Statement tempStmt = conn.createStatement();
-		if (dataSourceLookup.getServerType().equalsIgnoreCase(
-				DAOFactoryHelper.SQLSERVER)) {
+		if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)) {
 			String createTempInputListTable = "create table "
 					+ getTempTableName()
 					+ " (set_index int, char_param1 varchar(100) )";
 			tempStmt.executeUpdate(createTempInputListTable);
-		} else if (dataSourceLookup.getServerType().equalsIgnoreCase(
-				DAOFactoryHelper.POSTGRESQL))
-		{
+		} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)) {
 			String createTempInputListTable = "create temp table "
+					+ getTempTableName()
+					+ " (set_index int, char_param1 varchar(100) )";
+			tempStmt.executeUpdate(createTempInputListTable);
+		} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
+			String createTempInputListTable = "create GLOBAL TEMPORARY table "
 					+ getTempTableName()
 					+ " (set_index int, char_param1 varchar(100) )";
 			tempStmt.executeUpdate(createTempInputListTable);
@@ -428,9 +427,9 @@ public class PatientListTypeHandler extends CRCDAO implements
 		try {
 			deleteStmt = conn.createStatement();
 
-			if (dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.SQLSERVER) || dataSourceLookup.getServerType().equalsIgnoreCase(
-							DAOFactoryHelper.POSTGRESQL)) {
+			if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)
+					|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
+					|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
 			//	conn.createStatement().executeUpdate(
 				//		"drop table " + getTempTableName());
 				deleteStmt.executeUpdate(
@@ -458,12 +457,11 @@ public class PatientListTypeHandler extends CRCDAO implements
 
 	private String getTempTableName() {
 		String tempTableName = "";
-		if (dataSourceLookup.getServerType().equalsIgnoreCase(
-				DAOFactoryHelper.ORACLE)) {
+		if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE)) {
 			tempTableName = this.getDbSchemaName()
 					+ FactRelatedQueryHandler.TEMP_PARAM_TABLE;
-		} else if (dataSourceLookup.getServerType().equalsIgnoreCase(
-				DAOFactoryHelper.POSTGRESQL)) {
+		} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
+					|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
 			tempTableName = SQLServerFactRelatedQueryHandler.TEMP_PDO_INPUTLIST_TABLE.substring(1);
 			
 		} else {

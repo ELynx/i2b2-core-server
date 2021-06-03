@@ -44,9 +44,9 @@ public class DateConstrainHandler {
 		if (dataSourceLookup.getServerType().equalsIgnoreCase(
 				DAOFactoryHelper.ORACLE)) {
 			dateFormat = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss");
-		} else if (dataSourceLookup.getServerType().equalsIgnoreCase(
-				DAOFactoryHelper.SQLSERVER) ||dataSourceLookup.getServerType().equalsIgnoreCase(
-						DAOFactoryHelper.POSTGRESQL)) {
+		} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)
+					|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
+					|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
 			// ISO 8601
 			dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
 		}
@@ -70,13 +70,12 @@ public class DateConstrainHandler {
 				sqlOperator = " >= ";
 			}
 
-			if (dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.ORACLE)) {
+			if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE)) {
 				dateConstrainSql = fromDateField + sqlOperator + "to_date('"
 						+ fromDateString + "','DD-MON-YYYY HH24:MI:SS')";
-			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.SQLSERVER) || dataSourceLookup.getServerType().equalsIgnoreCase(
-							DAOFactoryHelper.POSTGRESQL)) {
+			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)
+						|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
+						|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
 				// {ts '2005-06-27 00:00:00'}
 				dateConstrainSql = fromDateField + sqlOperator + " '"
 						+ fromDateString + "'";
@@ -103,13 +102,12 @@ public class DateConstrainHandler {
 			if (dateConstrainSql == null) {
 				dateConstrainSql = " ";
 			}
-			if (dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.ORACLE)) {
+			if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE)) {
 				dateConstrainSql += (toDateField + sqlOperator + "to_date('"
 						+ toDateString + "','DD-MON-YYYY HH24:MI:SS')");
-			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.SQLSERVER) || dataSourceLookup.getServerType().equalsIgnoreCase(
-							DAOFactoryHelper.POSTGRESQL)) {
+			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)
+						|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
+						|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
 				dateConstrainSql += (toDateField + sqlOperator + " '"
 						+ toDateString + "'");
 			}

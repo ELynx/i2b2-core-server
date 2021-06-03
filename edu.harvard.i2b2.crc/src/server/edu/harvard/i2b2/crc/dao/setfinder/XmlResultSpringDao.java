@@ -80,6 +80,7 @@ public class XmlResultSpringDao extends CRCDAO implements IXmlResultDao  {
 		String SQLSERVER_SQL = "INSERT INTO " + getDbSchemaName() + "QT_XML_RESULT(result_instance_id,xml_value) VALUES(?,?)";
 		String SEQUENCE_ORACLE = "SELECT "+ dbSchemaName +"QT_SQ_QXR_XRID.nextval from dual";
 		String SEQUENCE_POSTGRESQL = "SELECT nextval('qt_xml_result_xml_result_id_seq') ";
+		String SEQUENCE_INTERSYSTEMS_IRIS = "select I2B2.Utils_nextval('qt_xml_result_xml_result_id_seq')";
 		int xmlResultId = 0;
 		if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE)) {
 			xmlResultId = jdbcTemplate.queryForObject(SEQUENCE_ORACLE, Integer.class);
@@ -87,8 +88,11 @@ public class XmlResultSpringDao extends CRCDAO implements IXmlResultDao  {
 		} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)) { 
 			jdbcTemplate.update(SQLSERVER_SQL, new Object[]{resultInstanceId,xmlValue});
 			xmlResultId = jdbcTemplate.queryForObject("SELECT @@IDENTITY", Integer.class);
-		} else 		if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)) {
-			xmlResultId = jdbcTemplate.queryForObject(SEQUENCE_POSTGRESQL, Integer.class);
+		} else 	if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
+						|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS) ) {
+			xmlResultId = jdbcTemplate.queryForObject(
+					dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL) ? SEQUENCE_POSTGRESQL : SEQUENCE_INTERSYSTEMS_IRIS,
+					Integer.class);
 			jdbcTemplate.update(POSTGRESQL_SQL, new Object[]{xmlResultId,Integer.parseInt(resultInstanceId),xmlValue});
 
 		}

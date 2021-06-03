@@ -79,7 +79,9 @@ public class TablePdoQueryConceptDao extends CRCDAO implements
 			if (serverType.equalsIgnoreCase(DAOFactoryHelper.ORACLE)) {
 				factTempTable = this.getDbSchemaName()
 						+ FactRelatedQueryHandler.TEMP_FACT_PARAM_TABLE;
-			} else if (serverType.equalsIgnoreCase(DAOFactoryHelper.SQLSERVER) || serverType.equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL )) {
+			} else if (serverType.equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)
+						|| serverType.equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
+						|| serverType.equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
 				log.debug("creating temp table");
 				java.sql.Statement tempStmt = conn.createStatement();
 				factTempTable = this.getDbSchemaName()
@@ -109,7 +111,8 @@ public class TablePdoQueryConceptDao extends CRCDAO implements
 				insertSql = " insert into "
 						+ factTempTable;
 				
-				if (serverType.equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL))
+				if (serverType.equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
+						|| serverType.equalsIgnoreCase(DAOFactoryHelper.IRIS))
 					insertSql = " CAST(coalesce(char_param1, '0') as integer) ";
 				//else 
 				//	insertSql += " (char_param1) ";
@@ -231,8 +234,9 @@ public class TablePdoQueryConceptDao extends CRCDAO implements
 				oracle.sql.ARRAY paramArray = new oracle.sql.ARRAY(desc, conn1,
 						conceptCdList.toArray(new String[] {}));
 				query.setArray(1, paramArray);
-			} else if (serverType.equalsIgnoreCase(DAOFactoryHelper.SQLSERVER) ||
-					serverType.equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)) {
+			} else if (serverType.equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)
+						|| serverType.equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
+						|| serverType.equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
 				log.debug("creating temp table");
 				java.sql.Statement tempStmt = conn.createStatement();
 				tempTableName = this.getDbSchemaName()

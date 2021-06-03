@@ -106,16 +106,15 @@ public class ObservationFactDao extends CRCDAO implements IObservationFactDao {
 			GregorianCalendar gc = factPrimaryKey.getStartDate()
 					.toGregorianCalendar();
 			String sqlFormatedStartDate = "";
-			if (dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.ORACLE)) {
+			if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE)) {
 				SimpleDateFormat dateFormat = new SimpleDateFormat(
 						"dd-MMM-yyyy HH:mm:ss");
 				sqlFormatedStartDate = dateFormat.format(gc.getTime());
 				sql += (" AND obs.start_date = to_date('"
 						+ sqlFormatedStartDate + " ', 'DD-MON-YYYY HH24:MI:SS') ");
-			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.SQLSERVER) || dataSourceLookup.getServerType().equalsIgnoreCase(
-							DAOFactoryHelper.POSTGRESQL)) {
+			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)
+					|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
+					|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
 				SimpleDateFormat dateFormat = new SimpleDateFormat(
 						"yyyy-MM-dd'T'HH:mm:ss");
 				sqlFormatedStartDate = dateFormat.format(gc.getTime());

@@ -116,14 +116,13 @@ public class QueryToolUtil extends CRCDAO {
 		this.setDbSchemaName(dataSourceLookup.getFullSchema());
 		SetQueryDatabaseConstants(dbType);
 		this.dataSourceLookup = dataSourceLookup;
-		if (dataSourceLookup.getServerType().equalsIgnoreCase(
-				DAOFactoryHelper.ORACLE) || dataSourceLookup.getServerType().equalsIgnoreCase(
-						DAOFactoryHelper.POSTGRESQL)) {
+		if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE)
+				|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
+				|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
 			TEMP_TABLE = "QUERY_GLOBAL_TEMP";
 			TEMP_RETURN_TABLE = "DX";
 			dateFormat = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss");
-		} else if (dataSourceLookup.getServerType().equalsIgnoreCase(
-				DAOFactoryHelper.SQLSERVER)) {
+		} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)) {
 			TEMP_TABLE = "#global_temp_table";
 			TEMP_RETURN_TABLE = "#dx";
 			dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");

@@ -144,10 +144,12 @@ public class EidListTypeHandler extends CRCDAO implements
 					+ " (set_index int, char_param1 varchar(100), char_param2 varchar(100) )";
 			deleteTempFlag = true;
 			tempStmt.executeUpdate(createTempInputListTable);
-		} else if (dataSourceLookup.getServerType().equalsIgnoreCase(
-				DAOFactoryHelper.POSTGRESQL))
-		{
-			String createTempInputListTable = "create temp table "
+		} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
+					|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
+			String createTempInputListTable = "create "
+					+ (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL) ? " temp "
+						: (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS) ? " GLOBAL TEMPORARY " : ""))
+					+ " table "
 					+ getTempTableName()
 					+ " (set_index int, char_param1 varchar(100), char_param2 varchar(100) )";
 			deleteTempFlag = true;
@@ -204,15 +206,14 @@ public class EidListTypeHandler extends CRCDAO implements
 		try {
 			deleteStmt = conn.createStatement();
 
-			if (dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.SQLSERVER) || dataSourceLookup.getServerType().equalsIgnoreCase(
-							DAOFactoryHelper.POSTGRESQL)) {
+			if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)
+					|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
+					|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
 			//	conn.createStatement().executeUpdate(
 			//			"drop table " + getTempTableName());
 				deleteStmt.executeUpdate(
 						"drop table " + getTempTableName());
-			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.ORACLE)) {
+			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE)) {
 		//		conn.createStatement().executeUpdate(
 		//				"delete  " + getTempTableName());
 				deleteStmt.executeUpdate(
