@@ -119,7 +119,7 @@ public class QueryResultGenerator extends CRCDAO implements IResultGenerator {
 					ptrUtil.logProcessTimingMessage(queryInstanceId, ptrUtil.buildProcessTiming(subLogTimingUtil, "BUILD - " + resultTypeName + " : Ontology Call(GetChildren) ", ""));
 				}
 			}
-
+			//TODO: only for the IRIS
 			String itemCountSql = " select count(distinct PATIENT_NUM) as item_count  from "
 					+ this.getDbSchemaName() 
 					+ "observation_fact obs_fact  "
@@ -128,7 +128,7 @@ public class QueryResultGenerator extends CRCDAO implements IResultGenerator {
 					+ "    ) "
 					+ " and obs_fact.concept_cd in (select concept_cd from "
 					+ this.getDbSchemaName()
-					+ "concept_dimension  where concept_path like ?)";
+					+ "concept_dimension  where concept_path [ ?)";
 
 			//get break down count sigma from property file 
 

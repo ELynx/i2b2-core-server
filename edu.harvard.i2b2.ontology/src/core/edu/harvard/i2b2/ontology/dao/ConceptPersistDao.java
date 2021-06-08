@@ -13,8 +13,6 @@
  */
 package edu.harvard.i2b2.ontology.dao;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -23,7 +21,6 @@ import java.util.List;
 import java.util.Random;
 
 import javax.sql.DataSource;
-import javax.xml.datatype.XMLGregorianCalendar;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -157,6 +154,7 @@ public class ConceptPersistDao extends JdbcDaoSupport {
 	}
 
 	public int deleteNode(final DeleteChildType deleteChildType, ProjectType projectInfo, DBInfoType dbInfo) throws DataAccessException, I2B2Exception{
+		log.info("ConceptPersistDao.class: deleteNode(final DeleteChildType deleteChildType, ProjectType projectInfo, DBInfoType dbInfo)");
 		String metadataSchema = dbInfo.getDb_fullSchema();
 		String serverType = dbInfo.getDb_serverType();
 		setDataSource(dbInfo.getDb_dataSource());
@@ -169,7 +167,7 @@ public class ConceptPersistDao extends JdbcDaoSupport {
 			throw e;
 		}
 
-		Boolean protectedAccess = false;
+		boolean protectedAccess = false;
 		Iterator<String> it = projectInfo.getRole().iterator();
 		while (it.hasNext()){
 			String role = (String) it.next();
@@ -203,9 +201,15 @@ public class ConceptPersistDao extends JdbcDaoSupport {
 
 		String deleteChildrenSql = null;
 		String deleteSql = " delete from " + metadataSchema+tableName  + " where c_fullname = ? and c_basecode = ?";
-		if(deleteChildType.isIncludeChildren()){	
-			deleteChildrenSql =  " delete from " + metadataSchema+tableName  + " where c_fullname like ? and c_visualattributes like '%E'";
+		if(deleteChildType.isIncludeChildren()) {
+			//TODO: check if [ is enough for IRIS
+			if (dbInfo.getDb_serverType().equalsIgnoreCase("INTERSYSTEMS IRIS"))
+				deleteChildrenSql =  " delete from " + metadataSchema+tableName  + " where c_fullname [ ? and c_visualattributes [ '%E'";
+			else
+				deleteChildrenSql =  " delete from " + metadataSchema+tableName  + " where c_fullname like ? and c_visualattributes like '%E'";
 		}
+		log.info("Script [" + StringUtil.getPath(deleteChildType.getKey()) + ", " + deleteChildType.getBasecode() + "]: " + deleteSql);
+		log.info("Script [" + StringUtil.getPath(deleteChildType.getKey()) +"%" + "]: " + deleteChildrenSql);
 		int numRowsDeleted = -1;
 		try{	
 			numRowsDeleted = jt.update(deleteSql, StringUtil.getPath(deleteChildType.getKey()), deleteChildType.getBasecode());
@@ -247,7 +251,7 @@ public class ConceptPersistDao extends JdbcDaoSupport {
 
 		//extract table code
 		String tableCd = null;
-		if((modifyChildType.getSelf().getModifier() == null)||(modifyChildType.getSelf().getModifier().getName() == null)){
+		if((modifyChildType.getSelf().getModifier() == null) || (modifyChildType.getSelf().getModifier().getName() == null)){
 			tableCd = StringUtil.getTableCd(modifyChildType.getSelf().getKey());
 			log.info("path: " + StringUtil.getPath(modifyChildType.getSelf().getKey()));
 		}
@@ -723,8 +727,8 @@ public class ConceptPersistDao extends JdbcDaoSupport {
 					" C_SYMBOL	VARCHAR(50)	NULL )  ";
 
 
-			if(dbInfo.getDb_serverType().equals("POSTGRESQL")
-					|| dbInfo.getDb_serverType().equalsIgnoreCase("InterSystems IRIS"))	{
+			if(dbInfo.getDb_serverType().equalsIgnoreCase("POSTGRESQL")
+					|| dbInfo.getDb_serverType().equalsIgnoreCase("INTERSYSTEMS IRIS"))	{
 				createSql = "CREATE TABLE " + metadataSchema + tableName +
 						"  (	C_HLEVEL INT			NOT NULL, C_FULLNAME VARCHAR(700)	NOT NULL, C_NAME VARCHAR(2000)		NOT NULL, "+
 						" C_SYNONYM_CD CHAR(1)		NOT NULL, C_VISUALATTRIBUTES CHAR(3)	NOT NULL,  C_TOTALNUM INT			NULL, " +
@@ -736,7 +740,7 @@ public class ConceptPersistDao extends JdbcDaoSupport {
 						" VALUETYPE_CD VARCHAR(50)	NULL, M_EXCLUSION_CD	VARCHAR(25) NULL, C_PATH	VARCHAR(700)   NULL, "+
 						" C_SYMBOL	VARCHAR(50)	NULL ) ";
 			}
-			else if(dbInfo.getDb_serverType().equals("ORACLE"))	{
+			else if(dbInfo.getDb_serverType().equalsIgnoreCase("ORACLE"))	{
 				createSql = "CREATE TABLE " + metadataSchema + tableName +
 						"  (	C_HLEVEL NUMBER(22,0)			NOT NULL, C_FULLNAME VARCHAR2(700)	NOT NULL, C_NAME VARCHAR2(2000)		NOT NULL, "+
 						" C_SYNONYM_CD CHAR(1)		NOT NULL, C_VISUALATTRIBUTES CHAR(3)	NOT NULL,  C_TOTALNUM NUMBER(22,0)			NULL, " +

@@ -34,9 +34,12 @@ public class OracleDataSourceLookupDAO extends DataSourceLookupDAO  {
 	}
 	
 	@Override
-	public List<DataSourceLookup> getDbLookupByHiveOwner(String domainId,String ownerId) { 
-		String sql =  "select * from crc_db_lookup where LOWER(c_domain_id) = ? and c_project_path = ? and (LOWER(c_owner_id) = ? or c_owner_id ='@') order by c_project_path";
+	public List<DataSourceLookup> getDbLookupByHiveOwner(String domainId,String ownerId) {
+		log.info("OracleDataSourceLookupDAO.class: getDbLookupByHiveOwner(String domainId,String ownerId)");
+		String sql =  "select * from crc_db_lookup where LOWER(c_domain_id) = ? and c_project_path = ? " +
+				" and (LOWER(c_owner_id) = ? or c_owner_id ='@') order by c_project_path";
 		String projectId = "@";
+		log.info("Script: " + sql);
 		List<DataSourceLookup> dataSourceLookupList = 
 			this.query(sql, new Object[]{domainId.toLowerCase(),projectId,ownerId.toLowerCase()}, new mapper());
 		return dataSourceLookupList;
@@ -44,20 +47,18 @@ public class OracleDataSourceLookupDAO extends DataSourceLookupDAO  {
 	
 	@Override
 	@SuppressWarnings("unchecked")
-	public List<DataSourceLookup> getDbLookupByHiveProjectOwner(String domainId, String projectId,
-			String ownerId) {
-		String sql = "select * from crc_db_lookup where LOWER(c_domain_id) = ? and c_project_path like  ? and (LOWER(c_owner_id) =? or c_owner_id = '@') order by c_project_path"; 
+	public List<DataSourceLookup> getDbLookupByHiveProjectOwner(String domainId, String projectId, String ownerId) {
+		log.info("OracleDataSourceLookupDAO.class: getDbLookupByHiveProjectOwner(String domainId, String projectId, String ownerId)");
+		//TODO: only for the IRIS
+		String sql = "select * from crc_db_lookup where LOWER(c_domain_id) = ? and c_project_path [  ? " +
+				"and (LOWER(c_owner_id) =? or c_owner_id = '@') order by c_project_path";
+		log.info("Script: " + sql);
 		List<DataSourceLookup> dataSourceLookupList = this.query(sql, new Object[]{domainId.toLowerCase(),projectId+"%",ownerId.toLowerCase()},new int[]{Types.VARCHAR,Types.VARCHAR,Types.VARCHAR},new mapper()  );
 		return dataSourceLookupList;
 	}
 	
-	
-	
-	
-	
 	public static void main(String args[]) { 
 		OracleDataSourceLookupDAO dao = new OracleDataSourceLookupDAO(null,null);
-		
 	}
 
 	public class mapper implements RowMapper {

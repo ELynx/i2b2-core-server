@@ -96,10 +96,14 @@ public class CreateConceptXmlDao extends JdbcDaoSupport {
 
 	}
 
-	private void buildDimensionUpdateXml(ProjectType projectInfo,
-			DBInfoType dbInfo, String pdoFileName, boolean synchronizeAllFlag,
-			boolean hiddenConceptFlag,String dimensionTableName, PatientDataXMLWriterUtil xmlWriterUtil)
+	private void buildDimensionUpdateXml(ProjectType projectInfo,DBInfoType dbInfo,
+										 String pdoFileName, boolean synchronizeAllFlag,
+										 boolean hiddenConceptFlag,String dimensionTableName,
+										 PatientDataXMLWriterUtil xmlWriterUtil)
 			throws I2B2Exception {
+		log.info("CreateConceptXmlDao.class: buildDimensionUpdateXml(ProjectType projectInfo,DBInfoType dbInfo, " +
+				"String pdoFileName, boolean synchronizeAllFlag, boolean hiddenConceptFlag,String dimensionTableName, " +
+				"PatientDataXMLWriterUtil xmlWriterUtil)");
 		String metadataSchema = dbInfo.getDb_fullSchema();
 		TableAccessDao tableAccessDao = new TableAccessDao();
 		if (this.dataSource == null) {
@@ -108,19 +112,25 @@ public class CreateConceptXmlDao extends JdbcDaoSupport {
 			tableAccessDao.setDataSourceObject(this.dataSource);
 		}
 		String emptyStringClause = " ";
-		if (dbInfo.getDb_serverType().equals("ORACLE")) {
+		if (dbInfo.getDb_serverType().equalsIgnoreCase("ORACLE")) {
 			emptyStringClause = "trim(c_basecode) is not null ";
 		} else {
 			emptyStringClause = "rtrim(ltrim(c_basecode)) <> ''";
 		}
 		String hiddenConceptSql = " ";
-		if (hiddenConceptFlag) { 
-			hiddenConceptSql = " and c_visualattributes not like '_H%' ";
+		if (hiddenConceptFlag) {
+			hiddenConceptSql = dbInfo.getDb_serverType().equalsIgnoreCase("InterSystems IRIS")
+					? " and (not c_visualattributes %STARTSWITH '_H')"
+					: " and c_visualattributes not like '_H%' ";
 		}
 		
 		String updateOnlyClause = " ";
-		if (synchronizeAllFlag == false) {
-			updateOnlyClause = " and c_visualattributes like '%E' "+ hiddenConceptSql + " and c_synonym_cd = 'N' and m_exclusion_cd is null";
+		if (!synchronizeAllFlag) {
+			//TODO: check if [ is enough for IRIS
+			if (dbInfo.getDb_serverType().equalsIgnoreCase("InterSystems IRIS"))
+				updateOnlyClause = " and c_visualattributes [ '%E' "+ hiddenConceptSql + " and c_synonym_cd = 'N' and m_exclusion_cd is null";
+			else
+				updateOnlyClause = " and c_visualattributes like '%E' "+ hiddenConceptSql + " and c_synonym_cd = 'N' and m_exclusion_cd is null";
 		} else {
 			updateOnlyClause = "  and c_synonym_cd = 'N' " + hiddenConceptSql + " and m_exclusion_cd is null";
 		}
@@ -146,6 +156,7 @@ public class CreateConceptXmlDao extends JdbcDaoSupport {
 						+ " where c_basecode is not null and "
 						+ emptyStringClause + updateOnlyClause
 						+ "   and lower(c_tablename) = '" + dimensionTableName.toLowerCase() + "'";
+				log.info("Script: " + selectSql);
 				log.debug("Executing sql [" + selectSql + "]");
 				query = conn.prepareStatement(JDBCUtil.escapeSingleQuote(selectSql));
 

@@ -216,8 +216,8 @@ public class QueryExecutorHelperDao extends CRCDAO {
 							+ " ENCOUNTER_NUM int, " + " PATIENT_NUM int, INSTANCE_NUM int, CONCEPT_CD varchar(50), START_DATE TIMESTAMP, PROVIDER_ID varchar(50), "
 							+ " PANEL_COUNT int, " + " fact_count int, "
 							+ " fact_panels int " + ")";
-					log.info("Script - createSql: " + createSql);
 				}
+				log.info("Script - createSql: " + createSql);
 				stmt.executeUpdate(createSql);
 				createSql = " CREATE  TABLE " + TEMP_DX_TABLE + "  ( "
 						+ " ENCOUNTER_NUM int, " + " PATIENT_NUM int, INSTANCE_NUM int, CONCEPT_CD varchar(50), START_DATE DATETIME, PROVIDER_ID varchar(50), temporal_start_date datetime, temporal_end_date DATETIME ) ";
@@ -227,8 +227,8 @@ public class QueryExecutorHelperDao extends CRCDAO {
 							(dsLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL) ? "TEMP" : "GLOBAL TEMPORARY" ) +
 							" TABLE " + TEMP_DX_TABLE + "  ( "
 							+ " ENCOUNTER_NUM int, " + " PATIENT_NUM int, INSTANCE_NUM int, CONCEPT_CD varchar(50), START_DATE TIMESTAMP, PROVIDER_ID varchar(50), temporal_start_date TIMESTAMP, temporal_end_date TIMESTAMP ) ";
-					log.info("Script - createSql: " + createSql);
 				}
+				log.info("Script - createSql: " + createSql);
 				stmt.executeUpdate(createSql);
 				createSql = " CREATE  TABLE " + TEMP_MASTER_TABLE + "  ( "
 						+ " ENCOUNTER_NUM int,  PATIENT_NUM int , INSTANCE_NUM int, CONCEPT_CD varchar(50), START_DATE DATETIME, PROVIDER_ID varchar(50), MASTER_ID varchar(50), LEVEL_NO int, temporal_start_date DATETIME, temporal_end_date DATETIME ) ";
@@ -238,8 +238,8 @@ public class QueryExecutorHelperDao extends CRCDAO {
 							(dsLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL) ? "TEMP" : "GLOBAL TEMPORARY" ) +
 							" TABLE " + TEMP_MASTER_TABLE + "  ( "
 							+ " ENCOUNTER_NUM int,  PATIENT_NUM int , INSTANCE_NUM int, CONCEPT_CD varchar(50), START_DATE TIMESTAMP, PROVIDER_ID varchar(50), MASTER_ID varchar(50), LEVEL_NO int, temporal_start_date TIMESTAMP, temporal_end_date TIMESTAMP ) ";
-					log.info("Script - createSql: " + createSql);
 				}
+				log.info("Script - createSql: " + createSql);
 				stmt.executeUpdate(createSql);
 
 				if (dsLookup.getServerType().equalsIgnoreCase(

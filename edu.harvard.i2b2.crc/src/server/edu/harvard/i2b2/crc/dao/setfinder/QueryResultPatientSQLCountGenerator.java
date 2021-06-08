@@ -160,7 +160,7 @@ public class QueryResultPatientSQLCountGenerator extends CRCDAO implements IResu
 				count++;
 			}
 
-
+			log.info("Script: " + sqls[count]);
 			stmt = sfConn.prepareStatement(JDBCUtil.escapeSingleQuote(sqls[count]));
 			stmt.setQueryTimeout(transactionTimeout);
 			log.debug("Executing count sql [" + sqls[count] + "]");
@@ -270,7 +270,7 @@ public class QueryResultPatientSQLCountGenerator extends CRCDAO implements IResu
 				} else {
 					// set the setsize and the description of the result instance if
 					// the user role is obfuscated
-					if (timeoutFlag == false) { // check if the query completed
+					if (!timeoutFlag) { // check if the query completed
 						try {
 							//	tm.begin();
 
@@ -331,8 +331,7 @@ public class QueryResultPatientSQLCountGenerator extends CRCDAO implements IResu
 				.getQueryBreakdownTypeDao();
 		QtQueryBreakdownType queryBreakdownType = queryBreakdownTypeDao
 				.getBreakdownTypeByName(resultTypeKey);
-		String itemKey = queryBreakdownType.getValue();
-		return itemKey;
+		return queryBreakdownType.getValue();
 	}
 
 

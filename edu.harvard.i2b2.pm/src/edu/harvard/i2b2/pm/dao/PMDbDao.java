@@ -131,7 +131,7 @@ public class PMDbDao extends JdbcDaoSupport {
 
 	@SuppressWarnings("unchecked")
 	public List<HiveParamData> getEnvironmentData(String domainId) throws I2B2Exception, I2B2DAOException {
-		log.info("PMDbDao.class + getEnvironmentData(String domainId)");
+		//log.info("PMDbDao.class: getEnvironmentData(String domainId)");
 		String sql =  "select * from pm_hive_params where domain_id = ? and status_cd<>'D'";
 		//		log.info(sql + domainId + projectId + ownerId);
 		List<HiveParamData> queryResult = null;
@@ -141,13 +141,13 @@ public class PMDbDao extends JdbcDaoSupport {
 			log.error(e.getMessage());
 			throw new I2B2DAOException("Database error");
 		}
-		log.info("Script: " + sql);
+	//	log.info("Script: " + sql);
 		return queryResult;	
 	}
 
 	@SuppressWarnings("unchecked")
 	public List<ConfigureType> getEnvironment(String domainId) throws I2B2Exception, I2B2DAOException {
-		log.info("PMDbDao.class: getEnvironment(String domainId)");
+	//	log.info("PMDbDao.class: getEnvironment(String domainId)");
 		String sql =  "select * from pm_hive_data where active='1' and status_cd <> 'D'";
 
 		if (domainId != null) 
@@ -168,14 +168,14 @@ public class PMDbDao extends JdbcDaoSupport {
 			e.printStackTrace();
 			throw new I2B2DAOException("Database error");
 		}
-		log.info("Script: " + sql);
+	//	log.info("Script: " + sql);
 		return queryResult;	
 	}
 
 
 	@SuppressWarnings("unchecked")
 	public List<RoleType> getRole(String userId, String project ) throws I2B2Exception, I2B2DAOException {
-		log.info("PMDbDao.class: getRole(String userId, String project )");
+	//	log.info("PMDbDao.class: getRole(String userId, String project )");
 		String sql = "select  distinct" +
 				"    case  upper(rr.COLUMN_CD)" +
 				"         when '@'   then pur.PROJECT_ID" +
@@ -214,12 +214,12 @@ public class PMDbDao extends JdbcDaoSupport {
 			e.printStackTrace();
 			throw new I2B2DAOException("Database error");
 		}
-		log.info("Script: " + sql);
+		//log.info("Script: " + sql);
 		return queryResult;	
 	}
 	@SuppressWarnings("unchecked")
 	public List<RoleType> getRole(String userId) throws I2B2Exception, I2B2DAOException {
-		log.info("PMDbDao.class: getRole(String userId)");
+		//log.info("PMDbDao.class: getRole(String userId)");
 		return getRole(userId, null);
 		/*
 		String sql =  "select * from pm_project_user_roles where user_id=? and status_cd<>'D' order by project_id ";
@@ -238,7 +238,7 @@ public class PMDbDao extends JdbcDaoSupport {
 
 	@SuppressWarnings("unchecked")
 	public List<ProjectType> getProject(Object utype, boolean ignoreDeleted) throws I2B2Exception, I2B2DAOException {
-		log.info("PMDbDao.class: getProject(Object utype, boolean ignoreDeleted)");
+		//log.info("PMDbDao.class: getProject(Object utype, boolean ignoreDeleted)");
 		String sql = "select  distinct" +
 				"    case  upper(rr.COLUMN_CD)" +
 				"         when '@'   then pd.PROJECT_ID" +
@@ -292,12 +292,12 @@ public class PMDbDao extends JdbcDaoSupport {
 			e.printStackTrace();
 			throw new I2B2DAOException("Database error");
 		}
-		log.info("Script: " + sql);
+		//log.info("Script: " + sql);
 		return queryResult;	
 	}
 
 	public List<ProjectType> getUserProject(String user) throws I2B2Exception, I2B2DAOException { 
-		log.info("PMDbDao.class: getUserProject(String user)");
+	//	log.info("PMDbDao.class: getUserProject(String user)");
 		String sql = "select  distinct" +
 				"    case  upper(rr.COLUMN_CD)" +
 				"         when '@'   then pd.PROJECT_ID" +
@@ -351,13 +351,13 @@ public class PMDbDao extends JdbcDaoSupport {
 			e.printStackTrace();
 			throw new I2B2DAOException("Database error");
 		}
-		log.info("Script: " + sql);
+	//	log.info("Script: " + sql);
 		return queryResult;	
 	}
 
 	@SuppressWarnings("unchecked")
 	public List<ProjectUserParamData> getProjectUserParams(String projectId, String userId) throws I2B2Exception, I2B2DAOException {
-		log.info("PMDbDao.class: getProjectUserParams(String projectId, String userId)");
+		//log.info("PMDbDao.class: getProjectUserParams(String projectId, String userId)");
 		String sql =  "select * from pm_project_user_params where project_id=? and user_id=? and status_cd<>'D'";
 		//		log.info(sql + domainId + projectId + ownerId);
 		List<ProjectUserParamData> queryResult = null;
@@ -368,13 +368,13 @@ public class PMDbDao extends JdbcDaoSupport {
 			e.printStackTrace();
 			throw new I2B2DAOException("Database error");
 		}
-		log.info("Script: " + sql);
+	//	log.info("Script: " + sql);
 		return queryResult;	
 	}
 
 	@SuppressWarnings("unchecked")
 	public List<ParamType> getProjectParams(String projectId) throws I2B2Exception, I2B2DAOException {
-		log.info("PMDbDao.class: getProjectParams(String projectId)");
+		//log.info("PMDbDao.class: getProjectParams(String projectId)");
 		String sql =  "select * from pm_project_params where project_id=? and status_cd<>'D'";
 		//log.debug(sql  + projectId );
 		List<ParamType> queryResult = null;
@@ -385,13 +385,13 @@ public class PMDbDao extends JdbcDaoSupport {
 			e.printStackTrace();
 			throw new I2B2DAOException("Database error");
 		}
-		log.info("Script: " + sql);
+		//log.info("Script: " + sql);
 		return queryResult;	
 	}
 
 	@SuppressWarnings("unchecked")
 	public List<CellDataType> getCell(String cell, String project, boolean ignoreDeleted) throws I2B2Exception, I2B2DAOException {
-		log.info("PMDbDao.class: getCell(String cell, String project, boolean ignoreDeleted)");
+	//	log.info("PMDbDao.class: getCell(String cell, String project, boolean ignoreDeleted)");
 		//		log.info(sql + domainId + projectId + ownerId);
 		List<CellDataType> queryResult = null;
 		log.debug("Searching for cell: " + cell + " within project " + project);
@@ -423,13 +423,13 @@ public class PMDbDao extends JdbcDaoSupport {
 			e.printStackTrace();
 			throw new I2B2DAOException("Database error");
 		}
-		log.info("Script: " + sql);
+	//	log.info("Script: " + sql);
 		return queryResult;	
 	}
 
 	@SuppressWarnings("unchecked")
 	public List<ApprovalType> getApproval(ApprovalType approval, boolean ignoreDeleted) throws I2B2Exception, I2B2DAOException {
-		log.info("PMDbDao.class: getApproval(ApprovalType approval, boolean ignoreDeleted)");
+	//	log.info("PMDbDao.class: getApproval(ApprovalType approval, boolean ignoreDeleted)");
 		//		log.info(sql + domainId + projectId + ownerId);
 		String sql = "select a.* from pm_approvals a ";
 		String sqlWhere = " where a.object_cd = 'APPROVAL' ";
@@ -514,14 +514,14 @@ public class PMDbDao extends JdbcDaoSupport {
 			e.printStackTrace();
 			throw new I2B2DAOException("Database error");
 		}
-		log.info("Script: " + sql);
+	//	log.info("Script: " + sql);
 		return queryResult;	
 	}
 
 
 	@SuppressWarnings("unchecked")
 	public List<ParamType> getCellParam(String cellId, String project) throws I2B2Exception, I2B2DAOException {
-		log.info("PMDbDao.class: getCellParam(String cellId, String project)");
+	//	log.info("PMDbDao.class: getCellParam(String cellId, String project)");
 		String sql =  "select * from  pm_cell_params where cell_id = ? and  project_path = ? and status_cd<>'D'";
 		//		log.info(sql + domainId + projectId + ownerId);
 		List<ParamType> queryResult = null;
@@ -532,13 +532,13 @@ public class PMDbDao extends JdbcDaoSupport {
 			e.printStackTrace();
 			throw new I2B2DAOException("Database error");
 		}
-		log.info("Script: " + sql);
+//		log.info("Script: " + sql);
 		return queryResult;	
 	}
 
 	private  boolean validateRole(String caller, String isrole, String project) throws I2B2DAOException
 	{
-		log.info("PMDbDao.class: validateRole(String caller, String isrole, String project)");
+	//	log.info("PMDbDao.class: validateRole(String caller, String isrole, String project)");
 		List response = null;	
 
 		if (isrole.equalsIgnoreCase("admin"))
@@ -546,7 +546,7 @@ public class PMDbDao extends JdbcDaoSupport {
 			try {
 				String sql =  "select * from pm_project_user_roles where project_id=? and user_id=? and status_cd<>'D' order by project_id";
 				response = jt.query(sql, new getRole(), "@", caller);
-				log.info("Script: " + sql);
+			//	log.info("Script: " + sql);
 				//response = getRole(caller, project);
 			} catch (Exception e1) {
 				throw new I2B2DAOException ("Database error in getting role data for validateRole");
@@ -584,7 +584,7 @@ public class PMDbDao extends JdbcDaoSupport {
 
 	// All user Process
 	public List<UserType> getUser(String user, String caller,String password, boolean ignoreDeleted) throws I2B2Exception, I2B2DAOException { 
-		log.info("PMDbDao.class : getUser(String user, String caller,String password, boolean ignoreDeleted)");
+		//log.info("PMDbDao.class: getUser(String user, String caller,String password, boolean ignoreDeleted)");
 		String sql = null;
 		List<UserType> queryResult = null;
 
@@ -640,8 +640,6 @@ public class PMDbDao extends JdbcDaoSupport {
 					(password!=null?"    password = ? and":"") +
 					"    (rr.read_hivemgmt_CD = '@') and" + //OR (upper(rr.read_hivemgmt_CD) =  upper(pur.USER_ROLE_CD)) and" +
 					"    upper(rr.table_cd) =  'PM_USER_DATA'";
-
-
 			try {
 				if (password == null) 
 					queryResult = jt.query(sql, GetUser(true), user);
@@ -652,7 +650,7 @@ public class PMDbDao extends JdbcDaoSupport {
 				throw new I2B2DAOException("Database error in getting userdata with password");
 			}
 		}
-		log.info("Script: " + sql);
+	//	log.info("Script: " + sql);
 		//		String sql =  "select * from pm_user_data where user_id = ? and password  = ? and status_cd <> 'D'";
 		//		log.info(sql + domainId + projectId + ownerId);
 
@@ -660,7 +658,7 @@ public class PMDbDao extends JdbcDaoSupport {
 	}
 
 	public List<ProjectRequestType> getAllProjectRequest(String project, String caller) throws I2B2Exception, I2B2DAOException {
-		log.info("PMDbDao.class: getAllProjectRequest(String project, String caller) ");
+	//	log.info("PMDbDao.class: getAllProjectRequest(String project, String caller) ");
 		String sql = null;
 		List<ProjectRequestType> queryResult = null;
 
@@ -669,13 +667,13 @@ public class PMDbDao extends JdbcDaoSupport {
 			sql =  "select * from pm_project_request where status_cd<>'D'";
 			queryResult = jt.query(sql, new getProjectRequest());
 		}
-		log.info("Script: " + sql);
+	//	log.info("Script: " + sql);
 		return queryResult;	
 	}
 
 
 	public List<UserType> getAllUser(String project, String caller) throws I2B2Exception, I2B2DAOException {
-		log.info("PMDbDao.class: getAllUser(String project, String caller)");
+	//	log.info("PMDbDao.class: getAllUser(String project, String caller)");
 		String sql = null;
 		List<UserType> queryResult = null;
 
@@ -687,12 +685,12 @@ public class PMDbDao extends JdbcDaoSupport {
 
 			queryResult = jt.query(sql,  GetUser(false));
 		}
-		log.info("Script: " + sql);
+	//	log.info("Script: " + sql);
 		return queryResult;	
 	}
 
 	public int setUser(final UserType userdata, String caller) throws I2B2DAOException, I2B2Exception{
-		log.info("PMDbDao.class: setUser(final UserType userdata, String caller)");
+		//log.info("PMDbDao.class: setUser(final UserType userdata, String caller)");
 		int numRowsAdded = 0;
 
 		if (validateRole(caller, "admin", null))
@@ -772,7 +770,7 @@ public class PMDbDao extends JdbcDaoSupport {
 								"@",
 								userdata.getUserName(),
 								"ADMIN");
-						log.info("Script: " + addSql);
+					//	log.info("Script: " + addSql);
 					}
 				}
 
@@ -794,7 +792,7 @@ public class PMDbDao extends JdbcDaoSupport {
 	}
 
 	public int deleteUser(final String user, String caller) throws I2B2DAOException, I2B2Exception{
-		log.info("PMDbDao.class: deleteUser(final String user, String caller)");
+	//	log.info("PMDbDao.class: deleteUser(final String user, String caller)");
 		int numRowsAdded = 0;
 
 		if (validateRole(caller, "admin", null))
@@ -807,7 +805,7 @@ public class PMDbDao extends JdbcDaoSupport {
 						Calendar.getInstance().getTime(),
 						caller,
 						user);
-				log.info("Script: " + addSql);
+		//		log.info("Script: " + addSql);
 				if (numRowsAdded ==0)
 					throw new I2B2DAOException("User not updated, does it exist?");
 
@@ -831,7 +829,7 @@ public class PMDbDao extends JdbcDaoSupport {
 
 
 	public List<ProjectRequestType> setProjectRequest(final ProjectRequestType groupdata,String project, String caller) throws I2B2DAOException, I2B2Exception{
-		log.info("PMDbDao.class: setProjectRequest(final ProjectRequestType groupdata,String project, String caller)");
+	//	log.info("PMDbDao.class: setProjectRequest(final ProjectRequestType groupdata,String project, String caller)");
 		int numRowsAdded = 0;
 
 		List<ProjectRequestType> queryResult = null;
@@ -874,7 +872,7 @@ public class PMDbDao extends JdbcDaoSupport {
 
 				queryResult = jt.query(addSql, new getProjectRequest());
 			}
-			log.info("Script: " + addSql);
+		//	log.info("Script: " + addSql);
 
 		} catch (Exception e) {
 			log.error("Dao deleteuser failed");
@@ -889,12 +887,10 @@ public class PMDbDao extends JdbcDaoSupport {
 
 
 	public int setPassword(String password, String caller) throws I2B2DAOException, I2B2Exception{
-		log.info("PMDbDao.class: setPassword(String password, String caller)");
+		//log.info("PMDbDao.class: setPassword(String password, String caller)");
 		int numRowsAdded = 0;
 		String hash = PMUtil.getInstance().getHashedPassword(password);
 		try {
-
-
 			String sql = "select * from pm_global_params where status_cd = 'A' and (param_name_cd ='PM_EXPIRED_PASSWORD' OR param_name_cd='PM_COMPLEX_PASSWORD')";
 
 			int expiredPassword = -1;
@@ -946,7 +942,7 @@ public class PMDbDao extends JdbcDaoSupport {
 				List<UserType> queryResult2 = jt.query(sql,  GetUser(true), caller, hash);
 
 				it = queryResult2.iterator();
-				log.info("Script: " + sql);
+			//	log.info("Script: " + sql);
 				if (it.hasNext())
 					throw new Exception("New password is same as current password.");
 
@@ -1004,40 +1000,40 @@ public class PMDbDao extends JdbcDaoSupport {
 
 
 	public List<ApprovalType> getAllApproval(String project, String caller) throws I2B2Exception, I2B2DAOException {
-		log.info("PMDbDao.class: getAllApproval(String project, String caller)");
+		//log.info("PMDbDao.class: getAllApproval(String project, String caller)");
 		String sql = null;
 		List<ApprovalType> queryResult = null;
 
 		sql =  "select * from pm_approvals where status_cd<>'D'";
 		queryResult = jt.query(sql, new getApproval());
-		log.info("Script: " + sql);
+	//	log.info("Script: " + sql);
 		return queryResult;	
 	}
 
 	public List<CellDataType> getAllCell(String project, String caller) throws I2B2Exception, I2B2DAOException {
-		log.info("PMDbDao.class: getAllCell(String project, String caller)");
+	//	log.info("PMDbDao.class: getAllCell(String project, String caller)");
 		String sql = null;
 		List<CellDataType> queryResult = null;
 
 		sql =  "select * from pm_cell_data where status_cd<>'D'";
 		queryResult = jt.query(sql, new getCell());
-		log.info("Script: " + sql);
+	//	log.info("Script: " + sql);
 		return queryResult;	
 	}
 
 	public List<SessionData>  getSession(String userId, String sessionID) throws I2B2Exception, I2B2DAOException {
-		log.info("PMDbDao.class: getSession(String userId, String sessionID)");
+	//	log.info("PMDbDao.class: getSession(String userId, String sessionID)");
 		String sql =  "select * from pm_user_session where user_id = ? and session_id = ?";
 		List<SessionData> queryResult = null;
 		log.debug("Searching for " + userId + " with session id of " + sessionID);
 		queryResult = jt.query(sql, new getSession(), userId, sessionID);
-		log.info("Script: " + sql);
+	//	log.info("Script: " + sql);
 		return queryResult;	
 	}
 
 	public boolean verifyExpiredPassword(String userId)
 	{
-		log.info("PMDbDao.class: verifyExpiredPassword(String userId)");
+	//	log.info("PMDbDao.class: verifyExpiredPassword(String userId)");
 		String sql = null;
 		sql = "select * from pm_global_params where status_cd = 'A' and param_name_cd ='PM_EXPIRED_PASSWORD'";
 
@@ -1051,11 +1047,10 @@ public class PMDbDao extends JdbcDaoSupport {
 				ParamType user = (ParamType)it.next();
 				expiredPassword = Integer.parseInt(user.getValue());
 			}
-			log.info("Script: " + sql);
+	//	log.info("Script: " + sql);
 		} catch (Exception e)
 		{
 			e.printStackTrace();
-
 		}
 
 		// Either dont want to use expired password or not set
@@ -1089,7 +1084,7 @@ public class PMDbDao extends JdbcDaoSupport {
 			e.printStackTrace();
 
 		}
-		log.info("Script: " + sql);
+	//	log.info("Script: " + sql);
 
 		// If we have gotten here than the variable PM_EXPIRED_PASSWORD is set to greater than -1 and the user does not have a expired entry, so considered expired
 		return true;
@@ -1098,14 +1093,14 @@ public class PMDbDao extends JdbcDaoSupport {
 
 	public boolean verifyNotLockedOut(String userId)
 	{
-		log.info("PMDbDao.class: verifyNotLockedOut(String userId)");
+	//	log.info("PMDbDao.class: verifyNotLockedOut(String userId)");
 
 		String sql = null;
 		//get results count max
 		sql = "select * from pm_global_params where status_cd = 'A' and param_name_cd ='PM_LOCKED_MAX_COUNT'";
 
 		int resultmax = 10;
-		log.info("Script: " + sql);
+	//	log.info("Script: " + sql);
 		try {
 			List<ParamType> queryResult  = jt.query(sql, new getParam());
 			Iterator it = queryResult.iterator();
@@ -1117,13 +1112,12 @@ public class PMDbDao extends JdbcDaoSupport {
 		} catch (Exception e)
 		{
 			e.printStackTrace();
-
 		}
 
 		sql = "select * from pm_global_params where status_cd = 'A' and param_name_cd ='PM_LOCKED_WAIT_TIME'";
 
 		int waittime = 2;
-		log.info("Script: " + sql);
+	//	log.info("Script: " + sql);
 		try {
 			List<ParamType> queryResult  = jt.query(sql, new getParam());
 			Iterator it = queryResult.iterator();
@@ -1135,9 +1129,7 @@ public class PMDbDao extends JdbcDaoSupport {
 		} catch (Exception e)
 		{
 			e.printStackTrace();
-
 		}
-
 
 		if (database.equalsIgnoreCase("oracle"))
 			sql =  "select count(*) as badlogin from pm_user_login where user_id = ? and " +
@@ -1160,16 +1152,12 @@ public class PMDbDao extends JdbcDaoSupport {
 		int results = jt.queryForObject(sql, Integer.class, userId);
 
 		//int results = 0;
-
-		log.info("Script: " + sql);
-		if (results >= resultmax)
-			return true;
-		else 
-			return false;
+	//	log.info("Script: " + sql);
+		return results >= resultmax;
 	}
 
 	public int setLoginAttempt(String userId, String attemptCd) {
-		log.info("PMDbDao.class: setLoginAttempt(String userId, String attemptCd)");
+	//	log.info("PMDbDao.class: setLoginAttempt(String userId, String attemptCd)");
 		String addSql = "";
 
 		if (database.equalsIgnoreCase("oracle"))
@@ -1191,14 +1179,14 @@ public class PMDbDao extends JdbcDaoSupport {
 						userId,
 						attemptCd,
 						userId);
-		log.info("Script: " + addSql);
+	//	log.info("Script: " + addSql);
 
 		return numRowsAdded;		
 	}
 
 	public int setSession(String userId, String sessionId, int timeout)
 	{
-		log.info("PMDbDao.class: setSession(String userId, String sessionId, int timeout)");
+	//	log.info("PMDbDao.class: setSession(String userId, String sessionId, int timeout)");
 		String addSql = "";
 
 		if (database.equalsIgnoreCase("oracle"))
@@ -1210,13 +1198,12 @@ public class PMDbDao extends JdbcDaoSupport {
 		else if (database.equalsIgnoreCase("postgresql"))
 			addSql = "insert into pm_user_session " + 
 					"(user_id, session_id, changeby_char, entry_date, expired_date) values (?,?,?,now(),  now() + interval '" + timeout + " millisecond')";
-		//TODO: replace with IRIS
 		else if (database.equalsIgnoreCase(IRIS))
 			addSql = "insert into pm_user_session " +
 					"(user_id, session_id, changeby_char, entry_date, expired_date) " +
 					"values (?,?,?,now(), DATEADD('millisecond'," + timeout + ",now()))";
 
-		log.info("Script: " + addSql);
+	//	log.info("Script: " + addSql);
 
 		Calendar now = Calendar.getInstance();
 		now.add(Calendar.MILLISECOND, timeout);
@@ -1231,7 +1218,7 @@ public class PMDbDao extends JdbcDaoSupport {
 	}
 	public int removeSession(String userId, String sessionId)
 	{
-		log.info("PMDbDao.class: removeSession(String userId, String sessionId)");
+	//	log.info("PMDbDao.class: removeSession(String userId, String sessionId)");
 		String addSql = "delete from pm_user_session " + 
 				" where session_id = ? and user_id =?";
 		int numRowsAdded = jt.update(addSql, 
@@ -1243,14 +1230,13 @@ public class PMDbDao extends JdbcDaoSupport {
 		int numRowsAdded2 = jt.update(addSql,
 				Calendar.getInstance().getTime());
 
-		log.info("Script: " + addSql);
-
+	//	log.info("Script: " + addSql);
 		return numRowsAdded;
 	}
 
 	public int updateSession(String userId, String sessionId, int timeout)
 	{
-		log.info("PMDbDao.class: updateSession(String userId, String sessionId, int timeout)");
+	//	log.info("PMDbDao.class: updateSession(String userId, String sessionId, int timeout)");
 		int numRowsAdded  = -1;
 		String addSql = "update pm_user_session set expired_date = ? " + 
 				" where session_id = ? and user_id =?";
@@ -1258,37 +1244,35 @@ public class PMDbDao extends JdbcDaoSupport {
 		now.add(Calendar.MILLISECOND, timeout);
 
 		try {
-
 			numRowsAdded = jt.update(addSql, 
 					now.getTime(),
 					sessionId,
 					userId);	
-		} catch (Exception e)
-		{ try {
-			if (e.getMessage().contains("deadlock")
-					|| e.getMessage().contains("try restarting transaction")
-					|| e.getMessage().contains(
-							"failed to resume the transaction")) {
-				int tosleep = new Random().nextInt(2000);
-				log.warn("Transaction rolled back. Restarting transaction.");
-				Thread.sleep(tosleep);
-				numRowsAdded = jt.update(addSql, 
-						now.getTime(),
-						sessionId,
-						userId);	
-			} else {
-				throw e;
-			} } catch (Exception ee) {}
-
+		} catch (Exception e) {
+			try {
+				if (e.getMessage().contains("deadlock")
+						|| e.getMessage().contains("try restarting transaction")
+						|| e.getMessage().contains(
+						"failed to resume the transaction")) {
+					int tosleep = new Random().nextInt(2000);
+					log.warn("Transaction rolled back. Restarting transaction.");
+					Thread.sleep(tosleep);
+					numRowsAdded = jt.update(addSql,
+							now.getTime(),
+							sessionId,
+							userId);
+				} else {
+					throw e;
+				}
+			} catch (Exception ee) {
+			}
 		}
-		log.info("Script: " + addSql);
+	//	log.info("Script: " + addSql);
 		return numRowsAdded;
 	}
 
-
-
 	public int setCell(final CellDataType groupdata, String project, String caller) throws I2B2DAOException, I2B2Exception{
-		log.info("PMDbDao.class: setCell(final CellDataType groupdata, String project, String caller)");
+		//log.info("PMDbDao.class: setCell(final CellDataType groupdata, String project, String caller)");
 		int numRowsAdded = 0;
 		String addSql = null;
 		if ((validateRole(caller, "admin", null)) || (validateRole(caller, "manager", project)))
@@ -1310,8 +1294,7 @@ public class PMDbDao extends JdbcDaoSupport {
 						Calendar.getInstance().getTime(),
 						caller,
 						"A");
-			} else 
-			{
+			} else {
 				//user already exists, lets try to update
 				addSql = "update pm_cell_data " +
 						"set name = ?, url = ?, method_cd = ?, can_override = ?, change_date = ?, changeby_char = ?,  status_cd = 'A' where cell_id = ? and  project_path = ?";
@@ -1333,13 +1316,13 @@ public class PMDbDao extends JdbcDaoSupport {
 		}
 		//	log.info(addSql +  " " + numRowsAdded);
 		log.debug("Number of rows added: " + numRowsAdded);
-		log.info("Script: " + addSql);
+	//	log.info("Script: " + addSql);
 		return numRowsAdded;
 
 	}
 
 	public int deleteCell(String cell, String project, String caller) throws I2B2DAOException, I2B2Exception{
-		log.info("PMDbDao.class: deleteCell(String cell, String project, String caller)");
+	//	log.info("PMDbDao.class: deleteCell(String cell, String project, String caller)");
 		int numRowsAdded = 0;
 
 		if ((validateRole(caller, "admin", null)) || (validateRole(caller, "manager", project)))
@@ -1351,7 +1334,7 @@ public class PMDbDao extends JdbcDaoSupport {
 				numRowsAdded = jt.update(addSql, 
 						((project == null || project.equals(""))? "@": project), 
 						cell);
-				log.info("Script: " + addSql);
+				//log.info("Script: " + addSql);
 				if (numRowsAdded ==0)
 					throw new I2B2DAOException("Cell not updated, does it exist?");				
 			} catch (DataAccessException e) {
@@ -1364,21 +1347,16 @@ public class PMDbDao extends JdbcDaoSupport {
 		log.debug("Number of rows deleted: " + numRowsAdded);
 
 		return numRowsAdded;
-
 	}
 
-
-
 	public int setApproval(final ApprovalType groupdata, String project, String caller) throws I2B2DAOException, I2B2Exception{
-		log.info("PMDbDao.class: setApproval(final ApprovalType groupdata, String project, String caller)");
+	//	log.info("PMDbDao.class: setApproval(final ApprovalType groupdata, String project, String caller)");
 		int numRowsAdded = 0;
 		String addSql = null;
 		if ((validateRole(caller, "admin", null)) || (validateRole(caller, "manager", project)))
 		{
-
 			if ((getApproval(groupdata, false) == null) || (getApproval(groupdata, false).size() == 0))
 			{
-
 				addSql = "insert into pm_approvals " +
 						"(approval_id, approval_name, approval_description, approval_activation_date, approval_expiration_date, object_cd, change_date, entry_date, changeby_char, status_cd) values (?,?,?,?,?,?,?,?,?,?)";
 				numRowsAdded = jt.update(addSql, 
@@ -1392,8 +1370,7 @@ public class PMDbDao extends JdbcDaoSupport {
 						Calendar.getInstance().getTime(),
 						caller,
 						"A");
-			} else 
-			{
+			} else {
 				//user already exists, lets try to update
 				addSql = "update pm_approvals " +
 						"set approval_name = ?, approval_description = ?, approval_activation_date = ?, approval_expiration_date = ?, object_cd = ?, change_date = ?, changeby_char = ?,  status_cd = 'A' where approval_id = ?";
@@ -1407,7 +1384,6 @@ public class PMDbDao extends JdbcDaoSupport {
 						Calendar.getInstance().getTime(),
 						caller,
 						groupdata.getId());
-
 			}
 		}
 		else 
@@ -1416,13 +1392,13 @@ public class PMDbDao extends JdbcDaoSupport {
 		}
 		//	log.info(addSql +  " " + numRowsAdded);
 		log.debug("Number of rows added: " + numRowsAdded);
-		log.info("Script: " + addSql);
+		//log.info("Script: " + addSql);
 		return numRowsAdded;
 
 	}
 
 	public int deleteApproval(String id, String project, String caller) throws I2B2DAOException, I2B2Exception{
-		log.info("PMDbDao.class: deleteApproval(String id, String project, String caller)");
+		//log.info("PMDbDao.class: deleteApproval(String id, String project, String caller)");
 		int numRowsAdded = 0;
 
 		if ((validateRole(caller, "admin", null)) || (validateRole(caller, "manager", project)))
@@ -1433,7 +1409,7 @@ public class PMDbDao extends JdbcDaoSupport {
 
 				numRowsAdded = jt.update(addSql, 
 						id);
-				log.info("Script: " + addSql);
+			//	log.info("Script: " + addSql);
 				if (numRowsAdded ==0)
 					throw new I2B2DAOException("approval not updated, does it exist?");				
 			} catch (DataAccessException e) {
@@ -1446,12 +1422,11 @@ public class PMDbDao extends JdbcDaoSupport {
 		log.debug("Number of rows deleted: " + numRowsAdded);
 
 		return numRowsAdded;
-
 	}
 
 
 	public List<ProjectType> getAllProject(String project, String caller) throws I2B2Exception, I2B2DAOException {
-		log.info("PMDbDao.class: getAllProject(String project, String caller)");
+		//log.info("PMDbDao.class: getAllProject(String project, String caller)");
 		String sql = null;
 		List<ProjectType> queryResult = null;
 
@@ -1460,17 +1435,16 @@ public class PMDbDao extends JdbcDaoSupport {
 			sql =  "select * from pm_project_data where status_cd<>'D'";
 			queryResult = jt.query(sql, new getProject());
 		}
-		log.info("Script: " + sql);
+	//	log.info("Script: " + sql);
 		return queryResult;	
 	}
 
 	public int setProject(final ProjectType groupdata, String caller) throws I2B2DAOException, I2B2Exception{
-		log.info("PMDbDao.class: setProject(final ProjectType groupdata, String caller)");
+		//log.info("PMDbDao.class: setProject(final ProjectType groupdata, String caller)");
 		int numRowsAdded = 0;
 		String addSql = null;
 		if (validateRole(caller, "admin", null))
 		{
-
 			if ((getProject(groupdata, false) == null) || (getProject(groupdata, false).size() == 0))
 			{
 				addSql = "insert into pm_project_data " +
@@ -1486,8 +1460,7 @@ public class PMDbDao extends JdbcDaoSupport {
 						Calendar.getInstance().getTime(),
 						Calendar.getInstance().getTime(),				
 						"A");
-			} else 
-			{
+			} else {
 				//project already exists, lets try to update
 				addSql = "update pm_project_data " +
 						"set project_name = ?, project_key = ?, project_wiki = ?, project_description = ?, project_path = ?, changeby_char = ?, change_date = ?,  status_cd = 'A' where project_id = ?";
@@ -1503,19 +1476,18 @@ public class PMDbDao extends JdbcDaoSupport {
 						groupdata.getId());					
 			}
 		}
-		else 
-		{
+		else {
 			throw new I2B2DAOException("Access Denied for " + caller);
 		}
 		//	log.info(addSql +  " " + numRowsAdded);
 		log.debug("Number of rows added: " + numRowsAdded);
-		log.info("Script: " + addSql);
+		//log.info("Script: " + addSql);
 		return numRowsAdded;
 
 	}
 
 	public List<Object> getAllParam(Object utype, String project, String caller) throws I2B2Exception, I2B2DAOException {
-		log.info("PMDbDao.class: getAllParam(Object utype, String project, String caller)");
+	//	log.info("PMDbDao.class: getAllParam(Object utype, String project, String caller)");
 		String sql = null;
 		List queryResult = null;
 
@@ -1523,13 +1495,11 @@ public class PMDbDao extends JdbcDaoSupport {
 		//	{
 		if (utype instanceof ProjectType)
 		{
-			if (((ProjectType) utype).getUserName() == null)
-			{
+			if (((ProjectType) utype).getUserName() == null) {
 				sql =  "select * from pm_project_params where status_cd<>'D' and project_id = ? order by project_id";
 				queryResult = jt.query(sql, new getParam(), ((ProjectType) utype).getId());
 
-			} else 
-			{
+			} else {
 				ArrayList al = new ArrayList();
 
 				sql = "select * from pm_project_user_params where status_cd<>'D' ";
@@ -1691,13 +1661,12 @@ public class PMDbDao extends JdbcDaoSupport {
 			//	}
 
 		}
-		log.info("Script: " + sql);
+	//	log.info("Script: " + sql);
 		return queryResult;	
 	}
 
-
 	public List<Object> getParam(Object utype, boolean showStatus) throws I2B2Exception, I2B2DAOException {
-		log.info("PMDbDao.class: getParam(Object utype, boolean showStatus)");
+		//log.info("PMDbDao.class: getParam(Object utype, boolean showStatus)");
 		//		log.info(sql + domainId + projectId + ownerId);
 		List  queryResult = null;
 		String sql = null;
@@ -1784,12 +1753,12 @@ public class PMDbDao extends JdbcDaoSupport {
 			e.printStackTrace();
 			throw new I2B2DAOException("Database error");
 		}
-		log.info("Script: " + sql);
+	//	log.info("Script: " + sql);
 		return queryResult;	
 	}
 
 	public int setParam(Object utype, String project, String name, String caller) throws I2B2DAOException, I2B2Exception{
-		log.info("PMDbDao.class: setParam(Object utype, String project, String name, String caller)");
+	//	log.info("PMDbDao.class: setParam(Object utype, String project, String name, String caller)");
 		int numRowsAdded = 0;
 		log.debug("Caller: "+ caller);
 		log.debug("Project: " + project);
@@ -1812,7 +1781,7 @@ public class PMDbDao extends JdbcDaoSupport {
 						Calendar.getInstance().getTime(),	
 						caller,
 						"A");
-				log.info("Script 1: " + addSql);
+			//	log.info("Script 1: " + addSql);
 			} else 
 			{
 				//user already exists, lets try to update
@@ -1828,8 +1797,7 @@ public class PMDbDao extends JdbcDaoSupport {
 						((UserType) utype).getParam().get(0).getId());
 				if (numRowsAdded == 0)
 					throw new I2B2DAOException("Record does not exist or access denied.");
-				log.info("Script 2: " + addSql);
-
+			//	log.info("Script 2: " + addSql);
 			}
 		}  		
 		else if ((utype instanceof ProjectType) && (((ProjectType) utype).getUserName() != null) && (((ProjectType) utype).getUserName().equals(caller) ))
@@ -1848,9 +1816,8 @@ public class PMDbDao extends JdbcDaoSupport {
 						Calendar.getInstance().getTime(),	
 						caller,
 						"A");
-				log.info("Script 3: " + addSql);
-			} else 
-			{
+			//	log.info("Script 3: " + addSql);
+			} else {
 				//user already exists, lets try to update
 				String addSql = "update pm_project_user_params " + 
 						"set value = ?, datatype_cd = ?, change_date = ?,   status_cd = 'A' where changeby_char = ? and id = ?";
@@ -1861,18 +1828,14 @@ public class PMDbDao extends JdbcDaoSupport {
 						Calendar.getInstance().getTime(),			
 						caller,
 						((ProjectType) utype).getParam().get(0).getId());
-				log.info("Script 4: " + addSql);
+			//	log.info("Script 4: " + addSql);
 				if (numRowsAdded == 0)
 					throw new I2B2DAOException("Record does not exist or access denied.");
 			}
 
-		}	else if (validateRole(caller, "admin", null) || validateRole(caller, "manager", project))
-		{
-			if (utype instanceof ParamsType)
-			{
-
-
-			}	else if (utype instanceof UserType) 
+		}	else if (validateRole(caller, "admin", null) || validateRole(caller, "manager", project)) {
+			if (utype instanceof ParamsType) {
+			}	else if (utype instanceof UserType)
 			{
 				log.debug("Searching for existing User Param");
 
@@ -1890,7 +1853,7 @@ public class PMDbDao extends JdbcDaoSupport {
 							Calendar.getInstance().getTime(),	
 							caller,
 							"A");
-					log.info("Script 5: " + addSql);
+			//		log.info("Script 5: " + addSql);
 				} else 
 				{
 					//user already exists, lets try to update
@@ -1904,7 +1867,7 @@ public class PMDbDao extends JdbcDaoSupport {
 							Calendar.getInstance().getTime(),
 							caller,
 							((UserType) utype).getParam().get(0).getId());
-					log.info("Script 6: " + addSql);
+				//	log.info("Script 6: " + addSql);
 				}
 			}		
 			else if (utype instanceof ProjectType)
@@ -1926,7 +1889,7 @@ public class PMDbDao extends JdbcDaoSupport {
 								Calendar.getInstance().getTime(),	
 								caller,
 								"A");
-						log.info("Script 7: " + addSql);
+					//	log.info("Script 7: " + addSql);
 					} else 
 					{
 						//user already exists, lets try to update
@@ -1939,7 +1902,7 @@ public class PMDbDao extends JdbcDaoSupport {
 								Calendar.getInstance().getTime(),			
 								caller,
 								((ProjectType) utype).getParam().get(0).getId());
-						log.info("Script 8: " + addSql);
+					//	log.info("Script 8: " + addSql);
 					}
 				} else {
 					if ((getParam(utype, false) == null) || (getParam(utype, false).size() == 0))
@@ -1955,7 +1918,7 @@ public class PMDbDao extends JdbcDaoSupport {
 								Calendar.getInstance().getTime(),	
 								caller,
 								"A");
-						log.info("Script 9: " + addSql);
+					//	log.info("Script 9: " + addSql);
 					} else 
 					{
 						//user already exists, lets try to update
@@ -1968,7 +1931,7 @@ public class PMDbDao extends JdbcDaoSupport {
 								Calendar.getInstance().getTime(),			
 								caller,
 								((ProjectType) utype).getParam().get(0).getId());
-						log.info("Script 10: " + addSql);
+					//	log.info("Script 10: " + addSql);
 					}
 				}
 			} else if (utype instanceof CellDataType)
@@ -1987,7 +1950,7 @@ public class PMDbDao extends JdbcDaoSupport {
 							Calendar.getInstance().getTime(),		
 							caller,
 							"A");
-					log.info("Script 11: " + addSql);
+				//	log.info("Script 11: " + addSql);
 				} else 
 				{
 					//user already exists, lets try to update
@@ -2000,7 +1963,7 @@ public class PMDbDao extends JdbcDaoSupport {
 							Calendar.getInstance().getTime(),
 							caller,
 							((CellDataType) utype).getParam().get(0).getId());
-					log.info("Script 12: " + addSql);
+				//	log.info("Script 12: " + addSql);
 				}
 			} else if (utype instanceof ApprovalType)
 			{
@@ -2020,7 +1983,7 @@ public class PMDbDao extends JdbcDaoSupport {
 							Calendar.getInstance().getTime(),		
 							caller,
 							"A");
-					log.info("Script 13: " + addSql);
+				//	log.info("Script 13: " + addSql);
 				} else 
 				{
 					//user already exists, lets try to update
@@ -2033,7 +1996,7 @@ public class PMDbDao extends JdbcDaoSupport {
 							Calendar.getInstance().getTime(),
 							caller,
 							((ApprovalType) utype).getParam().get(0).getId());
-					log.info("Script 14: " + addSql);
+				//	log.info("Script 14: " + addSql);
 				}
 			} else if (utype instanceof GlobalDataType)
 			{
@@ -2063,7 +2026,7 @@ public class PMDbDao extends JdbcDaoSupport {
 							Calendar.getInstance().getTime(),	
 							caller,
 							((GlobalDataType) utype).getParam().get(0).getId());
-					log.info("Script 15: " + addSql);
+				//	log.info("Script 15: " + addSql);
 				}
 			} else if (utype instanceof ConfigureType)
 			{
@@ -2083,7 +2046,7 @@ public class PMDbDao extends JdbcDaoSupport {
 								Calendar.getInstance().getTime(),	
 								caller,
 								"A");
-						log.info("Script 16: " + addSql);
+					//	log.info("Script 16: " + addSql);
 					} else 
 					{
 						//user already exists, lets try to update
@@ -2097,7 +2060,7 @@ public class PMDbDao extends JdbcDaoSupport {
 								Calendar.getInstance().getTime(),
 								caller,
 								((ConfigureType) utype).getParam().get(0).getId());
-						log.info("Script 17: " + addSql);
+					//	log.info("Script 17: " + addSql);
 					}
 				}
 				else if (((ConfigureType) utype).getDomainId() == null) // || (((ConfigureType) utype).getDomainId()).size() == 0))
@@ -2112,7 +2075,7 @@ public class PMDbDao extends JdbcDaoSupport {
 						numRowsAdded = jt.update(addSql, 
 								Calendar.getInstance().getTime(),	
 								caller);
-						log.info("Script 18: " + addSql);
+					//	log.info("Script 18: " + addSql);
 					}
 
 					addSql = "insert into pm_hive_data " + 
@@ -2127,7 +2090,7 @@ public class PMDbDao extends JdbcDaoSupport {
 							Calendar.getInstance().getTime(),				
 							caller,
 							"A");
-					log.info("Script 19: " + addSql);
+				//	log.info("Script 19: " + addSql);
 				} else 
 				{
 
@@ -2142,7 +2105,7 @@ public class PMDbDao extends JdbcDaoSupport {
 							Calendar.getInstance().getTime(),	
 							caller,
 							((ConfigureType) utype).getDomainId());
-					log.info("Script 20: " + addSql);
+				//	log.info("Script 20: " + addSql);
 				}				
 			} else if (utype instanceof RoleType)
 			{
@@ -2159,7 +2122,7 @@ public class PMDbDao extends JdbcDaoSupport {
 							Calendar.getInstance().getTime(),
 							caller,
 							"A");
-					log.info("Script 21: " + addSql2);
+				//	log.info("Script 21: " + addSql2);
 				} catch (Exception e) {
 					String addSql2 = "update pm_project_user_roles " + 
 							" set status_cd = 'A', change_date = ?, changeby_char = ?  where  project_id = ? and user_id = ? and user_role_cd = ?";
@@ -2169,7 +2132,7 @@ public class PMDbDao extends JdbcDaoSupport {
 							((RoleType) utype).getProjectId(),
 							((RoleType) utype).getUserName(),
 							((RoleType) utype).getRole());
-					log.info("Script 22: " + addSql2);
+				//	log.info("Script 22: " + addSql2);
 				}
 
 				try {
@@ -2186,7 +2149,7 @@ public class PMDbDao extends JdbcDaoSupport {
 								Calendar.getInstance().getTime(),
 								caller,
 								"A");
-						log.info("Script 23: " + addSql);
+					//	log.info("Script 23: " + addSql);
 					}
 				} catch (Exception e) {
 					if ((((RoleType) utype).getRole().equals("DATA_AGG")) || (((RoleType) utype).getRole().equals("DATA_LDS")) ||
@@ -2200,7 +2163,7 @@ public class PMDbDao extends JdbcDaoSupport {
 								((RoleType) utype).getProjectId(),
 								((RoleType) utype).getUserName(),
 								"DATA_OBFSC");
-						log.info("Script 24: " + addSql);
+					//	log.info("Script 24: " + addSql);
 					}
 				}					
 
@@ -2218,7 +2181,7 @@ public class PMDbDao extends JdbcDaoSupport {
 								Calendar.getInstance().getTime(),
 								caller,
 								"A");
-						log.info("Script 25: " + addSql);
+					//	log.info("Script 25: " + addSql);
 					}
 				} catch (Exception e) {
 					if ((((RoleType) utype).getRole().equals("DATA_LDS"))  ||
@@ -2232,7 +2195,7 @@ public class PMDbDao extends JdbcDaoSupport {
 								((RoleType) utype).getProjectId(),
 								((RoleType) utype).getUserName(),
 								"DATA_AGG");
-						log.info("Script 26: " + addSql);
+					//	log.info("Script 26: " + addSql);
 					}
 				}					
 
@@ -2249,7 +2212,7 @@ public class PMDbDao extends JdbcDaoSupport {
 								Calendar.getInstance().getTime(),
 								caller,
 								"A");
-						log.info("Script 27: " + addSql);
+					//	log.info("Script 27: " + addSql);
 					}
 				} catch (Exception e) {
 					if ((((RoleType) utype).getRole().equals("DATA_DEID")) || (((RoleType) utype).getRole().equals("DATA_PROT"))) 
@@ -2290,7 +2253,7 @@ public class PMDbDao extends JdbcDaoSupport {
 								((RoleType) utype).getProjectId(),
 								((RoleType) utype).getUserName(),
 								"DATA_DEID");
-						log.info("Script 28: " + addSql);
+					//	log.info("Script 28: " + addSql);
 					}
 				}
 
@@ -2309,7 +2272,7 @@ public class PMDbDao extends JdbcDaoSupport {
 								Calendar.getInstance().getTime(),
 								caller,
 								"A");
-						log.info("Script 29: " + addSql);
+					//	log.info("Script 29: " + addSql);
 					}
 				} catch (Exception e) {
 					//admin track
@@ -2323,7 +2286,7 @@ public class PMDbDao extends JdbcDaoSupport {
 								((RoleType) utype).getProjectId(),
 								((RoleType) utype).getUserName(),
 								"USER");
-						log.info("Script 30: " + addSql);
+					//	log.info("Script 30: " + addSql);
 					}
 				}					
 
@@ -2340,7 +2303,7 @@ public class PMDbDao extends JdbcDaoSupport {
 								Calendar.getInstance().getTime(),
 								caller,
 								"A");
-						log.info("Script 31: " + addSql);
+					//	log.info("Script 31: " + addSql);
 					}	
 				} catch (Exception e) {
 					if ((((RoleType) utype).getRole().equals("ADMIN")) ) 
@@ -2353,7 +2316,7 @@ public class PMDbDao extends JdbcDaoSupport {
 								((RoleType) utype).getProjectId(),
 								((RoleType) utype).getUserName(),
 								"MANAGER");
-						log.info("Script 32: " + addSql);
+					//	log.info("Script 32: " + addSql);
 					}
 				} 
 			}
@@ -2372,7 +2335,7 @@ public class PMDbDao extends JdbcDaoSupport {
 
 
 	public int deleteParam(Object utype, final String project, String caller) throws I2B2DAOException, I2B2Exception{
-		log.info("PMDbDao.class: deleteParam(Object utype, final String project, String caller)");
+		//log.info("PMDbDao.class: deleteParam(Object utype, final String project, String caller)");
 		int numRowsAdded = 0;
 		if (validateRole(caller, "admin", null) || validateRole(caller, "manager", project))
 		{
@@ -2387,7 +2350,7 @@ public class PMDbDao extends JdbcDaoSupport {
 							Calendar.getInstance().getTime(),
 							caller,
 							((UserType) utype).getParam().get(0).getId());
-					log.info("Script 1: " + addSql);
+				//	log.info("Script 1: " + addSql);
 				} else
 
 					if (utype instanceof ProjectType)
@@ -2401,8 +2364,7 @@ public class PMDbDao extends JdbcDaoSupport {
 									Calendar.getInstance().getTime(),				
 									caller,
 									((ProjectType) utype).getParam().get(0).getId());
-							log.info("Script 2: " + addSql);
-
+					//		log.info("Script 2: " + addSql);
 						} else {
 							String addSql = "update pm_project_params " + 
 									"set status_cd = 'D', change_date = ?, changeby_char = ? where id = ?";
@@ -2411,7 +2373,7 @@ public class PMDbDao extends JdbcDaoSupport {
 									Calendar.getInstance().getTime(),				
 									caller,
 									((ProjectType) utype).getParam().get(0).getId());
-							log.info("Script 3: " + addSql);
+					//		log.info("Script 3: " + addSql);
 						}
 					} else if (utype instanceof ConfigureType)
 					{
@@ -2425,7 +2387,7 @@ public class PMDbDao extends JdbcDaoSupport {
 									Calendar.getInstance().getTime(),				
 									caller,
 									((ConfigureType) utype).getParam().get(0).getId());
-							log.info("Script 4: " + addSql);
+					//		log.info("Script 4: " + addSql);
 
 						} else {
 							String addSql = "update pm_hive_data " + 
@@ -2435,7 +2397,7 @@ public class PMDbDao extends JdbcDaoSupport {
 									Calendar.getInstance().getTime(),				
 									caller,
 									((ConfigureType) utype).getDomainId());
-							log.info("Script 5: " + addSql);
+						//	log.info("Script 5: " + addSql);
 						}
 					} else if (utype instanceof CellDataType)
 					{
@@ -2446,7 +2408,7 @@ public class PMDbDao extends JdbcDaoSupport {
 								Calendar.getInstance().getTime(),				
 								caller,
 								((CellDataType) utype).getParam().get(0).getId());
-						log.info("Script 6: " + addSql);
+				//		log.info("Script 6: " + addSql);
 					} else if (utype instanceof ApprovalType)
 					{
 						String addSql = "update pm_approval_params " + 
@@ -2456,7 +2418,7 @@ public class PMDbDao extends JdbcDaoSupport {
 								Calendar.getInstance().getTime(),				
 								caller,
 								((ApprovalType) utype).getParam().get(0).getId());
-						log.info("Script 7: " + addSql);
+				//		log.info("Script 7: " + addSql);
 					} else if (utype instanceof GlobalDataType)
 					{
 						String addSql = "update pm_global_params " + 
@@ -2466,7 +2428,7 @@ public class PMDbDao extends JdbcDaoSupport {
 								Calendar.getInstance().getTime(),				
 								caller,
 								((GlobalDataType) utype).getParam().get(0).getId());
-						log.info("Script 8: " + addSql);
+					//	log.info("Script 8: " + addSql);
 					}  else if (utype instanceof RoleType)
 					{
 
@@ -2533,7 +2495,7 @@ public class PMDbDao extends JdbcDaoSupport {
 					caller,
 					caller,
 					((UserType) utype).getParam().get(0).getId());
-			log.info("Script 9: " + addSql);
+			//log.info("Script 9: " + addSql);
 			if (numRowsAdded == 0)
 				throw new I2B2DAOException("Record does not exist or access denied.");
 		} else if ((utype instanceof ProjectType) && (((ProjectType) utype).getUserName() != null) && (((ProjectType) utype).getUserName().equals(caller) ))
@@ -2546,7 +2508,7 @@ public class PMDbDao extends JdbcDaoSupport {
 					caller,
 					caller,
 					((ProjectType) utype).getParam().get(0).getId());
-			log.info("Script 10: " + addSql);
+		//	log.info("Script 10: " + addSql);
 			if (numRowsAdded == 0)
 				throw new I2B2DAOException("Record does not exist or access denied.");
 
@@ -2562,12 +2524,11 @@ public class PMDbDao extends JdbcDaoSupport {
 
 	}
 
-	public int executeRemoveRole(String role, String caller, Object utype)
-	{
-		log.info("PMDbDao.class: executeRemoveRole(String role, String caller, Object utype)");
+	public int executeRemoveRole(String role, String caller, Object utype) {
+	//	log.info("PMDbDao.class: executeRemoveRole(String role, String caller, Object utype)");
 		String addSql = "update pm_project_user_roles " + 
 				"set status_cd = 'D', change_date = ?, changeby_char = ? where user_role_cd = ? and project_id = ? and user_id = ?";
-		log.info("Script: " + addSql);
+	//	log.info("Script: " + addSql);
 		return  jt.update(addSql, 
 				Calendar.getInstance().getTime(),				
 				caller,
@@ -2577,7 +2538,7 @@ public class PMDbDao extends JdbcDaoSupport {
 	}
 
 	public int deleteProject(final Object project, String caller) throws I2B2DAOException, I2B2Exception{
-		log.info("PMDbDao.class: deleteProject(final Object project, String caller)");
+	//	log.info("PMDbDao.class: deleteProject(final Object project, String caller)");
 		int numRowsAdded = 0;
 
 		if (validateRole(caller, "admin", null))
@@ -2592,7 +2553,7 @@ public class PMDbDao extends JdbcDaoSupport {
 						((ProjectType) project).getPath(),
 						caller
 						);
-				log.info("Script: " + addSql);
+			//	log.info("Script: " + addSql);
 				if (numRowsAdded == 0)
 					throw new I2B2DAOException("Project not updated, does it exist?");
 			} catch (DataAccessException e) {
@@ -2613,7 +2574,7 @@ public class PMDbDao extends JdbcDaoSupport {
 	}
 
 	public List<UserLoginType> getUserLogin(UserLoginType value, String caller) throws I2B2Exception, I2B2DAOException {
-		log.info("PMDbDao.class: getUserLogin(UserLoginType value, String caller)");
+		//log.info("PMDbDao.class: getUserLogin(UserLoginType value, String caller)");
 		String sql = null;
 		List<UserLoginType> queryResult = null;
 
@@ -2627,17 +2588,13 @@ public class PMDbDao extends JdbcDaoSupport {
 
 			queryResult = jt.query(sql, new getUserLoginAttempt());
 		}
-		log.info("Script: " + sql);
+	//	log.info("Script: " + sql);
 		return queryResult;	
 	}
 
-	private getUser GetUser(boolean includePassword)
-	
-	{
+	private getUser GetUser(boolean includePassword){
 		getUser user = new getUser();
 		user.setIncludePassword(includePassword);
-		
-		
 		return user;
 	}
 }
@@ -2648,12 +2605,9 @@ class getEnvironmentParams implements RowMapper<HiveParamData> {
 	@Override
 	public HiveParamData mapRow(ResultSet rs, int rowNum) throws SQLException {
 		HiveParamData eData = new HiveParamData();
-
-
 		eData.setDomain(rs.getString("domain_id"));
 		eData.setName(rs.getString("param_name_cd"));
 		eData.setValue(rs.getString("value"));
-
 		return eData;
 	}
 }

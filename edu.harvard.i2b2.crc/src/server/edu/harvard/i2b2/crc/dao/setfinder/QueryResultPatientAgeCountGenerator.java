@@ -94,7 +94,7 @@ public class QueryResultPatientAgeCountGenerator extends CRCDAO implements
 		String ageFinalCountSql = age1CountSql + "\n union all " + age2CountSql
 				+ "\n union all " + age3CountSql + "\n union all "
 				+ age4CountSql + "\n union all " + age5CountSql;
-
+		log.info("Script: " + ageFinalCountSql);
 		boolean errorFlag = false;
 		int totalCount = 0;
 		try {

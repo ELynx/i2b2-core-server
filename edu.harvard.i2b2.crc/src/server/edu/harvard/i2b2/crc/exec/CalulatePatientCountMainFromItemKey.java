@@ -198,9 +198,9 @@ public class CalulatePatientCountMainFromItemKey extends CRCDAO {
 	public String buildXmlResult(DataSource dataSource,
 			ConceptsType conceptsType, SetFinderDAOFactory sfDAOFactory)
 			throws I2B2DAOException {
-		this
-				.setDbSchemaName(sfDAOFactory.getDataSourceLookup()
-						.getFullSchema());
+		log.info("CalulatePatientCountMainFromItemKey.class: buildXmlResult(DataSource dataSource," +
+				" ConceptsType conceptsType, SetFinderDAOFactory sfDAOFactory)");
+		this.setDbSchemaName(sfDAOFactory.getDataSourceLookup().getFullSchema());
 
 		String tempTableName = "";
 		PreparedStatement stmt = null;
@@ -208,7 +208,7 @@ public class CalulatePatientCountMainFromItemKey extends CRCDAO {
 		String itemKey = "";
 		Connection conn = null;
 		try {
-
+			//TODO: check if [ is enough for IRIS
 			String itemCountSql = " select count(distinct PATIENT_NUM) as item_count  from "
 					+ this.getDbSchemaName()
 					+ "observation_fact obs_fact "
@@ -218,9 +218,11 @@ public class CalulatePatientCountMainFromItemKey extends CRCDAO {
 					+ "  ) "
 					+ " and obs_fact.concept_cd in (select concept_cd from "
 					+ this.getDbSchemaName()
-					+ "concept_dimension where concept_path like ?)";
+					+ "concept_dimension where concept_path " +
+					(sfDAOFactory.getDataSourceLookup().getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS) ? "[ ?)" : "like ?)");
 			ResultType resultType = new ResultType();
 			resultType.setName(RESULT_NAME);
+			log.info("Script: " + itemCountSql);
 			conn = dataSource.getConnection();
 			stmt = conn.prepareStatement(itemCountSql);
 			for (ConceptType conceptType : conceptsType.getConcept()) {

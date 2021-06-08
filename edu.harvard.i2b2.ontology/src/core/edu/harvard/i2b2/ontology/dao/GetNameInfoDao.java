@@ -27,7 +27,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.support.JdbcDaoSupport;
 import org.w3c.dom.Document;
@@ -52,7 +51,9 @@ public class GetNameInfoDao extends JdbcDaoSupport {
 	final static String DEFAULT = " c_name ";
 	final static String BLOB = ", c_metadataxml, c_comment ";
 
-	public List findNameInfo(final VocabRequestType vocabType, List categories, ProjectType projectInfo, final String dbType)throws DataAccessException{
+	public List findNameInfo(final VocabRequestType vocabType, List categories, ProjectType projectInfo, final String dbType)
+			throws DataAccessException{
+		log.info("GetNameInfoDao.class: findNameInfo(final VocabRequestType vocabType, List categories, ProjectType projectInfo, final String dbType)");
 		DataSource ds = null;
 		try {
 			ds = OntologyUtil.getInstance().getDataSource("java:OntologyLocalDS");
@@ -69,7 +70,7 @@ public class GetNameInfoDao extends JdbcDaoSupport {
 		else if (vocabType.getType().equals("all")){
 			parameters = ALL;
 		}
-		if(vocabType.isBlob() == true)
+		if(vocabType.isBlob())
 			parameters = parameters + BLOB;
 
 
@@ -94,38 +95,46 @@ public class GetNameInfoDao extends JdbcDaoSupport {
 		String nameInfoSql = null;
 		String compareName = null;
 
-		if(vocabType.getMatchStr().getStrategy().equals("exact")) {
+		if (vocabType.getMatchStr().getStrategy().equals("exact")) {
 			nameInfoSql = "select " + parameters  + " from " + metadataSchema+table + " where upper(c_name) = ?  ";
 			compareName = vocabType.getMatchStr().getValue().toUpperCase();
-		}
-
-		else if(vocabType.getMatchStr().getStrategy().equals("left")){
-			nameInfoSql = "select " + parameters  + " from " + metadataSchema+table +" where upper(c_name) like ?  ";
+		} else if(vocabType.getMatchStr().getStrategy().equals("left")){
+			//TODO: check if %STARTSWITH is enough for IRIS
+			if (dbType.equals("InterSystems IRIS"))
+				nameInfoSql = "select " + parameters  + " from " + metadataSchema+table +" where upper(c_name) %STARTSWITH ?  ";
+			else
+				nameInfoSql = "select " + parameters  + " from " + metadataSchema+table +" where upper(c_name) like ?  ";
 			compareName = vocabType.getMatchStr().getValue().toUpperCase() + "%";
-		}
-
-		else if(vocabType.getMatchStr().getStrategy().equals("right")) {
-			nameInfoSql = "select " + parameters  + " from " + metadataSchema+table +" where upper(c_name) like ?  ";
+		} else if(vocabType.getMatchStr().getStrategy().equals("right")) {
+			//TODO: check if [ is enough for IRIS
+			if (dbType.equals("InterSystems IRIS"))
+				nameInfoSql = "select " + parameters  + " from " + metadataSchema+table +" where upper(c_name) [ ?  ";
+			else
+				nameInfoSql = "select " + parameters  + " from " + metadataSchema+table +" where upper(c_name) like ?  ";
 			compareName =  "%" + vocabType.getMatchStr().getValue().toUpperCase();
-		}
-
-		else if(vocabType.getMatchStr().getStrategy().equals("contains")) {
-			nameInfoSql = "select " + parameters  + " from " + metadataSchema+table +" where upper(c_name) like ?  ";
+		} else if(vocabType.getMatchStr().getStrategy().equals("contains")) {
+			if (dbType.equals("InterSystems IRIS"))
+				//TODO: check if [ is enough for IRIS
+				nameInfoSql = "select " + parameters  + " from " + metadataSchema+table +" where upper(c_name) [ ?  ";
+			else
+				nameInfoSql = "select " + parameters  + " from " + metadataSchema+table +" where upper(c_name) like ?  ";
 			compareName =  "%" + vocabType.getMatchStr().getValue().toUpperCase() + "%";
 		}
 
 		String hidden = "";
-		if(vocabType.isHiddens() == false)
-			hidden = " and c_visualattributes not like '_H%'";
+		if(!vocabType.isHiddens())
+			hidden = dbType.equals("InterSystems IRIS") ?
+					" and (not c_visualattributes %STARTSWITH '_H')"
+					: " and c_visualattributes not like '_H%'";
 
 		String synonym = "";
-		if(vocabType.isSynonyms() == false)
+		if(!vocabType.isSynonyms())
 			synonym = " and c_synonym_cd = 'N'";
 
 		nameInfoSql = nameInfoSql + hidden + synonym + " order by c_name ";
 		final  boolean obfuscatedUserFlag = Roles.getInstance().isRoleOfuscated( projectInfo );
 
-
+		log.info("Script: " + nameInfoSql);
 		List queryResult = null;
 		try {
 			queryResult = jt.query(nameInfoSql, getNamesInfoMapper(obfuscatedUserFlag,vocabType,dbType), compareName);
@@ -194,7 +203,7 @@ class GetNamesInfoMapper implements RowMapper<ConceptType> {
 			entry.setVisualattributes(rs.getString("c_visualattributes"));
 			Integer totalNum = rs.getInt("c_totalnum");
 
-			if ( obfuscatedUserFlag == false) { 
+			if (!obfuscatedUserFlag) {
 				entry.setTotalnum(totalNum);
 			}
 			entry.setFacttablecolumn(rs.getString("c_facttablecolumn" ));
@@ -205,7 +214,7 @@ class GetNamesInfoMapper implements RowMapper<ConceptType> {
 			entry.setDimcode(rs.getString("c_dimcode"));
 			entry.setTooltip(rs.getString("c_tooltip"));
 		}
-		if(vocabType.isBlob() == true) {
+		if(vocabType.isBlob()) {
 			if(rs.getClob("c_comment") == null)
 				entry.setComment(null);
 			else {

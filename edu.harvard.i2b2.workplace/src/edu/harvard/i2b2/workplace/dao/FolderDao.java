@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Date;
 import javax.sql.DataSource;
 
@@ -361,9 +360,7 @@ public class FolderDao extends JdbcDaoSupport {
 
 		// find return parameters
 		String type = "core";
-		String parameters = CORE;		
-
-
+		String parameters = CORE;
 
 		if (projectInfo.getRole().size() == 0)
 		{
@@ -421,8 +418,9 @@ public class FolderDao extends JdbcDaoSupport {
 
 	}
 
-	public List findChildrenByParent(final GetChildrenType childrenType, ProjectType projectInfo, DBInfoType dbInfo) throws I2B2DAOException, I2B2Exception{
-
+	public List findChildrenByParent(final GetChildrenType childrenType, ProjectType projectInfo, DBInfoType dbInfo)
+			throws I2B2DAOException, I2B2Exception{
+		log.info("FolderDao.class: findChildrenByParent(final GetChildrenType childrenType, ProjectType projectInfo, DBInfoType dbInfo)");
 		// find return parameters
 		String type = "core";
 		String parameters = CORE;		
@@ -430,7 +428,7 @@ public class FolderDao extends JdbcDaoSupport {
 			parameters = ALL;
 			type = "all";
 		}
-		if(childrenType.isBlob() == true)
+		if(childrenType.isBlob())
 			parameters = parameters + BLOB;
 
 		String metadataSchema = dbInfo.getDb_fullSchema();
@@ -490,14 +488,18 @@ public class FolderDao extends JdbcDaoSupport {
 		}
 
 		String hidden = "";
-		if(childrenType.isHiddens() == false)
-			hidden = " and c_visualattributes not like '_H%'";
+		if(!childrenType.isHiddens())
+			hidden = dbInfo.getDb_serverType().equalsIgnoreCase("InterSystems IRIS")
+					? " and (not c_visualattributes %STARTSWITH '_H') "
+					: " and c_visualattributes not like '_H%' ";
 
-		String sql = "select " + parameters +" from " + metadataSchema+tableName  + " where  c_parent_index = ? and (c_status_cd != 'D' or c_status_cd is null)"; 
+		String sql = "select " + parameters +" from " + metadataSchema + tableName  +
+				" where  c_parent_index = ? and (c_status_cd != 'D' or c_status_cd is null)";
 		sql = sql + hidden + " order by c_name ";
 
 		String parentIndex = StringUtil.getIndex(childrenType.getParent());
 
+		log.info("Script: " + sql);
 		log.debug(sql + " " + parentIndex);
 		//		log.info(type + " " + tableCd );
 
@@ -540,8 +542,11 @@ public class FolderDao extends JdbcDaoSupport {
 	 * 
 	 * @author Neha Patel
 	 */
-	public List findWorkplaceByKeyword(final FindByChildType returnType, String userId, final ProjectType projectInfo, final DBInfoType dbInfo) throws DataAccessException, I2B2Exception{
-
+	public List findWorkplaceByKeyword(final FindByChildType returnType, String userId,
+									   final ProjectType projectInfo, final DBInfoType dbInfo)
+			throws DataAccessException, I2B2Exception{
+		log.info("FolderDao.class: findWorkplaceByKeyword(final FindByChildType returnType, String userId, " +
+				"final ProjectType projectInfo, final DBInfoType dbInfo)");
 		// find return parameters
 		String type = "core"; // Default Type is core
 		String parameters = CORE; // parameters to be used in select statement 
@@ -561,31 +566,27 @@ public class FolderDao extends JdbcDaoSupport {
 			// if request parameter blob is set to true then include 
 			// columns with xml info in select statement :-
 			// c_work_xml, c_work_xml_schema, c_work_xml_i2b2_type
-			if(returnType.isBlob() == true)
+			if(returnType.isBlob())
 				parameters = parameters + BLOB;
 
 			// category is the directory where user is looking for the content
 			category= returnType.getCategory();
 
 			// request parameter hidden indicates to display hidden files or not
-			if(returnType.isHiddens() == false)
-				hiddenStr = " and c_visualattributes not like '_H%'";			
+			if(!returnType.isHiddens())
+				hiddenStr = dbInfo.getDb_serverType().equalsIgnoreCase("InterSystems IRIS")
+						? " and (not c_visualattributes %STARTSWITH '_H') "
+						: " and c_visualattributes not like '_H%'";
 
 			// get strategy if content name starts with given word
 			// or it contains given word or it ends with given word
-			if(returnType.getMatchStr().getStrategy().equals("exact")) {
+			if (returnType.getMatchStr().getStrategy().equals("exact")) {
 				searchWord = returnType.getMatchStr().getValue().toLowerCase();
-			}
-
-			else if(returnType.getMatchStr().getStrategy().equals("left")){
+			} else if(returnType.getMatchStr().getStrategy().equals("left")){
 				searchWord = returnType.getMatchStr().getValue().toLowerCase()+ "%";
-			}
-
-			else if(returnType.getMatchStr().getStrategy().equals("right")) {
+			} else if(returnType.getMatchStr().getStrategy().equals("right")) {
 				searchWord ="%"+ returnType.getMatchStr().getValue().toLowerCase();
-			}
-
-			else if(returnType.getMatchStr().getStrategy().equals("contains")) {
+			} else if(returnType.getMatchStr().getStrategy().equals("contains")) {
 				searchWord =  "%" +	returnType.getMatchStr().getValue().toLowerCase() + "%";
 			}
 
@@ -595,11 +596,12 @@ public class FolderDao extends JdbcDaoSupport {
 					int fetchSize = returnType.getMax() +1 ;
 
 					// if server is oracle then use rownum to return max number of rows
-					if(dbInfo.getDb_serverType().toUpperCase().equals("ORACLE"))				
+					if(dbInfo.getDb_serverType().equalsIgnoreCase("ORACLE"))
 						maxString = " and rownum>0 and rownum <=" + fetchSize; 
 
 					// if server is SQL SERVER then use 'TOP' clause to return max number of rows 
-					else if(dbInfo.getDb_serverType().toUpperCase().equals("SQLSERVER")){
+					else if(dbInfo.getDb_serverType().equalsIgnoreCase("SQLSERVER")
+							|| dbInfo.getDb_serverType().equalsIgnoreCase("InterSystems IRIS")) {
 						maxString = "TOP " + fetchSize + " "; 
 						parameters = maxString + parameters; // appended maxstring infront of parameters
 						maxString = "";
@@ -701,8 +703,11 @@ public class FolderDao extends JdbcDaoSupport {
 
 		String tableCd = StringUtil.getTableCd(resultStr);
 		String tableName = StringUtil.getIndex(resultStr);
-
-		StringBuilder sql = new StringBuilder ("select " + parameters +" from " + metadataSchema+tableName  + " where LOWER(c_user_id) = ? and LOWER(c_group_id) = ? and LOWER(c_name) like ? and (c_status_cd != 'D' or c_status_cd is null) "); 
+		//TODO: check if [ is enough for IRIS
+		StringBuilder sql = new StringBuilder ("select " + parameters +" from " + metadataSchema+tableName  +
+				" where LOWER(c_user_id) = ? and LOWER(c_group_id) = ? and LOWER(c_name) " +
+				(dbInfo.getDb_serverType().equalsIgnoreCase("InterSystems IRIS") ? "[" : "like") +
+				" ? and (c_status_cd != 'D' or c_status_cd is null) ");
 		sql.append( hiddenStr + maxString );
 
 		GetFolderMapper mapper = GetTableMapper(type, returnType.isBlob(), tableCd, dbInfo.getDb_serverType());
@@ -823,8 +828,11 @@ public class FolderDao extends JdbcDaoSupport {
 				resultStr = (String)itr.next();
 				tableCd = StringUtil.getTableCd(resultStr);
 				tableName = StringUtil.getIndex(resultStr);
-
-				StringBuilder sql = new StringBuilder ("select " + parameters +" from " + metadataSchema+tableName  + " where LOWER(c_name) like ? and (c_status_cd != 'D' or c_status_cd is null) "); 
+				//TODO: check if [ is enough for IRIS
+				StringBuilder sql = new StringBuilder ("select " + parameters +" from " + metadataSchema+tableName  +
+						" where LOWER(c_name) " +
+						(dbInfo.getDb_serverType().equalsIgnoreCase("InterSystems IRIS") ? "[" : "like") +
+						" ? and (c_status_cd != 'D' or c_status_cd is null) ");
 
 				if(managerRole){
 					sql.append("and LOWER(c_group_id) = ? ");
@@ -846,9 +854,10 @@ public class FolderDao extends JdbcDaoSupport {
 				 */
 
 				sql.append( " order by c_name ");
+				log.info("Script: " + sql);
 
 				// Executing the query to find the workplace content with the given name 
-				List<FolderType> workplaceResult=null;
+				List<FolderType> workplaceResult;
 
 				try {
 					if(managerRole){
@@ -1340,7 +1349,7 @@ public class FolderDao extends JdbcDaoSupport {
 			}
 		}
 		String index = StringUtil.getIndex(deleteChildType.getNode());	
-		checkForChildrenDeletion(index, tableName, metadataSchema);
+		checkForChildrenDeletion(index, tableName, metadataSchema, dbInfo);
 		//Mark node for deletion
 
 		String updateSql = " update " + metadataSchema+tableName  + " set c_change_date = ?, c_status_cd = 'D'  where c_index = ? ";
@@ -1522,7 +1531,7 @@ public class FolderDao extends JdbcDaoSupport {
 			// if user is not a manager
 			// then check if file/folder is shared
 			// if not shared then verify file/folder belongs to user
-			if(managerRole == false){
+			if(!managerRole){
 
 				sharedStr = resultToSplit.substring(10, resultToSplit.indexOf("\\user_id="));
 				contentUserId = resultToSplit.substring(resultToSplit.indexOf("\\user_id=")+9, resultToSplit.lastIndexOf("\\"));	
@@ -1632,7 +1641,7 @@ public class FolderDao extends JdbcDaoSupport {
 	}
 
 
-	private void checkForChildrenDeletion(String nodeIndex, String tableName, String metadataSchema) throws DataAccessException {
+	private void checkForChildrenDeletion(String nodeIndex, String tableName, String metadataSchema, DBInfoType dbInfo) throws DataAccessException {
 
 		// mark children for deletion
 		String updateSql = " update " + metadataSchema+tableName  + " set c_change_date = ?, c_status_cd = 'D'  where c_parent_index = ? ";
@@ -1647,7 +1656,12 @@ public class FolderDao extends JdbcDaoSupport {
 		}
 		log.debug("Number of children deleted: "+ numChildrenDeleted);
 		// look for children that are folders
-		String folderSql = "select c_index from " + metadataSchema+tableName + " where c_parent_index = ? and c_visualattributes like 'F%' ";
+		//TODO: check if %STARTSWITH is enough for IRIS
+		String folderSql = "select c_index from " + metadataSchema+tableName +
+				" where c_parent_index = ? " +
+				(dbInfo.getDb_serverType().equalsIgnoreCase("InterSystems IRIS")
+						? " and c_visualattributes %STARTSWITH 'F' "
+						: " and c_visualattributes like 'F%' ");
 
 		/*
 		ParameterizedRowMapper<String> map = new ParameterizedRowMapper<String>() {
@@ -1658,7 +1672,7 @@ public class FolderDao extends JdbcDaoSupport {
 			}
 		};
 		 */
-
+		log.info("Script: " + folderSql);
 		List folders = null;
 		try{
 			folders = jt.queryForList(folderSql, String.class, nodeIndex);
@@ -1671,7 +1685,7 @@ public class FolderDao extends JdbcDaoSupport {
 			Iterator it = folders.iterator();
 			while(it.hasNext()){
 				String folderIndex = (String) it.next();
-				checkForChildrenDeletion(folderIndex, tableName, metadataSchema);
+				checkForChildrenDeletion(folderIndex, tableName, metadataSchema, dbInfo);
 			}
 		}
 
@@ -1820,7 +1834,7 @@ class GetFolderMapper implements RowMapper<FolderType> {
 			//child.setTooltip(rs.getString("c_tooltip"));
 			child.setTooltip(toolTip);
 
-		}if(isBlob == true){
+		}if(isBlob){
 			child.setWorkXmlI2B2Type(rs.getString("c_work_xml_i2b2_type"));
 
 			String c_xml = null;

@@ -71,9 +71,6 @@ import edu.harvard.i2b2.crc.util.SqlClauseUtil;
 
 public class QueryExecutorDao extends CRCDAO implements IQueryExecutorDao {
 
-
-
-
 	private DataSourceLookup dataSourceLookup = null,
 			originalDataSourceLookup = null;
 	//	private static Map generatorMap = null;
@@ -121,12 +118,16 @@ public class QueryExecutorDao extends CRCDAO implements IQueryExecutorDao {
 	 * @throws I2B2Exception 
 	 */
 	@Override
-	public String executeSQL(
-			int transactionTimeout, DataSourceLookup dsLookup,
-			SetFinderDAOFactory sfDAOFactory, String requestXml,
-			String sqlString, String queryInstanceId, String patientSetId,
-			ResultOutputOptionListType resultOutputList, boolean allowLargeTextValueConstrainFlag,   String pmXml, List<String> userRoles)
-					throws I2B2Exception, JAXBUtilException {
+	public String executeSQL(int transactionTimeout, DataSourceLookup dsLookup,
+							 SetFinderDAOFactory sfDAOFactory, String requestXml,
+							 String sqlString, String queryInstanceId, String patientSetId,
+							 ResultOutputOptionListType resultOutputList, boolean allowLargeTextValueConstrainFlag,
+							 String pmXml, List<String> userRoles) throws I2B2Exception, JAXBUtilException {
+		log.info("QueryExecutorDao.class: executeSQL(int transactionTimeout, DataSourceLookup dsLookup, " +
+				"SetFinderDAOFactory sfDAOFactory, String requestXml, " +
+				"String sqlString, String queryInstanceId, String patientSetId, " +
+				"ResultOutputOptionListType resultOutputList, boolean allowLargeTextValueConstrainFlag, " +
+				"String pmXml, List<String> userRoles)");
 
 		String singleSql = null;
 		int recordCount = 0;
@@ -140,8 +141,7 @@ public class QueryExecutorDao extends CRCDAO implements IQueryExecutorDao {
 
 		/** Global temp table to store intermediate patient list * */
 		String TEMP_DX_TABLE = "#DX";
-		if (dsLookup.getServerType().equalsIgnoreCase(
-				DAOFactoryHelper.SQLSERVER)) {
+		if (dsLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)) {
 			TEMP_TABLE = getDbSchemaName() + "#GLOBAL_TEMP_TABLE";
 			TEMP_DX_TABLE = getDbSchemaName() + "#DX";
 
@@ -188,10 +188,12 @@ public class QueryExecutorDao extends CRCDAO implements IQueryExecutorDao {
 					.getQueryMasterId();
 			QtQueryMaster queryMaster = queryMasterDao
 					.getQueryDefinition(masterId);
-			String generatedSql = queryMaster.getGeneratedSql();
-			if (generatedSql == null) {
-				generatedSql = "";
-			}
+			String generatedSql;
+			if (queryMaster.getGeneratedSql() == null)
+				generatedSql = new String();
+			else
+				generatedSql = queryMaster.getGeneratedSql();
+
 			String missingItemMessage = "", processTimingMessage = "";
 			boolean missingItemFlag = false;
 			String queryType = null;
@@ -328,9 +330,6 @@ public class QueryExecutorDao extends CRCDAO implements IQueryExecutorDao {
 							log.debug("Single panel request message [" + newRequestMsg + "]");
 							//send request xml for each panel
 
-
-							
-							
 							generatedSql += "select distinct patient_num from "+ this.getDbSchemaName() +"qt_est_observation_fact where " ;
 
 							for (int j=0; j< panelList[i].getItem().size(); j++)
@@ -338,22 +337,14 @@ public class QueryExecutorDao extends CRCDAO implements IQueryExecutorDao {
 								ItemType item = panelList[i].getItem().get(j);
 								String key = item.getItemKey();
 
-
 								ConceptType conceptType = null;
 								try {
-									
+									SecurityType securityType = PMServiceAccountUtil.getServiceSecurityType(dataSourceLookup.getDomainId());
+									conceptType = CallOntologyUtil.callOntology(key,
+											securityType, dataSourceLookup.getProjectPath(),
+											QueryProcessorUtil.getInstance().getOntologyUrl());
 
-
-									SecurityType securityType = PMServiceAccountUtil
-											.getServiceSecurityType(dataSourceLookup.getDomainId());
-									
-		
-										conceptType = CallOntologyUtil.callOntology(key,
-												securityType, dataSourceLookup.getProjectPath(),
-												QueryProcessorUtil.getInstance().getOntologyUrl());
-									
 								} catch (Exception e) {
-
 									log.error("Error while fetching metadata [" + key
 											+ "] from ontology ", e);
 									throw new OntologyException("Error while fetching metadata ["
@@ -364,15 +355,14 @@ public class QueryExecutorDao extends CRCDAO implements IQueryExecutorDao {
 								key = key.substring(key.indexOf('\\', 3)).toLowerCase();
 								if (dsLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL))
 									key = key.replace("\\", "\\\\");
-								
+
 								generatedSql += " ( concept_path LIKE '" + key + "%'";
 								if ( item.getConstrainByValue() != null)
 								{
 									for (ItemType.ConstrainByValue valueConstrain : item.getConstrainByValue()) {
 
 										ConstrainValueType valueType = valueConstrain.getValueType();
-										ConstrainOperatorType operatorType = valueConstrain
-												.getValueOperator();
+										ConstrainOperatorType operatorType = valueConstrain.getValueOperator();
 										String value = valueConstrain.getValueConstraint();
 
 										if (valueType.equals(ConstrainValueType.NUMBER)) {
@@ -382,40 +372,30 @@ public class QueryExecutorDao extends CRCDAO implements IQueryExecutorDao {
 											}
 
 
-											if (operatorType.value().equalsIgnoreCase(
-													ConstrainOperatorType.GT.value())) {
-												generatedSql +=
-														" and min_nval_num > " + value;
-											} else if (operatorType.value().equalsIgnoreCase(
-													ConstrainOperatorType.GE.value())) {
+											if (operatorType.value().equalsIgnoreCase(ConstrainOperatorType.GT.value())) {
+												generatedSql += " and min_nval_num > " + value;
+											} else if (operatorType.value().equalsIgnoreCase(ConstrainOperatorType.GE.value())) {
 												generatedSql += " and min_nval_num >= " + value;
-											} else if (operatorType.value().equalsIgnoreCase(
-													ConstrainOperatorType.LT.value())) {
+											} else if (operatorType.value().equalsIgnoreCase(ConstrainOperatorType.LT.value())) {
 												generatedSql += " and min_nval_num <  " + value;
-											} else if (operatorType.value().equalsIgnoreCase(
-													ConstrainOperatorType.LE.value())) {
+											} else if (operatorType.value().equalsIgnoreCase(ConstrainOperatorType.LE.value())) {
 												generatedSql += " and min_nval_num <=  " + value;
-											} else if (operatorType.value().equalsIgnoreCase(
-													ConstrainOperatorType.EQ.value())) {
+											} else if (operatorType.value().equalsIgnoreCase(ConstrainOperatorType.EQ.value())) {
 												generatedSql += " and min_nval_num = " + value
 														+ " and max_nval_num = " + value;
-											} else if (operatorType.value().equalsIgnoreCase(
-													ConstrainOperatorType.BETWEEN.value())) {
+											} else if (operatorType.value().equalsIgnoreCase(ConstrainOperatorType.BETWEEN.value())) {
 												generatedSql += " and min_nval_num >  " + value
 														+ " and max_nval_num < " + value;
-											} else if (operatorType.value().equalsIgnoreCase(
-													ConstrainOperatorType.NE.value())) {
+											} else if (operatorType.value().equalsIgnoreCase(ConstrainOperatorType.NE.value())) {
 												generatedSql += " and min_nval_num <  " + value;
 											} else {
 												throw new I2B2DAOException(
 														"Error NUMBER value constrain because operator("
 																+ operatorType.toString() + ")is invalid");
-											}											
-
+											}
 										}
 									}
 								}
-
 								if (panelList[i].getItem().size()  != (j + 1))
 									generatedSql += " ) or ";
 								else
@@ -429,7 +409,7 @@ public class QueryExecutorDao extends CRCDAO implements IQueryExecutorDao {
 
 						generatedSql = "select count(*) as patient_num_count from (select count( *) as mycount,  patient_num from  (" +
 								generatedSql +
-								" ) as a group by patient_num ) as b where mycount = " + panelList.length; 
+								" ) as a group by patient_num ) as b where mycount = " + panelList.length;
 
 						log.debug("Setfinder converted sql without temp table " + generatedSql);
 
@@ -442,7 +422,7 @@ public class QueryExecutorDao extends CRCDAO implements IQueryExecutorDao {
 					log.debug("Setfinder skip temp table missing item message " +  missingItemMessage);
 					log.debug("Setfinder skip temp table process timing message " + processTimingMessage);
 				}
-				else if (this.queryWithoutTempTableFlag == false) { 
+				else if (!this.queryWithoutTempTableFlag) {
 					sqlResult = requestDao.buildSql(requestXml,
 							encounterSetFlag);
 					generatedSql = sqlResult[0];
@@ -475,12 +455,12 @@ public class QueryExecutorDao extends CRCDAO implements IQueryExecutorDao {
 								sqlResult = requestDao.buildSql(newRequestMsg,
 										encounterSetFlag);
 								DirectQueryForSinglePanel directQuerySql = new DirectQueryForSinglePanel(); 
-								if (buildSqlWithOR == false) { 
+								if (!buildSqlWithOR) {
 									generatedSql += "\n(" + directQuerySql.buildSqlWithUnion(sqlResult[0]) + ")\n";
 									if (i+1 < panelList.length) { 
 										generatedSql += " INTERSECT  \n";
 									}
-								} else if (buildSqlWithOR == true && (sqlResult[0].indexOf("patient_dimension where")>0 ||
+								} else if (buildSqlWithOR && (sqlResult[0].indexOf("patient_dimension where")>0 ||
 										sqlResult[0].indexOf("visit_dimension where")>0)) { 
 									buildSqlWithOR = false;
 									fullSqlGenerated = false;
@@ -522,6 +502,7 @@ public class QueryExecutorDao extends CRCDAO implements IQueryExecutorDao {
 					log.debug("Setfinder skip temp table missing item message " +  missingItemMessage);
 					log.debug("Setfinder skip temp table process timing message " + processTimingMessage);
 				}
+				log.info("Script: " + generatedSql);
 				queryMasterDao.updateQueryAfterRun(masterId, generatedSql, queryType);
 
 				if (missingItemMessage != null
@@ -542,15 +523,12 @@ public class QueryExecutorDao extends CRCDAO implements IQueryExecutorDao {
 				}
 
 				if (processTimingMessage != null && processTimingMessage.trim().length()>0) {
-
 					setQueryInstanceProcessTimingXml(sfDAOFactory,
 							queryInstanceId,   processTimingMessage);
-
 				}
-
 			}
 			log.debug("Setfinder before executor helper dao missingItemFlag " + missingItemFlag);
-			if (missingItemFlag == false) {
+			if (!missingItemFlag) {
 				QueryExecutorHelperDao helperDao = new QueryExecutorHelperDao(
 						dataSource, dataSourceLookup, originalDataSourceLookup);
 				helperDao.setProcessTimingFlag(processTimingFlag);
@@ -561,7 +539,6 @@ public class QueryExecutorDao extends CRCDAO implements IQueryExecutorDao {
 						dsLookup, sfDAOFactory, requestXml, sqlString,
 						queryInstanceId, patientSetId, resultOutputList,
 						generatedSql, pmXml);
-
 			}
 		} catch (NamingException e) {
 			exception = e;
@@ -581,7 +558,7 @@ public class QueryExecutorDao extends CRCDAO implements IQueryExecutorDao {
 			// update the error status to result instance
 			setQueryResultInstanceStatus(sfDAOFactory, queryInstanceId,
 					4, e.getMessage());
-
+			log.info("Error in QueryExecutorDAO Throwing: " + e.getMessage());
 			log.debug("Error in QueryExecutorDAO Throwing: " + e.getMessage());
 			exception = e;
 			errorFlag = true;
@@ -724,7 +701,6 @@ public class QueryExecutorDao extends CRCDAO implements IQueryExecutorDao {
 			throw new I2B2Exception(
 					"null value in after unmarshalling request string ");
 		}
-
 		RequestMessageType requestMessageType = (RequestMessageType) jaxbElement
 				.getValue();
 		return requestMessageType;
@@ -738,8 +714,6 @@ public class QueryExecutorDao extends CRCDAO implements IQueryExecutorDao {
 				.getObjectByClass(bodyType.getAny(),
 						QueryDefinitionRequestType.class);
 		return queryDefReqType;
-
-
 	}
 
 
@@ -752,5 +726,4 @@ public class QueryExecutorDao extends CRCDAO implements IQueryExecutorDao {
 		jaxbUtil.marshaller(ob.createRequest(requestMessageType), strWriter);
 		return strWriter.toString();
 	}
-
 }

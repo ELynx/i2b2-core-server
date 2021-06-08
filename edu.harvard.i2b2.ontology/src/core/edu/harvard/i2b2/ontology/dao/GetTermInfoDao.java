@@ -27,7 +27,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.support.JdbcDaoSupport;
 import org.w3c.dom.Document;
@@ -40,7 +39,6 @@ import edu.harvard.i2b2.common.util.xml.XMLUtil;
 import edu.harvard.i2b2.ontology.datavo.pm.ProjectType;
 import edu.harvard.i2b2.ontology.datavo.vdo.ConceptType;
 import edu.harvard.i2b2.ontology.datavo.vdo.GetTermInfoType;
-import edu.harvard.i2b2.ontology.datavo.vdo.VocabRequestType;
 import edu.harvard.i2b2.ontology.datavo.vdo.XmlValueType;
 import edu.harvard.i2b2.ontology.util.OntologyUtil;
 import edu.harvard.i2b2.ontology.util.Roles;
@@ -53,7 +51,10 @@ public class GetTermInfoDao extends JdbcDaoSupport {
 	final static String CORE = DEFAULT;
 	final static String BLOB = ", c_metadataxml, c_comment ";
 
-	public List findByFullname(final GetTermInfoType termInfoType, List categories,  ProjectType projectInfo, final String dbType) throws DataAccessException{
+	public List findByFullname(final GetTermInfoType termInfoType, List categories,  ProjectType projectInfo, final String dbType)
+			throws DataAccessException{
+		log.info("GetTermInfoDao.class: findByFullname(final GetTermInfoType termInfoType, List categories, " +
+				"ProjectType projectInfo, final String dbType)");
 		DataSource ds = null;
 		try {
 			ds = OntologyUtil.getInstance().getDataSource("java:OntologyLocalDS");
@@ -71,7 +72,7 @@ public class GetTermInfoDao extends JdbcDaoSupport {
 		else if (termInfoType.getType().equals("all")){
 			parameters = ALL;
 		}
-		if(termInfoType.isBlob() == true)
+		if(termInfoType.isBlob())
 			parameters = parameters + BLOB;
 
 		//extract table code
@@ -99,26 +100,28 @@ public class GetTermInfoDao extends JdbcDaoSupport {
 		String searchPath = path;
 
 		String hidden = "";
-		if(termInfoType.isHiddens() == false)
-			hidden = " and c_visualattributes not like '_H%'";
+		if(!termInfoType.isHiddens())
+			hidden = dbType.equalsIgnoreCase("INTERSYSTEMS IRIS")
+					? " and (not c_visualattributes %STARTSWITH '_H')"
+					: " and c_visualattributes not like '_H%'";
 
 		String synonym = "";
-		if(termInfoType.isSynonyms() == false)
+		if(!termInfoType.isSynonyms())
 			synonym = " and c_synonym_cd = 'N'";
-
-		String sql = "select " + parameters +" from " + metadataSchema+tableName  + " where c_fullname like ? "; 
+		//TODO: check if [ is enough for IRIS
+		String sql = "select " + parameters +" from " + metadataSchema+tableName  +
+				" where c_fullname " + (dbType.equalsIgnoreCase("INTERSYSTEMS IRIS") ? "[ ? " : "like ? ");
 		sql = sql + hidden + synonym + " order by c_name ";
 
 		//	log.info(sql + path + level);
 		final  boolean obfuscatedUserFlag = Roles.getInstance().isRoleOfuscated( projectInfo );
 
-
-
+		log.info("Script: " + sql);
 		//	log.info(sql + " " + path + " " + level);
 
 		List queryResult = null;
 		try {
-			queryResult = jt.query(sql,getTermInfoConcept(obfuscatedUserFlag,termInfoType, dbType), searchPath );
+			queryResult = jt.query(sql, getTermInfoConcept(obfuscatedUserFlag, termInfoType, dbType), searchPath );
 		} catch (DataAccessException e) {
 			log.error(e.getMessage());
 			throw e;
@@ -174,7 +177,7 @@ class GetTermInfoConcept implements RowMapper<ConceptType> {
 		self.setVisualattributes(rs.getString("c_visualattributes"));
 
 		Integer totalNum = rs.getInt("c_totalnum");
-		if ( obfuscatedUserFlag == false) { 
+		if (!obfuscatedUserFlag) {
 			self.setTotalnum(totalNum);
 		}
 		self.setFacttablecolumn(rs.getString("c_facttablecolumn" ));
@@ -184,7 +187,7 @@ class GetTermInfoConcept implements RowMapper<ConceptType> {
 		self.setOperator(rs.getString("c_operator")); 
 		self.setDimcode(rs.getString("c_dimcode")); 
 		self.setTooltip(rs.getString("c_tooltip"));
-		if(termInfoType.isBlob() == true) {
+		if(termInfoType.isBlob()) {
 			if(rs.getClob("c_comment") == null)
 				self.setComment(null);
 			else {

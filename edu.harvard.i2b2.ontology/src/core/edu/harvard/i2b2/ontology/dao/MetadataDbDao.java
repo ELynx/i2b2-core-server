@@ -82,18 +82,22 @@ public class MetadataDbDao extends JdbcDaoSupport {
 			String ownerId) throws I2B2Exception, I2B2DAOException{
 		log.info("MetadataDbDao.class: getDbLookupByHiveProjectOwner(String domainId, String projectId, String ownerId)");
     	String metadataSchema = getMetadataSchema();
-		String sql = "select * from " + metadataSchema + "ont_db_lookup where LOWER(c_domain_id) = ? and LOWER(c_project_path) like  ? and (LOWER(c_owner_id) =? or c_owner_id = '@') order by c_project_path"; // desc  c_owner_id desc";
+		//TODO: only for IRIS
+		//TODO: check if %STARTSWITH is enough for IRIS
+		String sql = "select * from " + metadataSchema + "ont_db_lookup " +
+				" where LOWER(c_domain_id) = ? and LOWER(c_project_path) %STARTSWITH '" + projectId.replace("%", "").toLowerCase() +
+				"' and (LOWER(c_owner_id) = ? or c_owner_id = '@') order by c_project_path"; // desc  c_owner_id desc";
 //		List<DBInfoType> dataSourceLookupList = this.query(sql, new Object[]{domainId,projectId+"%",ownerId},new int[]{Types.VARCHAR,Types.VARCHAR,Types.VARCHAR},new mapper()  );
 //		return dataSourceLookupList;
 //		log.info(sql + domainId + projectId + ownerId);
 		List queryResult = null;
+		log.info("Script: " + sql);
 		try {
-			queryResult = jt.query(sql, new getDBInfoMapper(), domainId.toLowerCase(),projectId.toLowerCase(),ownerId.toLowerCase());
+			queryResult = jt.query(sql, new getDBInfoMapper(), domainId.toLowerCase(), ownerId.toLowerCase());
 		} catch (DataAccessException e) {
 			log.error(e.getMessage());
 			throw new I2B2DAOException("Database error");
 		}
-		log.info("Script: " + sql);
 		return queryResult;
 		
 	}

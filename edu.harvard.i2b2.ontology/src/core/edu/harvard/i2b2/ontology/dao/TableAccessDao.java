@@ -22,7 +22,6 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.support.JdbcDaoSupport;
 
 import edu.harvard.i2b2.common.exception.I2B2Exception;
-import edu.harvard.i2b2.ontology.datavo.pm.ParamType;
 import edu.harvard.i2b2.ontology.datavo.pm.ProjectType;
 import edu.harvard.i2b2.ontology.ejb.DBInfoType;
 import edu.harvard.i2b2.ontology.ejb.TableAccessType;
@@ -55,25 +54,27 @@ public class TableAccessDao extends JdbcDaoSupport {
 		this.jt = new JdbcTemplate(dataSource);
 	}
 
-	public List<String> getEditorTableName(ProjectType projectInfo,
-			DBInfoType dbInfo, boolean synchronizeAllFlag) throws I2B2Exception {
+	public List<String> getEditorTableName(ProjectType projectInfo,DBInfoType dbInfo, boolean synchronizeAllFlag)
+			throws I2B2Exception {
+		log.info("TableAccessDao.class: getEditorTableName(ProjectType projectInfo,DBInfoType dbInfo, boolean synchronizeAllFlag)");
 		String metadataSchema = dbInfo.getDb_fullSchema();
 		if (jt == null) {
 			setDataSource(dbInfo.getDb_dataSource());
 		}
 		boolean protectedAccess = isProtectedAccess(projectInfo);
-		String sql = "select distinct(c_table_name) from " + metadataSchema
-				+ "table_access ";
-		if (synchronizeAllFlag == false) {
-			sql += " where c_visualattributes like '%E' ";
+		String sql = "select distinct(c_table_name) from " + metadataSchema + "table_access ";
+		if (!synchronizeAllFlag) {
+			//TODO: check if [ is enough for IRIS
+			sql += dbInfo.getDb_serverType().equalsIgnoreCase("INTERSYSTEMS IRIS")
+					? " where c_visualattributes [ '%E' "
+					: " where c_visualattributes like '%E' ";
 			if(!protectedAccess)
 				sql += " and c_protected_access = ? ";
 		}
 		else if (!protectedAccess) {
 			sql += " where c_protected_access = ? ";
 		}
-
-
+		log.info("Script: " + sql);
 		List<String> tableNameList = null;
 		log.debug("Executing sql [" + sql + "]");
 		if (!protectedAccess) {
@@ -91,12 +92,10 @@ public class TableAccessDao extends JdbcDaoSupport {
 			setDataSource(dbInfo.getDb_dataSource());
 		}
 		boolean protectedAccess = isProtectedAccess(projectInfo);
-		String sql = "select distinct(c_table_name) from " + metadataSchema
-				+ "table_access ";
+		String sql = "select distinct(c_table_name) from " + metadataSchema + "table_access ";
 		if (!protectedAccess) {
 			sql += " where c_protected_access = ? ";
 		}
-
 
 		List<String> tableNameList = null;
 		log.debug("Executing sql [" + sql + "]");

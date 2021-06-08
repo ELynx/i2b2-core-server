@@ -368,30 +368,39 @@ public abstract class TemporalPanelItem {
 	 */
 	protected String buildDimensionJoinSql(String tableAlias) {
 		String dimensionSql = "";
-
 		if (tableAlias!=null&&tableAlias.trim().length()>0)
 			tableAlias += ".";
 
-		if ((this.operator!=null)&& 
-				(this.operator.toUpperCase().equals("LIKE"))&&
-				(this.dimCode!=null)  && (parent.getServerType().equalsIgnoreCase("POSTGRESQL")))
-		{
+		if (parent.getServerType().equalsIgnoreCase("POSTGRESQL") && this.operator != null
+				&& this.operator.equalsIgnoreCase("LIKE") && this.dimCode != null)
 			this.dimCode = this.dimCode.replaceAll("\\\\", "\\\\\\\\");
 
-		}
-		dimensionSql = tableAlias + this.factTableColumn + " IN (select "
-				+ this.factTableColumn + " from " + noLockSqlServer
-				+ parent.getDatabaseSchema() + this.tableName
-				+ "  " + " where " + this.columnName + " "
-				+ this.operator + " " + this.dimCode;
+		if(parent.getServerType().equalsIgnoreCase("InterSystems IRIS")
+				&& this.operator != null && this.operator.endsWith("LIKE")
+				&& this.dimCode != null) {
+			String operator = null;
+			if ('%' == this.dimCode.charAt(0))
+				operator = "[";
+			else if('%' == this.dimCode.charAt(this.dimCode.length()-2))
+				operator = "%STARTSWITH";
+			else
+				operator = "LIKE";
+			dimensionSql = tableAlias + this.factTableColumn + " IN (select "
+					+ this.factTableColumn + " from " + noLockSqlServer
+					+ parent.getDatabaseSchema() + this.tableName
+					+ "  " + " where " + this.columnName + " "
+					+ operator + " " + this.dimCode.replaceAll("%", "");
+		} else
+			dimensionSql = tableAlias + this.factTableColumn + " IN (select "
+					+ this.factTableColumn + " from " + noLockSqlServer
+					+ parent.getDatabaseSchema() + this.tableName
+					+ "  " + " where " + this.columnName + " "
+					+ this.operator + " " + this.dimCode;
 
-		if ((this.operator!=null)&& 
-				(this.operator.toUpperCase().equals("LIKE"))&&
-				(this.dimCode!=null)&&
-				(this.dimCode.contains("?")))
-		{			
+		if (!parent.getServerType().equalsIgnoreCase("InterSystems IRIS")
+				&& this.operator != null && this.operator.equalsIgnoreCase("LIKE")
+				&& this.dimCode != null && this.dimCode.contains("?"))
 			dimensionSql +=  (!parent.getDataSourceLookup().getServerType().toUpperCase().equals("POSTGRESQL") ? " {ESCAPE '?'} " : "" ) ;
-		}
 		dimensionSql += ")";
 		return dimensionSql;
 	}
@@ -760,7 +769,7 @@ public abstract class TemporalPanelItem {
 	protected void checkLargeTextConstrainPermission() throws I2B2DAOException{
 		for (ConstrainByValue cvt : baseItem.getConstrainByValue()) {
 			if (cvt.getValueType().equals(ConstrainValueType.LARGETEXT)) {
-				if (parent.allowLargeTextValueConstrainFlag() == false) {
+				if (!parent.allowLargeTextValueConstrainFlag()) {
 					throw new I2B2DAOException("Insufficient user role for LARGETEXT constrain. Required minimum role DATA_DEID");
 				}
 			}

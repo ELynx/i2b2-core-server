@@ -493,7 +493,7 @@ IQueryResultInstanceDao {
 
 				};
 			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
-				resultInstanceId = Math.abs((int) new Date().getTime()); //jdbc.queryForObject(SEQUENCE_INTERSYSTEMS_IRIS, Integer.class);
+				resultInstanceId = jdbc.queryForObject(SEQUENCE_INTERSYSTEMS_IRIS, Integer.class);
 				resultInstance.setResultInstanceId(String.valueOf(resultInstanceId));
 				object = new Object[] {
 						resultInstance.getResultInstanceId(),

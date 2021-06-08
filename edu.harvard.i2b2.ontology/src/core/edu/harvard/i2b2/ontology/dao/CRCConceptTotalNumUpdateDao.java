@@ -109,7 +109,14 @@ public class CRCConceptTotalNumUpdateDao extends JdbcDaoSupport {
 			for (Iterator<TableAccessType> tableAccess = tableAccessTypeList.iterator(); tableAccess.hasNext();) {
 				tableAccessType = tableAccess.next();
 				
-				String updateStmtStr = " update " + metadataSchema + tableAccessType.getTableName().trim() + " set c_totalnum = null where c_fullname like ?  ";
+				String updateStmtStr;
+				//TODO: check if [ is enough for IRIS
+				if (dbInfo.getDb_serverType().equalsIgnoreCase("INTERSYSTEMS IRIS"))
+					updateStmtStr = " update " + metadataSchema + tableAccessType.getTableName().trim() +
+						" set c_totalnum = null where c_fullname [ ?  ";
+				else
+					updateStmtStr = " update " + metadataSchema + tableAccessType.getTableName().trim() +
+							" set c_totalnum = null where c_fullname like ?  ";
 				log.debug("Executing sql [" + updateStmtStr + "] c_fullname [" + tableAccessType.getFullName() + " ]");
 				if (synchronizeAllFlag) {
 					pStmt = conn.prepareStatement(updateStmtStr);
@@ -117,14 +124,17 @@ public class CRCConceptTotalNumUpdateDao extends JdbcDaoSupport {
 					pStmt.executeUpdate();
 					pStmt.close();
 				}
-				
-				
-				
-				String selectStmt = "select count(1) from " + metadataSchema + tableAccessType.getTableName().trim() + " where c_fullname like ? ";
-				if (synchronizeAllFlag == false) {
+
+				String selectStmt;
+				//TODO: check if [ is enough for IRIS
+				if (dbInfo.getDb_serverType().equalsIgnoreCase("INTERSYSTEMS IRIS"))
+					selectStmt = "select count(1) from " + metadataSchema + tableAccessType.getTableName().trim() + " where c_fullname [ ? ";
+				else
+					selectStmt = "select count(1) from " + metadataSchema + tableAccessType.getTableName().trim() + " where c_fullname like ? ";
+				if (!synchronizeAllFlag) {
 					selectStmt += " and c_totalnum is null ";
 				}
-				
+				log.info("Script [" + tableAccessType.getFullName() + "%" + "]:" + selectStmt);
 				pStmt = conn.prepareStatement(selectStmt);
 				pStmt.setString(1, tableAccessType.getFullName() + "%");
 				 resultSet = pStmt.executeQuery();
@@ -134,37 +144,50 @@ public class CRCConceptTotalNumUpdateDao extends JdbcDaoSupport {
 				 pStmt.close();
 				 log.debug("Executing sql [" + selectStmt + "] c_fullname [" + tableAccessType.getFullName() + " ] totalCount" + totalRecordToUpdate );
 			}
-			
-			
-			
+
 			//update the step field (PROCESSED updatedrecord/totalrecordtoupdate format)
 			ontProcessStatusDao.updateStatus(processId, new Date(System
 					.currentTimeMillis()), "PROCESSED 0/"+totalRecordToUpdate, "PROCESSING");
-			
-			for (Iterator<TableAccessType> tableAccess = tableAccessTypeList.iterator(); tableAccess.hasNext();) { 
-				tableAccessType = tableAccess.next();
-				String selectStmt = "select * from " + metadataSchema + tableAccessType.getTableName().trim() + " where c_fullname like ? and c_visualattributes not like 'C%' and c_visualattributes not like 'O%' " +
-						" and c_visualattributes not like 'D%' and c_visualattributes not like 'R%' ";
-				if (synchronizeAllFlag == false) {
+
+			for (TableAccessType accessType : tableAccessTypeList) {
+				tableAccessType = accessType;
+				String selectStmt;
+				//TODO: check if %STARTSWITH is enough for IRIS
+				if (dbInfo.getDb_serverType().equalsIgnoreCase("INTERSYSTEMS IRIS"))
+					selectStmt = "select * from " + metadataSchema + tableAccessType.getTableName().trim() +
+							" where c_fullname [ ? and (not c_visualattributes %STARTSWITH 'C') " +
+							" and (not c_visualattributes %STARTSWITH 'O') " +
+							" and (not c_visualattributes %STARTSWITH 'D') and (not c_visualattributes %STARTSWITH 'R') ";
+				else
+					selectStmt = "select * from " + metadataSchema + tableAccessType.getTableName().trim() +
+							" where c_fullname like ? and c_visualattributes not like 'C%' " +
+							"and c_visualattributes not like 'O%' " +
+							" and c_visualattributes not like 'D%' and c_visualattributes not like 'R%' ";
+
+				if (!synchronizeAllFlag) {
 					selectStmt += " and c_totalnum is null ";
 				}
 				selectStmt += " order by c_fullname";
+				log.info("Script [" + tableAccessType.getFullName() + "%" + "]:" + selectStmt);
+
 				pStmt = conn.prepareStatement(selectStmt);
 				pStmt.setString(1, tableAccessType.getFullName() + "%");
-				 resultSet = pStmt.executeQuery();
-				 
-				 updatePStmt = conn.prepareStatement("update "+ metadataSchema + tableAccessType.getTableName().trim() +" set c_totalnum = ? where c_fullname = ? ");
+				resultSet = pStmt.executeQuery();
+
+				String updateSql = "update " + metadataSchema + tableAccessType.getTableName().trim() +
+						" set c_totalnum = ? where c_fullname = ? ";
+				updatePStmt = conn.prepareStatement(updateSql);
 				//	CallCRCUtil crcUtil = new CallCRCUtil(
 				//			securityType, projectId);
 				String cFullName = "";
 				boolean conceptSkipFlag = false;
 				while (resultSet.next()) {
-					
+
 					cFullName = resultSet.getString("c_fullname");
 					//check for status of ont_process_status giving the process id
 					//if the status is  "aborted", then exit
 					ontProcessStatusType = ontProcessStatusDao.findById(processId);
-					if (ontProcessStatusType.getProcessStatusCd().equalsIgnoreCase("ABORT")) { 
+					if (ontProcessStatusType.getProcessStatusCd().equalsIgnoreCase("ABORT")) {
 						killedFlag = true;
 						break;
 					}
@@ -172,45 +195,46 @@ public class CRCConceptTotalNumUpdateDao extends JdbcDaoSupport {
 					// call frc
 					log.debug("Begin Setfinder query to CRC [" + cFullName + "]");
 					conceptSkipFlag = false;
-					try { 
+					try {
 						masterInstanceResultResponse = CallCRCUtil.callSetfinderQuery("\\\\" + tableAccessType.getTableCd().trim() + cFullName, securityType, projectId);
-					} catch (Throwable  i2b2Ex) { 
+					} catch (Throwable i2b2Ex) {
 						log.info("Patient count caught the exception " + i2b2Ex.getMessage());
 						i2b2Ex.printStackTrace();
 						conceptSkipFlag = true;
 					}
-					
-					if (conceptSkipFlag == false) { 
+
+					if (!conceptSkipFlag) {
 						String queryInstanceId = masterInstanceResultResponse.getQueryInstance().getQueryInstanceId();
 						queryStatusType = masterInstanceResultResponse.getQueryInstance().getQueryStatusType();
 						log.debug("End Setfinder query to CRC[" + cFullName + "]");
 						int totalNum = 0;
-						if (queryStatusType.getName().equalsIgnoreCase("PROCESSING")) { 
+						if (queryStatusType.getName().equalsIgnoreCase("PROCESSING")) {
 							log.info("Setfinder request status is processing query instance id [ " + queryInstanceId + " ]");
-							resultResponse = CallCRCUtil.pollQueryStatus(queryInstanceId, securityType, projectId); 
+							resultResponse = CallCRCUtil.pollQueryStatus(queryInstanceId, securityType, projectId);
 							totalNum = resultResponse.getQueryResultInstance().get(0).getSetSize();
-						} else { 
+						} else {
 							totalNum = masterInstanceResultResponse.getQueryResultInstance().get(0).getSetSize();
 						}
+						log.info("Script [" + totalNum + ", " + cFullName + "]:" + updateSql);
 						//update total_num column
-						updatePStmt.setInt(1,totalNum);
-						updatePStmt.setString(2,cFullName);
+						updatePStmt.setInt(1, totalNum);
+						updatePStmt.setString(2, cFullName);
 						updatePStmt.executeUpdate();
-						
+
 					}
-				    
-				    //delete the setfinder query
+
+					//delete the setfinder query
 					log.debug("Delete query for master id [ " + masterInstanceResultResponse.getQueryMaster().getQueryMasterId() + " ]");
-				    masterResponseType =CallCRCUtil.callDeleteMasterQuery(securityType.getUsername(), masterInstanceResultResponse.getQueryMaster().getQueryMasterId(), securityType, projectId);
-				    log.debug("Deleted query for master id [ " + masterInstanceResultResponse.getQueryMaster().getQueryMasterId() + " ]");
-					
+					masterResponseType = CallCRCUtil.callDeleteMasterQuery(securityType.getUsername(), masterInstanceResultResponse.getQueryMaster().getQueryMasterId(), securityType, projectId);
+					log.debug("Deleted query for master id [ " + masterInstanceResultResponse.getQueryMaster().getQueryMasterId() + " ]");
+
 					//update processed record count
 					totalProcessedRecord++;
-					if (totalProcessedRecord % 10 == 0) { 
+					if (totalProcessedRecord % 10 == 0) {
 						ontProcessStatusDao.updateStatus(processId, new Date(System
-							.currentTimeMillis()), "PROCESSED "+ totalProcessedRecord +"/"+totalRecordToUpdate, "PROCESSING");
+								.currentTimeMillis()), "PROCESSED " + totalProcessedRecord + "/" + totalRecordToUpdate, "PROCESSING");
 					}
-					
+
 				}
 				if (killedFlag) {
 					break;
@@ -219,7 +243,7 @@ public class CRCConceptTotalNumUpdateDao extends JdbcDaoSupport {
 				pStmt.close();
 			}
 			
-			if (killedFlag == false) { 
+			if (!killedFlag) {
 				ontProcessStatusDao.updateStatus(processId, new Date(System
 					.currentTimeMillis()), "PROCESSED "+ totalProcessedRecord +"/"+totalRecordToUpdate, "COMPLETED");
 			} else { 

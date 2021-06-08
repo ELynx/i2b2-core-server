@@ -114,11 +114,9 @@ public class QueryMasterSpringDao extends CRCDAO implements IQueryMasterDao {
 	@Override
 	@SuppressWarnings("unchecked")
 	public List<QtQueryMaster> getQueryMasterByNameInfo(SecurityType userRequestType, FindByChildType findChildType) throws I2B2DAOException {
+		log.info("QueryMasterSpringDao.class: getQueryMasterByNameInfo(SecurityType userRequestType, FindByChildType findChildType)");
 
-
-
-		String rolePath = dataSourceLookup.getDomainId() 
-				+ dataSourceLookup.getProjectPath() 
+		String rolePath = dataSourceLookup.getDomainId() + dataSourceLookup.getProjectPath()
 				+ userRequestType.getUsername();
 
 		//List<String> roles = (List<String>) cache.getRoot().get(rolePath);
@@ -151,13 +149,16 @@ public class QueryMasterSpringDao extends CRCDAO implements IQueryMasterDao {
 					+ "qt_query_master where ";
 			if (roles != null && !roles.contains("MANAGER"))
 				sql += "  user_id = ? and ";
-			sql += "  LOWER(name) like ? and delete_flag = ? "; //and master_type_cd is NULL";
+			if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS))
+				//TODO: check if [ is enough for IRIS
+				sql += " LOWER(name) [ ? and delete_flag = ? "; //and master_type_cd is NULL";
+			else
+				sql += " LOWER(name) like ? and delete_flag = ? "; //and master_type_cd is NULL";
 			if (findChildType.getCreateDate() != null)
 			{
 				InclusiveType inclusive = InclusiveType.NO;
 
-				DateConstrainHandler dateConstrainHandler = new DateConstrainHandler(
-						dataSourceLookup);
+				DateConstrainHandler dateConstrainHandler = new DateConstrainHandler(dataSourceLookup);
 
 				if (findChildType.isAscending())
 					sql +=" and " + dateConstrainHandler
@@ -181,11 +182,6 @@ public class QueryMasterSpringDao extends CRCDAO implements IQueryMasterDao {
 				sql += "asc";
 			else
 				sql += "desc";
-			/*			if (findChildType.isAscending())
-				sql += "desc";
-			else 
-				sql += "asc";
-			 */
 		} 
 		if ((findChildType.getCategory().equals("@")))
 		{
@@ -197,15 +193,13 @@ public class QueryMasterSpringDao extends CRCDAO implements IQueryMasterDao {
 					sql += " limit " + fetchSize;
 			}
 
+			log.info("Script: " + sql);
 			if (roles != null && roles.contains("MANAGER"))
 				queryMasterList = jdbcTemplate.query(sql,
 						new Object[] { str.toLowerCase(), DELETE_NO_FLAG }, queryMasterMapper);
 			else
 				queryMasterList = jdbcTemplate.query(sql,
 						new Object[] { userRequestType.getUsername(),  str.toLowerCase(), DELETE_NO_FLAG }, queryMasterMapper);
-
-
-
 
 			sql = "select ";
 			if (fetchSize > 0
@@ -227,11 +221,14 @@ public class QueryMasterSpringDao extends CRCDAO implements IQueryMasterDao {
 					+ "qi.QUERY_INSTANCE_ID = qri.QUERY_INSTANCE_ID and ";
 			if (roles != null && !roles.contains("MANAGER"))
 				sql += "  qm.user_id = ? and";
-			sql+= " LOWER(qri.DESCRIPTION) like ? and qm.delete_flag = ? "; //and qm.master_type_cd is NULL";
+			if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS))
+				//TODO: check if [ is enough for IRIS
+				sql += " LOWER(qri.DESCRIPTION) [ ? and qm.delete_flag = ? "; //and qm.master_type_cd is NULL";
+			else
+				sql += " LOWER(qri.DESCRIPTION) like ? and qm.delete_flag = ? "; //and qm.master_type_cd is NULL";
 			if (findChildType.getCreateDate() != null)
 			{
-				DateConstrainHandler dateConstrainHandler = new DateConstrainHandler(
-						dataSourceLookup);
+				DateConstrainHandler dateConstrainHandler = new DateConstrainHandler(dataSourceLookup);
 
 				if (!findChildType.isAscending())
 					sql += " and " + dateConstrainHandler
@@ -246,7 +243,6 @@ public class QueryMasterSpringDao extends CRCDAO implements IQueryMasterDao {
 							null,null ,
 							findChildType.getCreateDate());
 				sql += " order by qm.create_date  ";
-
 			}
 			else {
 				sql += " order by qm.create_date  ";
@@ -258,7 +254,6 @@ public class QueryMasterSpringDao extends CRCDAO implements IQueryMasterDao {
 		}  
 		if ((findChildType.getCategory().toLowerCase().equals("@")))
 		{
-
 			if (fetchSize > 0) {
 				if ( dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE))
 					sql = "select * from ( " + sql + " ) where " + "  rownum <= "
@@ -267,6 +262,7 @@ public class QueryMasterSpringDao extends CRCDAO implements IQueryMasterDao {
 					sql += " limit " + fetchSize;
 			}
 
+			log.info("Script: " + sql);
 			if (roles != null && roles.contains("MANAGER"))
 				queryMasterList.addAll(jdbcTemplate.query(sql,
 						new Object[] { str.toLowerCase(), DELETE_NO_FLAG }, queryMasterMapper));
@@ -300,16 +296,17 @@ public class QueryMasterSpringDao extends CRCDAO implements IQueryMasterDao {
 					+ "qri.RESULT_INSTANCE_ID = qp.RESULT_INSTANCE_ID and ";
 			if (roles != null && !roles.contains("MANAGER"))
 				sql += "  qm.user_id = ? and ";
-			if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
-					|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS))
+			if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL))
 				sql += " CAST(qp.patient_num AS TEXT) like ? and qm.delete_flag = ? "; 
-			else 
-				sql += " qp.patient_num like ? and qm.delete_flag = ? "; 
+			else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS))
+				//TODO: check if [ is enough for IRIS
+				sql += " CAST(qp.patient_num AS TEXT) [ ? and qm.delete_flag = ? ";
+			else
+				sql += " qp.patient_num like ? and qm.delete_flag = ? ";
 
 			if (findChildType.getCreateDate() != null)
 			{
-				DateConstrainHandler dateConstrainHandler = new DateConstrainHandler(
-						dataSourceLookup);
+				DateConstrainHandler dateConstrainHandler = new DateConstrainHandler(dataSourceLookup);
 
 				if (!findChildType.isAscending())
 					sql += " and " + dateConstrainHandler
@@ -362,6 +359,8 @@ public class QueryMasterSpringDao extends CRCDAO implements IQueryMasterDao {
 			args = new Object[] {  str.toLowerCase(), DELETE_NO_FLAG };
 		else
 			args = new Object[] { userid, str.toLowerCase(), DELETE_NO_FLAG };
+
+		log.info("Script: " + sql);
 
 		if (!findChildType.getCategory().toLowerCase().equals("@"))
 		{
@@ -480,9 +479,11 @@ public class QueryMasterSpringDao extends CRCDAO implements IQueryMasterDao {
 	 */
 	@Override
 	public QtQueryMaster getQueryDefinition(String masterId) {
+		log.info("QueryMasterSpringDao.class: getQueryDefinition(String masterId)");
 		String sql = "select * from " + getDbSchemaName() + "qt_query_master "
 				+ " where query_master_id = ? and delete_flag = ? ";
 		QtQueryMaster queryMaster = null;
+		log.info("Script [" + Integer.parseInt(masterId) + ", " + DELETE_NO_FLAG + "]: " + sql);
 		try {
 			queryMaster = (QtQueryMaster) jdbcTemplate.queryForObject(sql,
 					new Object[] { Integer.parseInt(masterId), DELETE_NO_FLAG },
@@ -705,7 +706,7 @@ public class QueryMasterSpringDao extends CRCDAO implements IQueryMasterDao {
 						queryMaster.getGeneratedSql(), i2b2RequestXml, pmXml };
 				update(object);
 			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
-				queryMasterIdentityId = Math.abs((int) new Date().getTime()); //jdbc.queryForObject(SEQUENCE_INTERSYSTEMS_IRIS, Integer.class);
+				queryMasterIdentityId = jdbc.queryForObject(SEQUENCE_INTERSYSTEMS_IRIS, Integer.class);
 				object = new Object[] { queryMasterIdentityId,
 						queryMaster.getName(), queryMaster.getUserId(),
 						queryMaster.getGroupId(),

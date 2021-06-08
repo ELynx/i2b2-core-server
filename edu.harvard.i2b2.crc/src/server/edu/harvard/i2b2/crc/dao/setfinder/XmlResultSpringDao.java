@@ -91,14 +91,11 @@ public class XmlResultSpringDao extends CRCDAO implements IXmlResultDao  {
 			xmlResultId = jdbcTemplate.queryForObject("SELECT @@IDENTITY", Integer.class);
 		} else 	if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
 						|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS) ) {
-			//TODO: Fix sequence function for IRIS
-			xmlResultId = (int) Math.abs(new Date().getTime());
-//			xmlResultId = jdbcTemplate.queryForObject(
-//					dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL) ?
-//							SEQUENCE_POSTGRESQL :  SEQUENCE_INTERSYSTEMS_IRIS,
-//					Integer.class);
-			jdbcTemplate.update(POSTGRESQL_SQL, new Object[]{xmlResultId,Integer.parseInt(resultInstanceId),xmlValue});
-
+			xmlResultId = jdbcTemplate.queryForObject(
+					dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL) ?
+							SEQUENCE_POSTGRESQL :  SEQUENCE_INTERSYSTEMS_IRIS,
+					Integer.class);
+			jdbcTemplate.update(POSTGRESQL_SQL, new Object[]{xmlResultId, Integer.parseInt(resultInstanceId), xmlValue});
 		}
 		return String.valueOf(xmlResultId);
 	}

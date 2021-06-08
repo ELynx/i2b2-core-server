@@ -328,7 +328,6 @@ public class QueryInstanceSpringDao extends CRCDAO implements IQueryInstanceDao 
 		private String INSERT_INTERSYSTEMS_IRIS = "";
 		private String SEQUENCE_INTERSYSTEMS_IRIS = "";
 
-		
 		private DataSourceLookup dataSourceLookup = null;
 
 		public SaveQueryInstance(DataSource dataSource, String dbSchemaName,
@@ -434,7 +433,7 @@ public class QueryInstanceSpringDao extends CRCDAO implements IQueryInstanceDao 
 						queryInstance.getQtQueryStatusType().getStatusTypeId(),
 						queryInstance.getDeleteFlag() };
 			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
-				queryInstanceId = Math.abs((int) new Date().getTime()); //jdbc.queryForObject(SEQUENCE_INTERSYSTEMS_IRIS, Integer.class);
+				queryInstanceId = jdbc.queryForObject(SEQUENCE_INTERSYSTEMS_IRIS, Integer.class);
 				queryInstance.setQueryInstanceId(String.valueOf(queryInstanceId));
 				object = new Object[] { queryInstance.getQueryInstanceId(),
 						queryInstance.getQtQueryMaster().getQueryMasterId(),
@@ -447,14 +446,10 @@ public class QueryInstanceSpringDao extends CRCDAO implements IQueryInstanceDao 
 			}
 
 			update(object);
-			if (dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.SQLSERVER)) {
+			if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)) {
 				int queryInstanceIdentityId = jdbc
 						.queryForObject("SELECT @@IDENTITY", Integer.class);
-
-				queryInstance.setQueryInstanceId(String
-						.valueOf(queryInstanceIdentityId));
-				
+				queryInstance.setQueryInstanceId(String.valueOf(queryInstanceIdentityId));
 			}
 		}
 	}

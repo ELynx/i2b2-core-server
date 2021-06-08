@@ -23,22 +23,18 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 import javax.sql.DataSource;
 
-import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.support.JdbcDaoSupport;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-import antlr.StringUtils;
 import edu.harvard.i2b2.common.exception.I2B2DAOException;
 import edu.harvard.i2b2.common.exception.I2B2Exception;
 import edu.harvard.i2b2.common.util.db.JDBCUtil;
@@ -146,18 +142,20 @@ public class ConceptDao extends JdbcDaoSupport {
 
 		final boolean obfuscatedUserFlag = Roles.getInstance().isRoleOfuscated(projectInfo);
 
-
 		List queryResult = null;
-
 
 		String categoriesSql = "select c_table_cd, " + parameters + " from " +  metadataSchema +  "table_access ";
 
 		String hidden = "";
-		if(returnType.isHiddens() == false)
-			hidden = " where c_visualattributes not like '_H%'";
+		if(!returnType.isHiddens()) {
+			if(dbInfo.getDb_serverType().equalsIgnoreCase("INTERSYSTEMS IRIS"))
+				hidden = " where (not c_visualattributes %STARTSWITH '_H')";
+			else
+				hidden = " where c_visualattributes not like '_H%'";
+		}
 
 		String synonym = "";
-		if(returnType.isSynonyms() == false)
+		if(!returnType.isSynonyms())
 			synonym = " c_synonym_cd = 'N'";
 
 		String whereClause = hidden;
@@ -179,7 +177,7 @@ public class ConceptDao extends JdbcDaoSupport {
 		//}
 		log.debug("result size = " + queryResult.size());
 
-		if (returnType.isBlob() == true && queryResult != null){
+		if (returnType.isBlob() && queryResult != null){
 			Iterator itr = queryResult.iterator();
 			while (itr.hasNext()){
 				ConceptType child = (ConceptType) itr.next();
@@ -206,8 +204,6 @@ public class ConceptDao extends JdbcDaoSupport {
 		return queryResult;
 	}
 
-
-
 	public List findChildrenByParent(final GetChildrenDataMessage childrenMsg, ProjectType projectInfo, DBInfoType dbInfo) throws I2B2DAOException, I2B2Exception, JAXBUtilException{
 		log.info("ConceptDao.class: findChildrenByParent(final GetChildrenDataMessage childrenMsg, ProjectType projectInfo, DBInfoType dbInfo)");
 		final GetChildrenType childrenType = childrenMsg.getChildrenType();
@@ -224,7 +220,7 @@ public class ConceptDao extends JdbcDaoSupport {
 		else if (childrenType.getType().equals("all")){
 			parameters = CORE + ALL;
 		}
-		if(childrenType.isBlob() == true)
+		if(childrenType.isBlob())
 			parameters = parameters + BLOB;
 
 		String metadataSchema = dbInfo.getDb_fullSchema();
@@ -279,39 +275,41 @@ public class ConceptDao extends JdbcDaoSupport {
 		}
 
 		String hidden = "";
-		if(!childrenType.isHiddens() && !dbInfo.getDb_serverType().toUpperCase().equals("INTERSYSTEMS IRIS"))
-			hidden = " and c_visualattributes not like '_H%'";
-		else
-			hidden = " and not(c_visualattributes %STARTSWITH '_H')";
+		if(!childrenType.isHiddens()) {
+			if (dbInfo.getDb_serverType().equalsIgnoreCase("INTERSYSTEMS IRIS"))
+				hidden = " and (not c_visualattributes %STARTSWITH '_H')";
+			else
+				hidden = " and c_visualattributes not like '_H%'";
+		}
 
 		String synonym = "";
 		if(!childrenType.isSynonyms())
 			synonym = " and c_synonym_cd = 'N'";
 		String sql;
-		if(!dbInfo.getDb_serverType().toUpperCase().equals("INTERSYSTEMS IRIS"))
-			sql = "select " + parameters + " from " + metadataSchema + tableName + " where c_fullname like ? " +
-					(!dbInfo.getDb_serverType().toUpperCase().equals("POSTGRESQL") ? "{ESCAPE '?'}" : "") +
-					" and c_hlevel = ? ";
-		else
+		if (dbInfo.getDb_serverType().equalsIgnoreCase("INTERSYSTEMS IRIS"))
 			sql = "select " + parameters + " from " + metadataSchema + tableName + " where c_fullname %STARTSWITH ? " +
 					" and c_hlevel = ? ";
+		else
+			sql = "select " + parameters + " from " + metadataSchema + tableName + " where c_fullname like ? " +
+				(!dbInfo.getDb_serverType().equalsIgnoreCase("POSTGRESQL") ? "{ESCAPE '?'}" : "") +
+				" and c_hlevel = ? ";
 		sql = sql + hidden + synonym + " order by upper(c_name) ";
 		log.info("Script: " + sql);
 		//log.info(sql + " " + path + " " + level);
 		boolean obfuscatedUserFlag = Roles.getInstance().isRoleOfuscated(projectInfo);
 		//ParameterizedRowMapper<ConceptType> mapper = getMapper(new NodeType(childrenType),obfuscatedUserFlag, dbInfo.getDb_serverType());
 
-		if(dbInfo.getDb_serverType().toUpperCase().equals("SQLSERVER")){
+		if(dbInfo.getDb_serverType().equalsIgnoreCase("SQLSERVER")){
 			searchPath = StringUtil.escapeSQLSERVER(path);
 			searchPath += "%";
 			//			log.info("escaped searchPath is " + searchPath);
 		}
 
-		else if(dbInfo.getDb_serverType().toUpperCase().equals("ORACLE")){
+		else if(dbInfo.getDb_serverType().equalsIgnoreCase("ORACLE")){
 			searchPath = StringUtil.escapeORACLE(path); 
 			searchPath += "%";
 		}
-		else if(dbInfo.getDb_serverType().toUpperCase().equals("POSTGRESQL")){
+		else if(dbInfo.getDb_serverType().equalsIgnoreCase("POSTGRESQL")){
 			searchPath = StringUtil.escapePOSTGRESQL(path); 
 			searchPath += "%";
 		}
@@ -324,7 +322,7 @@ public class ConceptDao extends JdbcDaoSupport {
 		try {
 			queryResult = jt.query(sql,
 					getConceptNodeMapper(new NodeType(childrenType),obfuscatedUserFlag, dbInfo.getDb_serverType()),
-					dbInfo.getDb_serverType().toUpperCase().equals("INTERSYSTEMS IRIS") ? path : searchPath,
+					dbInfo.getDb_serverType().equalsIgnoreCase("INTERSYSTEMS IRIS") ? path : searchPath,
 					(level + 1) );
 		} catch (Exception e) {
 			log.error("Get Children " + e.getMessage());
@@ -360,19 +358,20 @@ public class ConceptDao extends JdbcDaoSupport {
 						m_applied_pathSql = m_applied_pathSql + " or m_applied_path = '" + modPath + "'" ;
 					}
 					sqlCount = sqlCount + "(select c_fullname from " + metadataSchema+ tableName  + " where " +
-							(dbInfo.getDb_serverType().toUpperCase().equals("INTERSYSTEMS IRIS") ? "(" : "") +
+							(dbInfo.getDb_serverType().equalsIgnoreCase("INTERSYSTEMS IRIS") ? "(" : "") +
 							" c_hlevel = 1 and m_exclusion_cd is null and " + m_applied_pathSql + " )" +
-							(dbInfo.getDb_serverType().toUpperCase().equals("INTERSYSTEMS IRIS") ? ")" : "");
+							(dbInfo.getDb_serverType().equalsIgnoreCase("INTERSYSTEMS IRIS") ? ")" : "");
 
-					if(dbInfo.getDb_serverType().toUpperCase().equals("ORACLE"))
+					if(dbInfo.getDb_serverType().equalsIgnoreCase("ORACLE"))
 						sqlCount = sqlCount + " MINUS ";
-					else if(dbInfo.getDb_serverType().toUpperCase().equals("INTERSYSTEMS IRIS"))
+					else if(dbInfo.getDb_serverType().equalsIgnoreCase("INTERSYSTEMS IRIS"))
 						sqlCount = sqlCount + " and c_fullname not in (";
 					else
 						sqlCount = sqlCount + " EXCEPT ";
 
-					sqlCount = sqlCount+ " (select c_fullname from " + metadataSchema+ tableName  + " where m_exclusion_cd is not null and " + m_applied_pathSql + " )))" +
-							(dbInfo.getDb_serverType().toUpperCase().equals("INTERSYSTEMS IRIS") ? ")" : "");
+					sqlCount = sqlCount+ " (select c_fullname from " + metadataSchema+ tableName  +
+							" where m_exclusion_cd is not null and " + m_applied_pathSql + " )))" +
+							(dbInfo.getDb_serverType().equalsIgnoreCase("INTERSYSTEMS IRIS") ? ")" : "");
 					log.info("Script: " + sqlCount);
 
 					try {
@@ -419,7 +418,7 @@ public class ConceptDao extends JdbcDaoSupport {
 		else if (termInfoType.getType().equals("all")){
 			parameters = CORE + ALL;
 		}
-		if(termInfoType.isBlob() == true)
+		if(termInfoType.isBlob())
 			parameters = parameters + BLOB;
 
 		String metadataSchema = dbInfo.getDb_fullSchema();
@@ -432,15 +431,16 @@ public class ConceptDao extends JdbcDaoSupport {
 			throw e;
 		}
 
-
 		boolean ofuscatedUserFlag = Roles.getInstance().isRoleOfuscated(projectInfo);
 
 		//tableCd to table name conversion
-
-
 		String hidden = "";
-		if(termInfoType.isHiddens() == false)
-			hidden = " and c_visualattributes not like '_H%'";
+		if(!termInfoType.isHiddens()) {
+			if (dbInfo.getDb_serverType().equalsIgnoreCase("INTERSYSTEMS IRIS"))
+				hidden = " and (not c_visualattributes %STARTSWITH '_H')";
+			else
+				hidden = " and c_visualattributes not like '_H%'";
+		}
 
 		//extract table code
 		String tableCd = StringUtil.getTableCd(termInfoType.getSelf());
@@ -533,7 +533,7 @@ public class ConceptDao extends JdbcDaoSupport {
 		else if (vocabType.getType().equals("all")){
 			parameters = CORE + ALL;
 		}
-		if(vocabType.isBlob() == true)
+		if(vocabType.isBlob())
 			parameters = parameters + BLOB;
 
 		String metadataSchema = dbInfo.getDb_fullSchema();
@@ -547,13 +547,7 @@ public class ConceptDao extends JdbcDaoSupport {
 			I2B2Exception e = new I2B2Exception("No role found for user");
 			throw e;
 		}
-
-
-
 		//tableCd to table name + fullname conversion
-
-
-
 		//extract table code
 		String tableCd = vocabType.getCategory();
 		List<ConceptType> categoryResult;
@@ -561,7 +555,14 @@ public class ConceptDao extends JdbcDaoSupport {
 		List<ConceptType> queryResult = null;
 		if (tableCd.equals("@"))
 		{
-			String tableSql = "select distinct(c_table_name), c_fullname, c_name from " + metadataSchema + "table_access where c_visualattributes not like '_H%'" ;
+			String whereCause;
+			if (dbInfo.getDb_serverType().equalsIgnoreCase("INTERSYSTEMS IRIS"))
+				whereCause = " where (not c_visualattributes %STARTSWITH '_H')";
+			else
+				whereCause = " where c_visualattributes not like '_H%'";
+
+			String tableSql = "select distinct(c_table_name), c_fullname, c_name from " + metadataSchema +
+					"table_access " + whereCause;
 			log.info("Script: " + tableSql);
 			try {
 				categoryResult = jt.query(tableSql, new GetConceptNameMapper());	    
@@ -569,8 +570,6 @@ public class ConceptDao extends JdbcDaoSupport {
 				log.error("Search by Name " + e.getMessage());
 				throw new I2B2DAOException("Database Error");
 			}
-
-
 		} else { 
 			String tableSql = "select distinct(c_table_name), c_fullname, c_name from " + metadataSchema + "table_access where c_table_cd = ? " ;
 			log.info("Script: " + tableSql);
@@ -604,34 +603,51 @@ public class ConceptDao extends JdbcDaoSupport {
 				category = category.replaceAll("'", "''");
 			}
 
-			if(dbInfo.getDb_serverType().toUpperCase().equals("SQLSERVER")){
+			if(dbInfo.getDb_serverType().equalsIgnoreCase("SQLSERVER")){
 				category = StringUtil.escapeSQLSERVER(category);
 			}
-			else if(dbInfo.getDb_serverType().toUpperCase().equals("ORACLE")){
+			else if(dbInfo.getDb_serverType().equalsIgnoreCase("ORACLE")){
 				category = StringUtil.escapeORACLE(category);
 			}
-			else if(dbInfo.getDb_serverType().toUpperCase().equals("POSTGRESQL")){
+			else if(dbInfo.getDb_serverType().equalsIgnoreCase("POSTGRESQL")){
 				category = StringUtil.escapePOSTGRESQL(category); 
 			}		
 
 
 			// dont do the sql injection replace; it breaks the service.
 			if(vocabType.getMatchStr().getStrategy().equals("exact")) {
-				nameInfoSql = "select " + parameters  + " from " + metadataSchema+categoryResult.get(i).getTablename() + " where upper(c_name) = ? and c_fullname like '" + category +	"%' " + (!dbInfo.getDb_serverType().toUpperCase().equals("POSTGRESQL") ? "{ESCAPE '?'}" : "" )	;  //{ESCAPE '?'}";    
+				String causeFullname;
+				//TODO: check if %STARTSWITH is enough for IRIS
+				if (dbInfo.getDb_serverType().equalsIgnoreCase("INTERSYSTEMS IRIS"))
+					causeFullname = " and c_fullname %STARTSWITH '" + category + "' ";
+				else
+					causeFullname = " and c_fullname like '" + category + "%' ";
+				nameInfoSql = "select " + parameters  + " from " + metadataSchema+categoryResult.get(i).getTablename() +
+						" where upper(c_name) = ? " + causeFullname +
+						(!dbInfo.getDb_serverType().equalsIgnoreCase("POSTGRESQL") ? "{ESCAPE '?'}" : "" )	;  //{ESCAPE '?'}";
 				compareName = value.toUpperCase();  	
 			}
 
 			else if(vocabType.getMatchStr().getStrategy().equals("left")){
-				nameInfoSql = "select " + parameters  + " from " + metadataSchema+categoryResult.get(i).getTablename() +" where upper(c_name) like ? " + (!dbInfo.getDb_serverType().toUpperCase().equals("POSTGRESQL") ? "{ESCAPE '?'}" : "" ) + " and c_fullname like '" + category +"%' " + (!dbInfo.getDb_serverType().toUpperCase().equals("POSTGRESQL") ? "{ESCAPE '?'}" : "" )	;  //{ESCAPE '?'}";    
-				if(dbInfo.getDb_serverType().toUpperCase().equals("SQLSERVER")){
+				//TODO: check if [ and %STARTSWITH are enough for IRIS
+				if (dbInfo.getDb_serverType().equalsIgnoreCase("INTERSYSTEMS IRIS"))
+					nameInfoSql = "select " + parameters  + " from " + metadataSchema+categoryResult.get(i).getTablename() +
+							" where upper(c_name) [ ? " + " and c_fullname %STARTSWITH '" + category + "'";
+				else
+					nameInfoSql = "select " + parameters  + " from " + metadataSchema+categoryResult.get(i).getTablename() +
+						" where upper(c_name) like ? " +
+						(!dbInfo.getDb_serverType().equalsIgnoreCase("POSTGRESQL") ? "{ESCAPE '?'}" : "" ) +
+						" and c_fullname like '" + category +"%' " +
+						(!dbInfo.getDb_serverType().equalsIgnoreCase("POSTGRESQL") ? "{ESCAPE '?'}" : "" )	;  //{ESCAPE '?'}";
+				if (dbInfo.getDb_serverType().equalsIgnoreCase("SQLSERVER")) {
 					compareName = StringUtil.escapeSQLSERVER(vocabType.getMatchStr().getValue().toUpperCase());
 					//compareName = compareName.replaceAll("\\[", "[[]");
 				}
-				else if(dbInfo.getDb_serverType().toUpperCase().equals("ORACLE")){
+				else if(dbInfo.getDb_serverType().equalsIgnoreCase("ORACLE")) {
 					compareName = StringUtil.escapeORACLE(vocabType.getMatchStr().getValue().toUpperCase());
 					//compareName = compareName.replaceAll("\\[", "[[]");
 				}
-				else if(dbInfo.getDb_serverType().toUpperCase().equals("POSTGRESQL")){
+				else if(dbInfo.getDb_serverType().equalsIgnoreCase("POSTGRESQL")){
 					compareName = StringUtil.escapePOSTGRESQL(vocabType.getMatchStr().getValue().toUpperCase());
 					//compareName = compareName.replaceAll("\\[", "[[]");
 				}
@@ -640,14 +656,24 @@ public class ConceptDao extends JdbcDaoSupport {
 			}
 
 			else if(vocabType.getMatchStr().getStrategy().equals("right")) {
-				nameInfoSql = "select " + parameters  + " from " + metadataSchema+categoryResult.get(i).getTablename() +" where upper(c_name) like ? " + (!dbInfo.getDb_serverType().toUpperCase().equals("POSTGRESQL") ? "{ESCAPE '?'}" : "" ) + " and c_fullname like '" + category +"%' " + (!dbInfo.getDb_serverType().toUpperCase().equals("POSTGRESQL") ? "{ESCAPE '?'}" : "" )	;  //{ESCAPE '?'}";     {ESCAPE '?'}";
-				if(dbInfo.getDb_serverType().toUpperCase().equals("SQLSERVER")){
+				//TODO: check if [ and %STARTSWITH are enough for IRIS
+				if (dbInfo.getDb_serverType().equalsIgnoreCase("INTERSYSTEMS IRIS"))
+					nameInfoSql = "select " + parameters + " from " + metadataSchema + categoryResult.get(i).getTablename() +
+							" where upper(c_name) [ ? and c_fullname %STARTSWITH '" + category + "'";
+				else
+					nameInfoSql = "select " + parameters + " from " + metadataSchema + categoryResult.get(i).getTablename() +
+							" where upper(c_name) like ? " +
+							(!dbInfo.getDb_serverType().equalsIgnoreCase("POSTGRESQL") ? "{ESCAPE '?'}" : "") +
+							" and c_fullname like '" + category + "%' " +
+							(!dbInfo.getDb_serverType().equalsIgnoreCase("POSTGRESQL") ? "{ESCAPE '?'}" : "");  //{ESCAPE '?'}";     {ESCAPE '?'}";
+
+				if(dbInfo.getDb_serverType().equalsIgnoreCase("SQLSERVER")){
 					compareName = StringUtil.escapeSQLSERVER(vocabType.getMatchStr().getValue().toUpperCase());
 				}
-				else if(dbInfo.getDb_serverType().toUpperCase().equals("ORACLE")){
+				else if(dbInfo.getDb_serverType().equalsIgnoreCase("ORACLE")){
 					compareName = StringUtil.escapeORACLE(vocabType.getMatchStr().getValue().toUpperCase());
 				}
-				else if(dbInfo.getDb_serverType().toUpperCase().equals("POSTGRESQL")){
+				else if(dbInfo.getDb_serverType().equalsIgnoreCase("POSTGRESQL")){
 					compareName = StringUtil.escapePOSTGRESQL(vocabType.getMatchStr().getValue().toUpperCase());
 				}
 
@@ -658,58 +684,75 @@ public class ConceptDao extends JdbcDaoSupport {
 			}
 
 			else if(vocabType.getMatchStr().getStrategy().equals("contains")) {
-				if(!(value.contains(" "))){
-					nameInfoSql = "select " + parameters  + " from " + metadataSchema+categoryResult.get(i).getTablename() +" where upper(c_name) like ? " + (!dbInfo.getDb_serverType().toUpperCase().equals("POSTGRESQL") ? "{ESCAPE '?'}" : "" ) + " and c_fullname like '" + category +"%' " + (!dbInfo.getDb_serverType().toUpperCase().equals("POSTGRESQL") ? "{ESCAPE '?'}" : "" ) + "";
-					if(dbInfo.getDb_serverType().toUpperCase().equals("SQLSERVER")){
+				if(!(value.contains(" "))) {
+					//TODO: check if [ and %STARTSWITH are enough for IRIS
+					if (dbInfo.getDb_serverType().equalsIgnoreCase("INTERSYSTEMS IRIS"))
+						nameInfoSql = "select " + parameters  + " from " + metadataSchema+categoryResult.get(i).getTablename() +
+							" where upper(c_name) [ ? and c_fullname %STARTSWITH '" + category + "'";
+					else
+						nameInfoSql = "select " + parameters  + " from " + metadataSchema+categoryResult.get(i).getTablename() +
+								" where upper(c_name) like ? " +
+								(!dbInfo.getDb_serverType().equalsIgnoreCase("POSTGRESQL") ? "{ESCAPE '?'}" : "" ) +
+								" and c_fullname like '" + category + "%' " +
+								(!dbInfo.getDb_serverType().equalsIgnoreCase("POSTGRESQL") ? "{ESCAPE '?'}" : "" ) + "";
+					if(dbInfo.getDb_serverType().equalsIgnoreCase("SQLSERVER")){
 						compareName = StringUtil.escapeSQLSERVER(vocabType.getMatchStr().getValue().toUpperCase());
 					}
-					else if(dbInfo.getDb_serverType().toUpperCase().equals("ORACLE")){
+					else if(dbInfo.getDb_serverType().equalsIgnoreCase("ORACLE")){
 						compareName = StringUtil.escapeORACLE(vocabType.getMatchStr().getValue().toUpperCase());
 					}
-					else if(dbInfo.getDb_serverType().toUpperCase().equals("POSTGRESQL")){
+					else if(dbInfo.getDb_serverType().equalsIgnoreCase("POSTGRESQL")){
 						compareName = StringUtil.escapePOSTGRESQL(vocabType.getMatchStr().getValue().toUpperCase());
 					}
 					compareName =  "%" + compareName + "%";
 					//if(dbInfo.getDb_serverType().toUpperCase().equals("SQLSERVER")){
 					//		compareName = compareName.replaceAll("\\[", "[[]");
 					//	}
-				}else{
+				}else {
 					nameInfoSql = "select " + parameters  + " from " + metadataSchema+categoryResult.get(i).getTablename();
-					if(dbInfo.getDb_serverType().toUpperCase().equals("SQLSERVER")){
+					if(dbInfo.getDb_serverType().equalsIgnoreCase("SQLSERVER")) {
 						compareName = StringUtil.escapeSQLSERVER(vocabType.getMatchStr().getValue().toUpperCase());
 					}
-					else if(dbInfo.getDb_serverType().toUpperCase().equals("ORACLE")){
+					else if(dbInfo.getDb_serverType().equalsIgnoreCase("ORACLE")) {
 						compareName = StringUtil.escapeORACLE(vocabType.getMatchStr().getValue().toUpperCase());
 					}
-					else if(dbInfo.getDb_serverType().toUpperCase().equals("POSTGRESQL")){
+					else if(dbInfo.getDb_serverType().equalsIgnoreCase("POSTGRESQL")) {
 						compareName = StringUtil.escapePOSTGRESQL(vocabType.getMatchStr().getValue().toUpperCase());
 					}
 
 					//		if(dbInfo.getDb_serverType().toUpperCase().equals("SQLSERVER")){
 					//			value = value.replaceAll("\\[", "[[]");
 					//		}
-					//	WAS
-					//		nameInfoSql = nameInfoSql + parseMatchString(value)+ " and c_fullname like '" + category +"%'" + (!dbInfo.getDb_serverType().toUpperCase().equals("POSTGRESQL") ? "{ESCAPE '?'}" : "" ) + "";;
-					// !dbInfo.getDb_serverType().toUpperCase().equals("POSTGRESQL") ? compareName.replaceAll("'", "''") : compareName 
-					nameInfoSql = nameInfoSql + parseMatchString((compareName.replaceAll("'", "''")), dbInfo)+ " and c_fullname like '" + category +"%' " + (!dbInfo.getDb_serverType().toUpperCase().equals("POSTGRESQL") ? "{ESCAPE '?'}" : "" ) + " ";;
+					//	WAS					//		nameInfoSql = nameInfoSql + parseMatchString(value)+ " and c_fullname like '" + category +"%'" + (!dbInfo.getDb_serverType().toUpperCase().equals("POSTGRESQL") ? "{ESCAPE '?'}" : "" ) + "";;
+					// !dbInfo.getDb_serverType().toUpperCase().equals("POSTGRESQL") ? compareName.replaceAll("'", "''") : compareName
 
+					//TODO: check if  %STARTSWITH is enough for IRIS
+					if (dbInfo.getDb_serverType().equalsIgnoreCase("INTERSYSTEMS IRIS"))
+						nameInfoSql = nameInfoSql + parseMatchString((compareName.replaceAll("'", "''")), dbInfo)+
+							" and c_fullname %STARTSWITH '" + category + "'";
+					else
+						nameInfoSql = nameInfoSql + parseMatchString((compareName.replaceAll("'", "''")), dbInfo)+
+							" and c_fullname like '" + category + "%' " +
+							(!dbInfo.getDb_serverType().equalsIgnoreCase("POSTGRESQL") ? "{ESCAPE '?'}" : "" ) + " ";
 					compareName = null;
 				}
 			}
 
-
 			String hidden = "";// and c_totalnum != 0 ";
-			if(vocabType.isHiddens() == false)
-				hidden += " and c_visualattributes not like '_H%'";
-
+			if(!vocabType.isHiddens())
+				if (dbInfo.getDb_serverType().equalsIgnoreCase("INTERSYSTEMS IRIS"))
+					hidden = " and (not c_visualattributes %STARTSWITH '_H')";
+				else
+					hidden += " and c_visualattributes not like '_H%'";
 
 			String synonym = "";
-			if(vocabType.isSynonyms() == false)
+			if(!vocabType.isSynonyms())
 				synonym = " and c_synonym_cd = 'N'";
 
-			nameInfoSql = nameInfoSql + hidden + synonym + " order by c_hlevel, c_totalnum, upper(c_name) asc ";  
+			nameInfoSql = nameInfoSql + hidden + synonym + " order by c_hlevel, c_totalnum, upper(c_name) asc ";
 
-			log.info("nameInfoSql:" + nameInfoSql + " " +compareName);
+			log.info("Script [" + compareName + "]: " + nameInfoSql + " ");
+			log.info("nameInfoSql:" + nameInfoSql + " " + compareName);
 			boolean obfuscatedUserFlag = Roles.getInstance().isRoleOfuscated(projectInfo);
 			//ParameterizedRowMapper<ConceptType> mapper = getMapper(new NodeType(vocabType),obfuscatedUserFlag, dbInfo.getDb_serverType());
 
@@ -796,7 +839,7 @@ public class ConceptDao extends JdbcDaoSupport {
 							skipCount++;
 						}
 						else {
-							if(dbInfo.getDb_serverType().toUpperCase().equals("SQLSERVER")){
+							if(dbInfo.getDb_serverType().equalsIgnoreCase("SQLSERVER")){
 								sql = "WITH pathnames ";
 								sql += " AS";
 								sql += " (";
@@ -812,12 +855,8 @@ public class ConceptDao extends JdbcDaoSupport {
 								sql += " SELECT distinct c_name, c_fullname, c_pathorder as c_hlevel";
 								sql += " FROM   pathnames";
 								sql += " order by c_pathorder desc ";
-		
 							}
-		
-							else if(dbInfo.getDb_serverType().toUpperCase().equals("ORACLE")){
-		
-		
+							else if(dbInfo.getDb_serverType().equalsIgnoreCase("ORACLE")) {
 								sql = "WITH pathnames (c_name, c_fullname, c_path, c_pathorder) ";
 								sql += " AS ";
 								sql += " ( ";
@@ -834,8 +873,8 @@ public class ConceptDao extends JdbcDaoSupport {
 								sql += " SELECT distinct c_name, c_fullname, c_pathorder as c_hlevel";
 								sql += " FROM   pathnames";
 								sql += " order by c_pathorder desc ";
-							} 		else if(dbInfo.getDb_serverType().toUpperCase().equals("POSTGRESQL")){
-		
+							} else if (dbInfo.getDb_serverType().equalsIgnoreCase("POSTGRESQL")
+										|| dbInfo.getDb_serverType().equalsIgnoreCase("INTERSYSTEMS IRIS") ) {
 								sql  = "WITH RECURSIVE pathnames ";
 								sql += " AS";
 								sql += " (";
@@ -933,7 +972,7 @@ public class ConceptDao extends JdbcDaoSupport {
 		else if (vocabType.getType().equals("all")){
 			parameters = CORE + ALL;
 		}
-		if(vocabType.isBlob() == true)
+		if(vocabType.isBlob())
 			parameters = parameters + BLOB;
 
 		String metadataSchema = dbInfo.getDb_fullSchema();
@@ -955,12 +994,17 @@ public class ConceptDao extends JdbcDaoSupport {
 
 		String hidden = "";
 		String whereHidden = "";
-		if(vocabType.isHiddens() == false) {
-			hidden = " and c_visualattributes not like '_H%'";	
-			whereHidden = " where c_visualattributes not like '_H%'";
+		if(!vocabType.isHiddens()) {
+			if (dbInfo.getDb_serverType().equalsIgnoreCase("INTERSYSTEMS IRIS")) {
+				hidden = " and (not c_visualattributes %STARTSWITH '_H')";
+				whereHidden = " where (not c_visualattributes %STARTSWITH '_H')";
+			} else {
+				hidden = " and c_visualattributes not like '_H%'";
+				whereHidden = " where c_visualattributes not like '_H%'";
+			}
 		}
 		//no table code provided so check all tables user has access to
-		List tableNames=null;
+		List tableNames = null;
 		String tableSql = "select distinct(c_table_name) from " + metadataSchema + "table_access " + whereHidden;
 		log.info("Script: " + tableSql);
 		try {
@@ -971,7 +1015,7 @@ public class ConceptDao extends JdbcDaoSupport {
 		}
 
 		String synonym = "";
-		if(vocabType.isSynonyms() == false)
+		if(!vocabType.isSynonyms())
 			synonym = " and c_synonym_cd = 'N'";
 
 		// I have to do this the hard way because there are a dynamic number of codes to pass in
@@ -990,28 +1034,43 @@ public class ConceptDao extends JdbcDaoSupport {
 
 		else { // need escape logic for like operator
 
-			if(dbType.toUpperCase().equals("SQLSERVER")){
+			if(dbType.equalsIgnoreCase("SQLSERVER")){
 				compareCode = StringUtil.escapeSQLSERVER(compareCode);
 			}
-			else if(dbType.toUpperCase().equals("ORACLE")){
+			else if(dbType.equalsIgnoreCase("ORACLE")){
 				compareCode = StringUtil.escapeORACLE(compareCode);
 			}
-			else if(dbType.toUpperCase().equals("POSTGRESQL")){
+			else if(dbType.equalsIgnoreCase("POSTGRESQL")){
 				compareCode = StringUtil.escapePOSTGRESQL(compareCode);
 			}
 
-			if(vocabType.getMatchStr().getStrategy().equals("left")){
-				whereClause = " where upper(c_basecode) like '" + compareCode + "%' " + (!dbInfo.getDb_serverType().toUpperCase().equals("POSTGRESQL") ? "{ESCAPE '?'}" : "" )	;  //{ESCAPE '?'}";    
+			if (vocabType.getMatchStr().getStrategy().equals("left")) {
+				if(dbType.equalsIgnoreCase("INTERSYSTEMS IRIS"))
+					whereClause = " where upper(c_basecode) [ '" + compareCode + "%' ";
+				else
+					whereClause = " where upper(c_basecode) like '" + compareCode + "%' " +
+							(!dbInfo.getDb_serverType().equalsIgnoreCase("POSTGRESQL") ? "{ESCAPE '?'}" : "" );  //{ESCAPE '?'}";
 			}
 
 			else if(vocabType.getMatchStr().getStrategy().equals("right")) {
 				compareCode = compareCode.replaceFirst(":", ":%");
-				whereClause = " where upper(c_basecode) like '" +  compareCode + "' " + (!dbInfo.getDb_serverType().toUpperCase().equals("POSTGRESQL") ? "{ESCAPE '?'}" : "" )	;  //{ESCAPE '?'}";    
+
+				//TODO: check if [ is enough for IRIS
+				if(dbType.equalsIgnoreCase("INTERSYSTEMS IRIS"))
+					whereClause = " where upper(c_basecode) [ '" +  compareCode + "' ";
+				else
+					whereClause = " where upper(c_basecode) like '" +  compareCode + "' " +
+							(!dbInfo.getDb_serverType().equalsIgnoreCase("POSTGRESQL") ? "{ESCAPE '?'}" : "" )	;  //{ESCAPE '?'}";
 			}
 
 			else if(vocabType.getMatchStr().getStrategy().equals("contains")) {
 				compareCode = compareCode.replaceFirst(":", ":%");
-				whereClause = " where upper(c_basecode) like '" + compareCode + "%' " + (!dbInfo.getDb_serverType().toUpperCase().equals("POSTGRESQL") ? "{ESCAPE '?'}" : "" )	;  //{ESCAPE '?'}";    
+				//TODO: check if [ and %STARTSWITH are enough for IRIS
+				if(dbType.equalsIgnoreCase("INTERSYSTEMS IRIS"))
+					whereClause = " where upper(c_basecode) [ '" + compareCode + "%' ";
+				else
+					whereClause = " where upper(c_basecode) like '" + compareCode + "%' " +
+							(!dbInfo.getDb_serverType().equalsIgnoreCase("POSTGRESQL") ? "{ESCAPE '?'}" : "" )	;  //{ESCAPE '?'}";
 			}
 		}
 		//	log.debug(vocabType.getMatchStr().getStrategy() + whereClause);
@@ -1022,30 +1081,31 @@ public class ConceptDao extends JdbcDaoSupport {
 			String table = (String)itTn.next();
 			// the following (distinct) doesnt work for a flattened hierarchy but is left for
 			//  dbs other than sqlserver or oracle.   [c_table_cd is needed for key]
-			String tableCdSql = ", (select distinct(c_table_cd) from "+ metadataSchema + "TABLE_ACCESS where c_table_name = '"+  table+ "') as tableCd"; 
-			if(dbType.toUpperCase().equals("SQLSERVER"))
-				tableCdSql = ", (select top 1(c_table_cd) from "+ metadataSchema + "TABLE_ACCESS where c_table_name = '"+  table+ "') as tableCd"; 
-			else if (dbType.toUpperCase().equals("ORACLE"))
-				tableCdSql = ", (select c_table_cd from "+ metadataSchema + "TABLE_ACCESS where c_table_name = '"+  table+ "' and rownum <= 1) as tableCd"; 
-			else if(dbType.toUpperCase().equals("POSTGRESQL"))
-				tableCdSql = ", (select c_table_cd from "+ metadataSchema + "TABLE_ACCESS where c_table_name = '"+  table+ "' limit 1) as tableCd"; 
+			String tableCdSql = ", (select distinct(c_table_cd) from "+ metadataSchema + "TABLE_ACCESS where c_table_name = '"+  table+ "') as tableCd";
+			if (dbType.equalsIgnoreCase("SQLSERVER") || dbType.equalsIgnoreCase("INTERSYSTEMS IRIS"))
+				tableCdSql = ", (select top 1(c_table_cd) from "+ metadataSchema + "TABLE_ACCESS where c_table_name = '"+  table+ "') as tableCd";
+			else if (dbType.equalsIgnoreCase("ORACLE"))
+				tableCdSql = ", (select c_table_cd from "+ metadataSchema + "TABLE_ACCESS where c_table_name = '"+  table+ "' and rownum <= 1) as tableCd";
+			else if(dbType.equalsIgnoreCase("POSTGRESQL"))
+				tableCdSql = ", (select c_table_cd from "+ metadataSchema + "TABLE_ACCESS where c_table_name = '"+  table+ "' limit 1) as tableCd";
 			codeInfoSql = "select " + parameters + tableCdSql + " from " + metadataSchema + table + whereClause	+ hidden + synonym;;
-			while(itTn.hasNext()){		
+			while(itTn.hasNext()){
 				table = (String)itTn.next();
 				// the following (distinct) doesnt work for a flattened hierarchy but is left for
 				//  dbs other than sqlserver or oracle.    [c_table_cd is needed for key]
-				tableCdSql = ", (select distinct(c_table_cd) from "+ metadataSchema + "TABLE_ACCESS where c_table_name = '"+  table+ "') as tableCd"; 
-				if(dbType.toUpperCase().equals("SQLSERVER"))
-					tableCdSql = ", (select top 1(c_table_cd) from "+ metadataSchema + "TABLE_ACCESS where c_table_name = '"+  table+ "') as tableCd"; 
-				else if (dbType.toUpperCase().equals("ORACLE"))
-					tableCdSql = ", (select c_table_cd from "+ metadataSchema + "TABLE_ACCESS where c_table_name = '"+  table+ "' and rownum <= 1) as tableCd"; 
-				else if(dbType.toUpperCase().equals("POSTGRESQL"))
-					tableCdSql = ", (select  c_table_cd from "+ metadataSchema + "TABLE_ACCESS where c_table_name = '"+  table+ "' limit 1) as tableCd"; 
+				tableCdSql = ", (select distinct(c_table_cd) from "+ metadataSchema + "TABLE_ACCESS where c_table_name = '"+  table+ "') as tableCd";
+				if(dbType.equalsIgnoreCase("SQLSERVER") || dbType.equalsIgnoreCase("INTERSYSTEMS IRIS"))
+					tableCdSql = ", (select top 1(c_table_cd) from "+ metadataSchema + "TABLE_ACCESS where c_table_name = '"+  table+ "') as tableCd";
+				else if (dbType.equalsIgnoreCase("ORACLE"))
+					tableCdSql = ", (select c_table_cd from "+ metadataSchema + "TABLE_ACCESS where c_table_name = '"+  table+ "' and rownum <= 1) as tableCd";
+				else if(dbType.equalsIgnoreCase("POSTGRESQL"))
+					tableCdSql = ", (select  c_table_cd from "+ metadataSchema + "TABLE_ACCESS where c_table_name = '"+  table+ "' limit 1) as tableCd";
 
 				codeInfoSql = codeInfoSql +  " union all (select "+ parameters + tableCdSql + " from " + metadataSchema + table + whereClause
 						+ hidden + synonym + ")";
 			}
 			codeInfoSql = codeInfoSql + " order by (c_name) ";
+			log.info("Script: " + codeInfoSql);
 		}
 		else
 			return null;
@@ -1106,10 +1166,20 @@ public class ConceptDao extends JdbcDaoSupport {
 
 		Iterator it = goodWords.iterator();
 		while(it.hasNext()){
-			if(whereClause == null)	
-				whereClause = " where upper(c_name) like " + "'%"  + ((String)it.next()).toUpperCase() + "%' " + (!dbInfo.getDb_serverType().toUpperCase().equals("POSTGRESQL") ? "{ESCAPE '?'}" : "" )	;  //{ESCAPE '?'}";    
+			//TODO: check if [ is enough for IRIS
+			if(whereClause == null)
+				if(dbInfo.getDb_serverType().equalsIgnoreCase("INTERSYSTEMS IRIS"))
+					whereClause = " where upper(c_name) [ " + "'%" + ((String)it.next()).toUpperCase() + "%' ";
+				else
+					whereClause = " where upper(c_name) like " + "'%"  +
+							((String)it.next()).toUpperCase() + "%' " +
+							(!dbInfo.getDb_serverType().equalsIgnoreCase("POSTGRESQL") ? "{ESCAPE '?'}" : "" )	;  //{ESCAPE '?'}";
 			else
-				whereClause = whereClause + " AND upper(c_name) like " + "'% " + ((String)it.next()).toUpperCase() + "%' " + (!dbInfo.getDb_serverType().toUpperCase().equals("POSTGRESQL") ? "{ESCAPE '?'}" : "" )	;  //{ESCAPE '?'}";    
+				if(dbInfo.getDb_serverType().equalsIgnoreCase("INTERSYSTEMS IRIS"))
+					whereClause = whereClause + " AND upper(c_name) [ " + "'% " + ((String)it.next()).toUpperCase() + "%' ";
+				else
+					whereClause = whereClause + " AND upper(c_name) like " + "'% " + ((String)it.next()).toUpperCase() + "%' " +
+							(!dbInfo.getDb_serverType().equalsIgnoreCase("POSTGRESQL") ? "{ESCAPE '?'}" : "" )	;  //{ESCAPE '?'}";
 		}	
 		return whereClause;
 	}
@@ -1133,7 +1203,7 @@ public class ConceptDao extends JdbcDaoSupport {
 		else if (modifierType.getType().equals("all")){
 			parameters = MOD_CORE + ALL;
 		}
-		if(modifierType.isBlob() == true)
+		if(modifierType.isBlob())
 			parameters = parameters + BLOB;
 
 		String metadataSchema = dbInfo.getDb_fullSchema();
@@ -1146,14 +1216,10 @@ public class ConceptDao extends JdbcDaoSupport {
 			throw e;
 		}
 
-
-
-
-
 		String hidden = "";
-		if(modifierType.isHiddens() == false)
-			hidden = dbInfo.getDb_serverType().toUpperCase().equals("INTERSYSTEMS IRIS")
-					? " and not(c_visualattributes %STARTSWITH '_H')"
+		if(!modifierType.isHiddens())
+			hidden = dbInfo.getDb_serverType().equalsIgnoreCase("INTERSYSTEMS IRIS")
+					? " and (not c_visualattributes %STARTSWITH '_H')"
 					: " and c_visualattributes not like '_H%'";
 
 		//extract table code
@@ -1167,9 +1233,6 @@ public class ConceptDao extends JdbcDaoSupport {
 			log.error("Find Modifiers " + e.getMessage());
 			throw new I2B2DAOException("Database Error");
 		}
-
-
-
 
 		//     Original sql before exclusions		
 		//		String path = StringUtil.getLiteralPath(modifierType.getSelf());
@@ -1192,7 +1255,7 @@ public class ConceptDao extends JdbcDaoSupport {
 		}
 
 		String synonym = "";
-		if(modifierType.isSynonyms() == false)
+		if(!modifierType.isSynonyms())
 			synonym = " and c_synonym_cd = 'N'";		
 
 
@@ -1213,11 +1276,12 @@ public class ConceptDao extends JdbcDaoSupport {
 			modifier_select = modifier_select + ", '" + path + "'";
 		}
 
-		String sql = "select " + parameters + " from "+ metadataSchema+ tableName + " where m_exclusion_cd is null " + synonym + modifier_select +") and c_fullname in (";
+		String sql = "select " + parameters + " from "+ metadataSchema+ tableName +
+				" where m_exclusion_cd is null " + synonym + modifier_select +") and c_fullname in (";
 
-		if(dbInfo.getDb_serverType().toUpperCase().equals("ORACLE"))
+		if(dbInfo.getDb_serverType().equalsIgnoreCase("ORACLE"))
 			sql = sql + inclusionSql + " MINUS (";
-		else if (dbInfo.getDb_serverType().toUpperCase().equals("INTERSYSTEMS IRIS"))
+		else if (dbInfo.getDb_serverType().equalsIgnoreCase("INTERSYSTEMS IRIS"))
 			sql = sql + inclusionSql + ") and c_fullname not in (";
 		else
 			sql = sql + inclusionSql + " EXCEPT (";
@@ -1246,7 +1310,7 @@ public class ConceptDao extends JdbcDaoSupport {
 			exclusionSql = exclusionSql + " union all (select c_fullname from " + metadataSchema+ tableName  + " where m_applied_path = '" + path + "' and m_exclusion_cd = 'X')";
 		}
 		 */
-		sql = sql + exclusionSql + (dbInfo.getDb_serverType().toUpperCase().equals("INTERSYSTEMS IRIS") ? ")" : "))");
+		sql = sql + exclusionSql + (dbInfo.getDb_serverType().equalsIgnoreCase("INTERSYSTEMS IRIS") ? ")" : "))");
 
 		sql = sql + " order by (c_name) ";
 
@@ -1285,7 +1349,7 @@ public class ConceptDao extends JdbcDaoSupport {
 		else if (modifierChildrenType.getType().equals("all")){
 			parameters = MOD_CORE + ALL;
 		}
-		if(modifierChildrenType.isBlob() == true)
+		if(modifierChildrenType.isBlob())
 			parameters = parameters + BLOB;
 
 		String metadataSchema = dbInfo.getDb_fullSchema();
@@ -1298,11 +1362,11 @@ public class ConceptDao extends JdbcDaoSupport {
 			throw e;
 		}
 
-
-
 		String hidden = "";
-		if(modifierChildrenType.isHiddens() == false)
-			hidden = " and c_visualattributes not like '_H%'";
+		if(!modifierChildrenType.isHiddens())
+			hidden = dbInfo.getDb_serverType().equalsIgnoreCase("INTERSYSTEMS IRIS")
+					? " and (not c_visualattributes %STARTSWITH '_H')"
+					: " and c_visualattributes not like '_H%'";
 
 		//extract table code
 		String tableCd = StringUtil.getTableCd(modifierChildrenType.getParent());
@@ -1319,19 +1383,20 @@ public class ConceptDao extends JdbcDaoSupport {
 		String path = StringUtil.getPath(modifierChildrenType.getParent());
 
 		String searchPath = path;
-		if(dbInfo.getDb_serverType().toUpperCase().equals("SQLSERVER")){
+		if(dbInfo.getDb_serverType().equalsIgnoreCase("SQLSERVER")){
 			searchPath = StringUtil.escapeSQLSERVER(searchPath);
 		}
-		else if(dbInfo.getDb_serverType().toUpperCase().equals("ORACLE")){
+		else if(dbInfo.getDb_serverType().equalsIgnoreCase("ORACLE")){
 			searchPath = StringUtil.escapeORACLE(searchPath);
 		}
-		else if(dbInfo.getDb_serverType().toUpperCase().equals("POSTGRESQL")){
+		else if(dbInfo.getDb_serverType().equalsIgnoreCase("POSTGRESQL")){
 			searchPath = StringUtil.escapePOSTGRESQL(searchPath);
 		}
 
 		searchPath = searchPath + "%";
 
-		String levelSql = "select c_hlevel from " + metadataSchema+tableName  + " where c_fullname = ?  and c_synonym_cd = 'N' and m_applied_path = ? and m_exclusion_cd is null";
+		String levelSql = "select c_hlevel from " + metadataSchema+tableName  +
+				" where c_fullname = ?  and c_synonym_cd = 'N' and m_applied_path = ? and m_exclusion_cd is null";
 		log.info("Script: " + levelSql);
 		int level = 0;
 		try {
@@ -1343,7 +1408,7 @@ public class ConceptDao extends JdbcDaoSupport {
 		}
 
 		String synonym = "";
-		if(modifierChildrenType.isSynonyms() == false)
+		if(!modifierChildrenType.isSynonyms())
 			synonym = " and c_synonym_cd = 'N'";		
 
 		String appliedConcept = StringUtil.getLiteralPath(modifierChildrenType.getAppliedConcept());
@@ -1353,7 +1418,8 @@ public class ConceptDao extends JdbcDaoSupport {
 			appliedConcept = appliedConcept.replaceAll("'", "''");
 		}
 
-		String inclusionSql = "select c_fullname from " + metadataSchema+ tableName  + " where m_applied_path = ? and c_hlevel = " + (level+1) + " and m_exclusion_cd is null";
+		String inclusionSql = "select c_fullname from " + metadataSchema+ tableName  +
+				" where m_applied_path = ? and c_hlevel = " + (level+1) + " and m_exclusion_cd is null";
 		String modifier_select =  " and m_applied_path in ('" + appliedConcept + "'";
 		while (appliedConcept.length() > 2) {
 			if(appliedConcept.endsWith("%")){
@@ -1362,20 +1428,32 @@ public class ConceptDao extends JdbcDaoSupport {
 			}
 			else
 				appliedConcept = appliedConcept + "%";
-			inclusionSql = inclusionSql + " union all (select c_fullname from " + metadataSchema+ tableName  + " where m_applied_path = '" + appliedConcept + "' and c_hlevel = " + (level+1) + " and m_exclusion_cd is null)";
+			inclusionSql = inclusionSql + " union all (select c_fullname from " +
+					metadataSchema+ tableName  + " where m_applied_path = '" + appliedConcept +
+					"' and c_hlevel = " + (level+1) + " and m_exclusion_cd is null)";
 			modifier_select = modifier_select + ", '" + appliedConcept + "'";
 		}
 
-		String sql = "select " + parameters + " from "+ metadataSchema+ tableName + " where m_exclusion_cd is null and c_hlevel = ? and c_fullname like ? "  + (!dbInfo.getDb_serverType().toUpperCase().equals("POSTGRESQL") ? "{ESCAPE '?'}" : "" ) + hidden + synonym
-				+ modifier_select +") and c_fullname in (";
+		String sql;
+		//TODO: check if [ is enough for IRIS
+		if(dbInfo.getDb_serverType().equalsIgnoreCase("INTERSYSTEMS IRIS"))
+			sql = "select " + parameters + " from "
+					+ metadataSchema+ tableName
+					+ " where m_exclusion_cd is null and c_hlevel = ? and c_fullname [ ? "
+					+ hidden + synonym + modifier_select + ") and c_fullname in (";
+		else
+			sql = "select " + parameters + " from "+ metadataSchema+ tableName +
+					" where m_exclusion_cd is null and c_hlevel = ? and c_fullname like ? " +
+					(!dbInfo.getDb_serverType().equalsIgnoreCase("POSTGRESQL") ? "{ESCAPE '?'}" : "" ) + hidden + synonym
+					+ modifier_select +") and c_fullname in (";
 
-
-		if(dbInfo.getDb_serverType().toUpperCase().equals("ORACLE"))
+		if(dbInfo.getDb_serverType().equalsIgnoreCase("ORACLE"))
 			sql = sql + inclusionSql + " MINUS (";
 		else
 			sql = sql + inclusionSql + " EXCEPT (";
 
-		String exclusionSql = "select c_fullname from " + metadataSchema+ tableName  + " where m_applied_path = ? and m_exclusion_cd is not null";
+		String exclusionSql = "select c_fullname from " + metadataSchema+ tableName  +
+				" where m_applied_path = ? and m_exclusion_cd is not null";
 		String appliedExclConcept = StringUtil.getLiteralPath(modifierChildrenType.getAppliedConcept());
 		// I have to do this the hard way because there are a dynamic number of applied paths to check
 		//   prevent SQL injection
@@ -1389,7 +1467,8 @@ public class ConceptDao extends JdbcDaoSupport {
 			}
 			else
 				appliedExclConcept = appliedExclConcept + "%";
-			exclusionSql = exclusionSql + " union all (select c_fullname from " + metadataSchema+ tableName  + " where m_applied_path = '" + appliedExclConcept + "' and m_exclusion_cd is not null)";
+			exclusionSql = exclusionSql + " union all (select c_fullname from " + metadataSchema+ tableName  +
+					" where m_applied_path = '" + appliedExclConcept + "' and m_exclusion_cd is not null)";
 		}
 
 		sql = sql + exclusionSql + "))";
@@ -1406,16 +1485,15 @@ public class ConceptDao extends JdbcDaoSupport {
 		List queryResult = null;
 		log.info("Script: " + sql);
 		try {
-			queryResult = jt.query(sql, getModNodeMapper(new NodeType(modifierChildrenType),ofuscatedUserFlag, dbInfo.getDb_serverType()), (level+1), searchPath,  StringUtil.getLiteralPath(modifierChildrenType.getAppliedConcept()),
+			queryResult = jt.query(sql, getModNodeMapper(new NodeType(modifierChildrenType),
+					ofuscatedUserFlag, dbInfo.getDb_serverType()), (level+1), searchPath,
+					StringUtil.getLiteralPath(modifierChildrenType.getAppliedConcept()),
 					StringUtil.getLiteralPath(modifierChildrenType.getAppliedConcept()));
 		} catch (DataAccessException e) {
 			log.error("Get Modifier Children " + e.getMessage());
 			throw new I2B2DAOException("Database Error");
 		}
-
-
 		log.debug("Get Mod children result size = " + queryResult.size());
-
 
 		return queryResult;
 
@@ -1436,7 +1514,7 @@ public class ConceptDao extends JdbcDaoSupport {
 		else if (modifierInfoType.getType().equals("all")){
 			parameters = MOD_CORE + ALL;
 		}
-		if(modifierInfoType.isBlob() == true)
+		if(modifierInfoType.isBlob())
 			parameters = parameters + BLOB;
 
 		String metadataSchema = dbInfo.getDb_fullSchema();
@@ -1448,18 +1526,16 @@ public class ConceptDao extends JdbcDaoSupport {
 			I2B2DAOException e = new I2B2DAOException("No role found for user");
 			throw e;
 		}
-
 		//tableCd to table name conversion
-
-
 		String hidden = "";
-		if(modifierInfoType.isHiddens() == false)
-			hidden = " and c_visualattributes not like '_H%'";
-
+		if(!modifierInfoType.isHiddens())
+			hidden = dbInfo.getDb_serverType().equalsIgnoreCase("INTERSYSTEMS IRIS")
+					? " and (not c_visualattributes %STARTSWITH '_H')"
+					: " and c_visualattributes not like '_H%'";
 
 		//extract table code
 		String tableCd = StringUtil.getTableCd(modifierInfoType.getSelf());
-		String tableName=null;
+		String tableName;
 		String tableSql = "select distinct(c_table_name) from " + metadataSchema + "table_access where c_table_cd = ? " + hidden;
 		log.info("Script: " + tableSql);
 		try {
@@ -1474,7 +1550,7 @@ public class ConceptDao extends JdbcDaoSupport {
 
 
 		String synonym = "";
-		if(modifierInfoType.isSynonyms() == false)
+		if(!modifierInfoType.isSynonyms())
 			synonym = " and c_synonym_cd = 'N'";
 
 		//	Removed dependency on m_applied_path 8/4/14 lcp
@@ -1496,7 +1572,9 @@ public class ConceptDao extends JdbcDaoSupport {
 		log.info("Script: " + sqlWpath);
 		List queryResult = null;
 		try {
-			queryResult = jt.query(sqlWpath, getModNodeMapper(new NodeType(modifierInfoType),ofuscatedUserFlag, dbInfo.getDb_serverType()), searchPath, modifierInfoType.getAppliedPath());
+			queryResult = jt.query(sqlWpath, getModNodeMapper(new NodeType(modifierInfoType),
+					ofuscatedUserFlag, dbInfo.getDb_serverType()), searchPath,
+					modifierInfoType.getAppliedPath());
 
 		} catch (DataAccessException e) {
 			log.error("Get Modifier " + e.getMessage());
@@ -1507,19 +1585,16 @@ public class ConceptDao extends JdbcDaoSupport {
 			sql = sql + hidden + synonym + " order by upper(c_name) ";
 			log.info("Script: " + sql);
 			try {
-				queryResult = jt.query(sql, getModNodeMapper(new NodeType(modifierInfoType),ofuscatedUserFlag, dbInfo.getDb_serverType()), searchPath);
-
+				queryResult = jt.query(sql, getModNodeMapper(new NodeType(modifierInfoType),
+						ofuscatedUserFlag, dbInfo.getDb_serverType()), searchPath);
 			} catch (DataAccessException e) {
 				log.error("Get Modifier " + e.getMessage());
 				throw new I2B2DAOException("Database Error");
 			}
 		}
-
 		log.debug("Get ModInfo result size = " + queryResult.size());
 
-
 		return queryResult;
-
 	}
 
 	public List findModifierNameInfo(final VocabRequestType vocabType, ProjectType projectInfo, DBInfoType dbInfo) throws I2B2DAOException, I2B2Exception{
@@ -1529,16 +1604,12 @@ public class ConceptDao extends JdbcDaoSupport {
 
 		if (vocabType.getType().equals("limited")){
 			parameters = MOD_LIMITED;
-		}
-
-		else if (vocabType.getType().equals("core")){
+		} else if (vocabType.getType().equals("core")){
 			parameters = MOD_CORE;
-		}
-
-		else if (vocabType.getType().equals("all")){
+		} else if (vocabType.getType().equals("all")){
 			parameters = MOD_CORE + ALL;
 		}
-		if(vocabType.isBlob() == true)
+		if(vocabType.isBlob())
 			parameters = parameters + BLOB;
 
 		String metadataSchema = dbInfo.getDb_fullSchema();
@@ -1552,13 +1623,11 @@ public class ConceptDao extends JdbcDaoSupport {
 			I2B2Exception e = new I2B2Exception("No role found for user");
 			throw e;
 		}
-
 		//tableCd to table name conversion
-
 
 		//extract table code
 		String tableCd = StringUtil.getTableCd(vocabType.getSelf());
-		String tableName=null;
+		String tableName = null;
 		String tableSql = "select distinct(c_table_name) from " + metadataSchema + "table_access where c_table_cd = ? " ;
 		log.info("Script: " + tableSql);
 		try {
@@ -1583,69 +1652,89 @@ public class ConceptDao extends JdbcDaoSupport {
 		if(vocabType.getMatchStr().getStrategy().equals("exact")) {
 			compareName = value.toUpperCase();
 			nameInfoSql = "select c_fullname from " + metadataSchema + tableName + " where upper(c_name) = '" + compareName + "'" ;//and m_applied_path = '" + path + "'";	  
-		}
-
-		else if(vocabType.getMatchStr().getStrategy().equals("left")){ 
+		} else if(vocabType.getMatchStr().getStrategy().equals("left")){
 			compareName = value.toUpperCase();
-			if(dbInfo.getDb_serverType().toUpperCase().equals("SQLSERVER")){
+			if(dbInfo.getDb_serverType().equalsIgnoreCase("SQLSERVER")){
 				//compareName = compareName.replaceAll("\\[", "[[]");
 				compareName = StringUtil.escapeSQLSERVER(compareName);
-			}
-			else if(dbInfo.getDb_serverType().toUpperCase().equals("ORACLE")){
+			} else if(dbInfo.getDb_serverType().equalsIgnoreCase("ORACLE")){
 				compareName = StringUtil.escapeORACLE(compareName);
-			}
-			else if(dbInfo.getDb_serverType().toUpperCase().equals("POSTGRESQL")){
+			} else if(dbInfo.getDb_serverType().equalsIgnoreCase("POSTGRESQL")){
 				compareName = StringUtil.escapePOSTGRESQL(compareName);
 			}
 			compareName +=  "%";
-			nameInfoSql = "select c_fullname from " + metadataSchema + tableName +" where upper(c_name) like '" + compareName + "' " + (!dbInfo.getDb_serverType().toUpperCase().equals("POSTGRESQL") ? "{ESCAPE '?'}" : "" )	;  //{ESCAPE '?'}";      and m_applied_path = '" + path + "'";
+
+			//TODO: check if [ is enough for IRIS
+			if (dbInfo.getDb_serverType().equalsIgnoreCase("INTERSYSTEMS IRIS"))
+				nameInfoSql = "select c_fullname from " + metadataSchema + tableName +
+					" where upper(c_name) [ '" + compareName + "' ";  //and m_applied_path = '" + path + "'";
+			else
+				nameInfoSql = "select c_fullname from " + metadataSchema + tableName +
+						" where upper(c_name) like '" + compareName + "' " +
+						(!dbInfo.getDb_serverType().equalsIgnoreCase("POSTGRESQL") ? "{ESCAPE '?'}" : "" )	;  //{ESCAPE '?'}";      and m_applied_path = '" + path + "'";
 		}
 
 		else if(vocabType.getMatchStr().getStrategy().equals("right")) {
 			compareName = value.toUpperCase();
-			if(dbInfo.getDb_serverType().toUpperCase().equals("SQLSERVER")){
+			if(dbInfo.getDb_serverType().equalsIgnoreCase("SQLSERVER")){
 				//compareName = compareName.replaceAll("\\[", "[[]");
 				compareName = StringUtil.escapeSQLSERVER(compareName);
 			}
-			else if(dbInfo.getDb_serverType().toUpperCase().equals("ORACLE")){
+			else if(dbInfo.getDb_serverType().equalsIgnoreCase("ORACLE")){
 				compareName = StringUtil.escapeORACLE(compareName);
 			}
-			else if(dbInfo.getDb_serverType().toUpperCase().equals("POSTGRESQL")){
+			else if(dbInfo.getDb_serverType().equalsIgnoreCase("POSTGRESQL")){
 				compareName = StringUtil.escapePOSTGRESQL(compareName);
 			}
 			compareName =  "%" + compareName;
-			nameInfoSql = "select c_fullname from " + metadataSchema + tableName +" where upper(c_name) like '" + compareName + "' " + (!dbInfo.getDb_serverType().toUpperCase().equals("POSTGRESQL") ? "{ESCAPE '?'}" : "" )	;  //{ESCAPE '?'}";     {ESCAPE '?'}";//and m_applied_path = '" + path + "'";	
+
+			//TODO: check if [ is enough for IRIS
+			if (dbInfo.getDb_serverType().equalsIgnoreCase("INTERSYSTEMS IRIS"))
+				nameInfoSql = "select c_fullname from " + metadataSchema + tableName +
+					" where upper(c_name) [ '" + compareName + "' "; //and m_applied_path = '" + path + "'";
+			else
+				nameInfoSql = "select c_fullname from " + metadataSchema + tableName +
+						" where upper(c_name) like '" + compareName + "' " +
+						(!dbInfo.getDb_serverType().equalsIgnoreCase("POSTGRESQL") ? "{ESCAPE '?'}" : "" )	;  //{ESCAPE '?'}";     {ESCAPE '?'}";//and m_applied_path = '" + path + "'";
 		}
 
 		else if(vocabType.getMatchStr().getStrategy().equals("contains")) {
 			if(!(value.contains(" "))){
 				//	compareName =  "%" + value.toUpperCase() + "%";
 				compareName = value.toUpperCase();
-				if(dbInfo.getDb_serverType().toUpperCase().equals("SQLSERVER")){
+				if(dbInfo.getDb_serverType().equalsIgnoreCase("SQLSERVER")){
 					//compareName = compareName.replaceAll("\\[", "[[]");
 					compareName = StringUtil.escapeSQLSERVER(compareName);
 				}
-				else if(dbInfo.getDb_serverType().toUpperCase().equals("ORACLE")){
+				else if(dbInfo.getDb_serverType().equalsIgnoreCase("ORACLE")){
 					compareName = StringUtil.escapeORACLE(compareName);
 				}
-				else if(dbInfo.getDb_serverType().toUpperCase().equals("POSTGRESQL")){
+				else if(dbInfo.getDb_serverType().equalsIgnoreCase("POSTGRESQL")){
 					compareName = StringUtil.escapePOSTGRESQL(compareName);
 				}
 				compareName =  "%" + compareName + "%";
-				nameInfoSql = "select c_fullname from " + metadataSchema + tableName +" where upper(c_name) like '" + compareName + "' " + (!dbInfo.getDb_serverType().toUpperCase().equals("POSTGRESQL") ? "{ESCAPE '?'}" : "" )	;  //{ESCAPE '?'}";    {ESCAPE '?'}";  //and m_applied_path = '" + path + "'";
+
+				//TODO: check if [ is enough for IRIS
+				if (dbInfo.getDb_serverType().equalsIgnoreCase("INTERSYSTEMS IRIS"))
+					nameInfoSql = "select c_fullname from " + metadataSchema + tableName +
+						" where upper(c_name) [ '" + compareName + "' ";  //and m_applied_path = '" + path + "'";
+				else
+					nameInfoSql = "select c_fullname from " + metadataSchema + tableName +
+							" where upper(c_name) like '" + compareName + "' " +
+							(!dbInfo.getDb_serverType().equalsIgnoreCase("POSTGRESQL") ? "{ESCAPE '?'}" : "" )	;  //{ESCAPE '?'}";    {ESCAPE '?'}";  //and m_applied_path = '" + path + "'";
 
 			}else{
 				nameInfoSql = "select c_fullname from " + metadataSchema + tableName ;
 				//	if(dbInfo.getDb_serverType().toUpperCase().equals("SQLSERVER")){
 				//		value = value.replaceAll("\\[", "[[]");
 				//	}
-				if(dbInfo.getDb_serverType().toUpperCase().equals("SQLSERVER")){
+				if(dbInfo.getDb_serverType().equalsIgnoreCase("SQLSERVER")) {
 					value = StringUtil.escapeSQLSERVER(value);
 				}
-				else if(dbInfo.getDb_serverType().toUpperCase().equals("ORACLE")){
+				else if(dbInfo.getDb_serverType().equalsIgnoreCase("ORACLE")) {
 					value = StringUtil.escapeORACLE(value);
 				}
-				else if(dbInfo.getDb_serverType().toUpperCase().equals("POSTGRESQL")){
+				else if(dbInfo.getDb_serverType().equalsIgnoreCase("POSTGRESQL")){
 					value = StringUtil.escapePOSTGRESQL(value);
 				}
 				nameInfoSql = nameInfoSql + parseMatchString(value, dbInfo);// + "and m_applied_path = '" + path + "'";
@@ -1656,11 +1745,13 @@ public class ConceptDao extends JdbcDaoSupport {
 		String appliedPath   = " and m_applied_path = '" + modifierPath + "' ";
 
 		String hidden = "";
-		if(vocabType.isHiddens() == false)
-			hidden = " and c_visualattributes not like '_H%' ";
+		if(!vocabType.isHiddens())
+			hidden = dbInfo.getDb_serverType().equalsIgnoreCase("INTERSYSTEMS IRIS")
+					? " and (not c_visualattributes %STARTSWITH '_H')"
+					: " and c_visualattributes not like '_H%'";
 
 		String synonym = "";
-		if(vocabType.isSynonyms() == false)
+		if(!vocabType.isSynonyms())
 			synonym = " and c_synonym_cd = 'N' ";
 
 		String inclusionSql = nameInfoSql + appliedPath + hidden + synonym + " and m_exclusion_cd is null ";
@@ -1694,7 +1785,7 @@ public class ConceptDao extends JdbcDaoSupport {
 		}
 
 		String exceptSql =  " EXCEPT (";
-		if(dbInfo.getDb_serverType().toUpperCase().equals("ORACLE"))
+		if(dbInfo.getDb_serverType().equalsIgnoreCase("ORACLE"))
 			exceptSql =	" MINUS (";
 
 
@@ -1740,7 +1831,7 @@ public class ConceptDao extends JdbcDaoSupport {
 		else if (vocabType.getType().equals("all")){
 			parameters = MOD_CORE + ALL;
 		}
-		if(vocabType.isBlob() == true)
+		if(vocabType.isBlob())
 			parameters = parameters + BLOB;
 
 		String metadataSchema = dbInfo.getDb_fullSchema();
@@ -1761,8 +1852,10 @@ public class ConceptDao extends JdbcDaoSupport {
 
 
 		String hidden = "";
-		if(vocabType.isHiddens() == false)
-			hidden = " and c_visualattributes not like '_H%'";
+		if(!vocabType.isHiddens())
+			hidden = dbInfo.getDb_serverType().equalsIgnoreCase("INTERSYSTEMS IRIS")
+					? " and (not c_visualattributes %STARTSWITH '_H')"
+					: " and c_visualattributes not like '_H%'";
 
 		//extract table code
 		String tableCd = StringUtil.getTableCd(vocabType.getSelf());
@@ -1777,7 +1870,7 @@ public class ConceptDao extends JdbcDaoSupport {
 		}
 
 		String synonym = "";
-		if(vocabType.isSynonyms() == false)
+		if(!vocabType.isSynonyms())
 			synonym = " and c_synonym_cd = 'N'";
 
 		// I have to do this the hard way because there are a dynamic number of codes to pass in
@@ -1788,47 +1881,60 @@ public class ConceptDao extends JdbcDaoSupport {
 		}
 		String whereClause = null;
 
-		if(vocabType.getMatchStr().getStrategy().equals("exact")) {
+		if (vocabType.getMatchStr().getStrategy().equals("exact")) {
 			whereClause = " where upper(c_basecode) = '" + value.toUpperCase()+ "'";
 		}
-
 		else if(vocabType.getMatchStr().getStrategy().equals("left")){
-			if(dbInfo.getDb_serverType().toUpperCase().equals("SQLSERVER")){
+			if(dbInfo.getDb_serverType().equalsIgnoreCase("SQLSERVER")){
 				value = StringUtil.escapeSQLSERVER(value);
 			}
-			else if(dbInfo.getDb_serverType().toUpperCase().equals("ORACLE")){
+			else if(dbInfo.getDb_serverType().equalsIgnoreCase("ORACLE")){
 				value = StringUtil.escapeORACLE(value);
 			}
-			else if(dbInfo.getDb_serverType().toUpperCase().equals("POSTGRESQL")){
+			else if(dbInfo.getDb_serverType().equalsIgnoreCase("POSTGRESQL")) {
 				value = StringUtil.escapePOSTGRESQL(value);
 			}
-			whereClause = " where upper(c_basecode) like '" + value.toUpperCase() + "%' " + (!dbInfo.getDb_serverType().toUpperCase().equals("POSTGRESQL") ? "{ESCAPE '?'}" : "" )	;  //{ESCAPE '?'}";    {ESCAPE '?'}";
+			if (dbInfo.getDb_serverType().equalsIgnoreCase("INTERSYSTEMS IRIS"))
+				whereClause = " where upper(c_basecode) %STARTSWITH '" + value.toUpperCase() + "' ";
+			else
+				whereClause = " where upper(c_basecode) like '" + value.toUpperCase() + "%' " +
+						(!dbInfo.getDb_serverType().equalsIgnoreCase("POSTGRESQL") ? "{ESCAPE '?'}" : "" )	;  //{ESCAPE '?'}";    {ESCAPE '?'}"
 		}
-
 		else if(vocabType.getMatchStr().getStrategy().equals("right")) {
-			if(dbInfo.getDb_serverType().toUpperCase().equals("SQLSERVER")){
+			if(dbInfo.getDb_serverType().equalsIgnoreCase("SQLSERVER")) {
 				value = StringUtil.escapeSQLSERVER(value);
 			}
-			else if(dbInfo.getDb_serverType().toUpperCase().equals("ORACLE")){
+			else if(dbInfo.getDb_serverType().equalsIgnoreCase("ORACLE")) {
 				value = StringUtil.escapeORACLE(value);
 			}
 			value = value.replaceFirst(":", ":%");
-			whereClause = " where upper(c_basecode) like '%" +  value.toUpperCase() + "' " + (!dbInfo.getDb_serverType().toUpperCase().equals("POSTGRESQL") ? "{ESCAPE '?'}" : "" )	;  //{ESCAPE '?'}";    {ESCAPE '?'}";
 
+			//TODO: check if [ is enough for IRIS
+			if (dbInfo.getDb_serverType().equalsIgnoreCase("INTERSYSTEMS IRIS"))
+				whereClause = " where upper(c_basecode) [ '%" +  value.toUpperCase() + "' ";
+			else
+				whereClause = " where upper(c_basecode) like '%" +  value.toUpperCase() + "' " +
+						(!dbInfo.getDb_serverType().equalsIgnoreCase("POSTGRESQL") ? "{ESCAPE '?'}" : "" )	;  //{ESCAPE '?'}";    {ESCAPE '?'}";
 		}
 
 		else if(vocabType.getMatchStr().getStrategy().equals("contains")) {
-			if(dbInfo.getDb_serverType().toUpperCase().equals("SQLSERVER")){
+			if(dbInfo.getDb_serverType().equalsIgnoreCase("SQLSERVER")){
 				value = StringUtil.escapeSQLSERVER(value);
 			}
-			else if(dbInfo.getDb_serverType().toUpperCase().equals("ORACLE")){
+			else if(dbInfo.getDb_serverType().equalsIgnoreCase("ORACLE")){
 				value = StringUtil.escapeORACLE(value);
 			}
-			else if(dbInfo.getDb_serverType().toUpperCase().equals("POSTGRESQL")){
+			else if(dbInfo.getDb_serverType().equalsIgnoreCase("POSTGRESQL")){
 				value = StringUtil.escapePOSTGRESQL(value);
 			}
 			value = value.replaceFirst(":", ":%");
-			whereClause = " where upper(c_basecode) like '%" + value.toUpperCase() + "%' " + (!dbInfo.getDb_serverType().toUpperCase().equals("POSTGRESQL") ? "{ESCAPE '?'}" : "" )	;  //{ESCAPE '?'}";    {ESCAPE '?'}";
+
+			//TODO: check if [ is enough for IRIS
+			if (dbInfo.getDb_serverType().equalsIgnoreCase("INTERSYSTEMS IRIS"))
+				whereClause = " where upper(c_basecode) [ '" + value.toUpperCase() + "' ";
+			else
+				whereClause = " where upper(c_basecode) like '%" + value.toUpperCase() + "%' " +
+					(!dbInfo.getDb_serverType().equalsIgnoreCase("POSTGRESQL") ? "{ESCAPE '?'}" : "" )	;  //{ESCAPE '?'}";    {ESCAPE '?'}";
 		}
 
 		String codeInfoSql = "select c_fullname from " + metadataSchema + tableName + whereClause;
@@ -1870,13 +1976,13 @@ public class ConceptDao extends JdbcDaoSupport {
 		}
 
 		String exceptSql =  " EXCEPT (";
-		if(dbInfo.getDb_serverType().toUpperCase().equals("ORACLE"))
+		if(dbInfo.getDb_serverType().equalsIgnoreCase("ORACLE"))
 			exceptSql =	" MINUS (";
 
 
-		String 	modCodeInfoSql = " select " + parameters + " from "  + metadataSchema + tableName +  " where m_exclusion_cd is null and m_applied_path in ("
-				+ modifierSelect +") and c_fullname in (" 	+ inclusionSql	+ exceptSql + exclusionSql 	+ ")) order by (c_name) ";
-
+		String 	modCodeInfoSql = " select " + parameters + " from "  + metadataSchema + tableName +
+				" where m_exclusion_cd is null and m_applied_path in (" + modifierSelect +
+				") and c_fullname in (" 	+ inclusionSql	+ exceptSql + exclusionSql 	+ ")) order by (c_name) ";
 
 		//		log.debug("MODCodeInfo " + modCodeInfoSql);
 		boolean obfuscatedUserFlag = Roles.getInstance().isRoleOfuscated(projectInfo);
@@ -1889,7 +1995,6 @@ public class ConceptDao extends JdbcDaoSupport {
 			log.error("Get Modifier by Code " + e.getMessage());
 			throw new I2B2DAOException("Database Error");
 		}
-
 
 		log.debug("Mod search by code result size = " + queryResult.size());
 
@@ -1922,17 +2027,18 @@ public class ConceptDao extends JdbcDaoSupport {
 
 		//tableCd to table name conversion
 
-
-
 		String hidden = "";
-		if(termInfoType.isHiddens() == false)
-			hidden = " and c_visualattributes not like '_H%'";
+		if(!termInfoType.isHiddens())
+			hidden = dbInfo.getDb_serverType().equalsIgnoreCase("INTERSYSTEMS IRIS")
+					? " and (not c_visualattributes %STARTSWITH '_H')"
+					: " and c_visualattributes not like '_H%'";
 
 		//extract table code
 		String tableCd = StringUtil.getTableCd(termInfoType.getSelf());
 		String tableName=null;
 		if (!protectedAccess){
-			String tableSql = "select distinct(c_table_name) from " + metadataSchema + "table_access where c_table_cd = ? and c_protected_access = ? " + hidden;
+			String tableSql = "select distinct(c_table_name) from " + metadataSchema +
+					"table_access where c_table_cd = ? and c_protected_access = ? " + hidden;
 			log.info("Script: " + tableSql);
 			try {
 				tableName = jt.queryForObject(tableSql, String.class, tableCd, "N");	    
@@ -1969,22 +2075,29 @@ public class ConceptDao extends JdbcDaoSupport {
 
 
 		String synonym = "";
-		if(termInfoType.isSynonyms() == false)
+		String sql;
+		if(!termInfoType.isSynonyms())
 			synonym = " and c_synonym_cd = 'N'";
 
-		String sql = "select distinct(c_facttablecolumn) from " + metadataSchema+tableName  + " where c_facttablecolumn is not null and c_fullname like ? {ESCAPE '?'}" ;
+		//TODO: check if [ is enough for IRIS
+		if (dbInfo.getDb_serverType().equalsIgnoreCase("INTERSYSTEMS IRIS"))
+			sql = "select distinct(c_facttablecolumn) from " + metadataSchema + tableName  +
+				" where c_facttablecolumn is not null and c_fullname [ ? {ESCAPE '?'}";
+		else
+			sql = "select distinct(c_facttablecolumn) from " + metadataSchema + tableName  +
+				" where c_facttablecolumn is not null and c_fullname like ? {ESCAPE '?'}";
 		sql = sql + hidden + synonym ;
 
-		if(dbInfo.getDb_serverType().toUpperCase().equals("SQLSERVER")){
+		if(dbInfo.getDb_serverType().equalsIgnoreCase("SQLSERVER")){
 			searchPath = StringUtil.escapeSQLSERVER(path);
 			searchPath += "%";
 		}
 
-		else if(dbInfo.getDb_serverType().toUpperCase().equals("ORACLE")){
+		else if(dbInfo.getDb_serverType().equalsIgnoreCase("ORACLE")){
 			searchPath = StringUtil.escapeORACLE(path); 
 			searchPath += "%";
 		}
-		else if(dbInfo.getDb_serverType().toUpperCase().equals("POSTGRESQL")){
+		else if(dbInfo.getDb_serverType().equalsIgnoreCase("POSTGRESQL")){
 			searchPath = StringUtil.escapePOSTGRESQL(path); 
 			searchPath += "%";
 		}
@@ -2006,13 +2119,11 @@ public class ConceptDao extends JdbcDaoSupport {
 
 	}
 
-
 	private GetConceptXMLMapper getConceptXMLMapper(DBInfoType dbInfo) {
 		GetConceptXMLMapper mapper= new GetConceptXMLMapper();
 		mapper.setdbInfo(dbInfo);
 		return mapper;
 	}
-
 
 	private GetModNodeMapper getModNodeMapper(NodeType nodeType, boolean obfuscatedUserFlag,
 			String db_serverType) {
@@ -2023,7 +2134,6 @@ public class ConceptDao extends JdbcDaoSupport {
 		mapper.setObfuscatedUserFlag(obfuscatedUserFlag);
 		return mapper;
 	}
-
 
 	private GetConceptNodeMapper getConceptNodeMapper(NodeType nodeType, boolean obfuscatedUserFlag,
 			String db_serverType) {
@@ -2043,8 +2153,6 @@ public class ConceptDao extends JdbcDaoSupport {
 		mapper.setReturnType(returnType);
 		return mapper;
 	}
-
-
 }
 
 
@@ -2053,7 +2161,6 @@ class GetConceptNodeMapper implements RowMapper<ConceptType> {
 	boolean ofuscatedUserFlag;
 	NodeType node;
 	String dbType;
-
 
 	public void setObfuscatedUserFlag(boolean obfuscatedUserFlag) {
 		this.ofuscatedUserFlag = obfuscatedUserFlag;
@@ -2118,9 +2225,10 @@ class GetConceptNodeMapper implements RowMapper<ConceptType> {
 				child.setDimcode(rs.getString("c_dimcode")); 
 			}
 		}
-		if(node.isBlob() == true){
+		if(node.isBlob()){
 			try {
-				if (dbType.equals("POSTGRESQL") || dbType.equals("INTERSYSTEMS IRIS"))
+				if (dbType.equalsIgnoreCase("POSTGRESQL")
+						|| dbType.equalsIgnoreCase("INTERSYSTEMS IRIS"))
 				{
 					if(rs.getString("c_comment") == null)
 						child.setComment(null);
@@ -2141,7 +2249,8 @@ class GetConceptNodeMapper implements RowMapper<ConceptType> {
 			String c_xml = null;
 			try {
 
-				if (dbType.equals("POSTGRESQL") || dbType.equals("INTERSYSTEMS IRIS"))
+				if (dbType.equalsIgnoreCase("POSTGRESQL")
+						|| dbType.equalsIgnoreCase("INTERSYSTEMS IRIS"))
 					c_xml = rs.getString("c_metadataxml");
 				else if (rs.getClob("c_metadataxml") != null)
 					c_xml = JDBCUtil.getClobString(rs.getClob("c_metadataxml"));
@@ -2200,7 +2309,6 @@ class GetConceptNodeMapper implements RowMapper<ConceptType> {
 		}
 		return child;
 	}
-
 }
 
 
@@ -2287,10 +2395,9 @@ class GetConceptFullNameMapper implements RowMapper<ConceptType> {
 			} else { 
 			}
 
-			if (obfuscatedUserFlag == false && nullFlag == false) {
+			if (!obfuscatedUserFlag && !nullFlag) {
 				child.setTotalnum(totalNum);
-			} 
-
+			}
 
 			child.setFacttablecolumn(rs.getString("c_facttablecolumn" ));
 			child.setTablename(rs.getString("c_dimtablename")); 
@@ -2305,13 +2412,14 @@ class GetConceptFullNameMapper implements RowMapper<ConceptType> {
 		{
 			Boolean protectedAccess = false;
 			String[] dataProt = {"DATA_PROT"};
-			List<String> ontologyProtection = Arrays.asList(child.getOntologyProtection() == null || child.getOntologyProtection().equals("")?dataProt:child.getOntologyProtection().split(","));
+			List<String> ontologyProtection = Arrays.asList(child.getOntologyProtection() == null
+					|| child.getOntologyProtection().equals("")?dataProt:child.getOntologyProtection().split(","));
 			for (String s: projectInfo.getRole()) {
 				if (ontologyProtection.contains(s))
 					protectedAccess = true;
 
 			}
-			if (protectedAccess == false)
+			if (!protectedAccess)
 				child = null;
 		}
 
@@ -2320,14 +2428,11 @@ class GetConceptFullNameMapper implements RowMapper<ConceptType> {
 }
 
 
-
-
 class GetModNodeMapper implements RowMapper<ModifierType> {
 
 	boolean ofuscatedUserFlag;
 	NodeType node;
 	String dbType;
-
 
 	public void setObfuscatedUserFlag(boolean obfuscatedUserFlag) {
 		this.ofuscatedUserFlag = obfuscatedUserFlag;
@@ -2375,9 +2480,10 @@ class GetModNodeMapper implements RowMapper<ModifierType> {
 			child.setDimcode(rs.getString("c_dimcode")); 
 		}
 
-		if(node.isBlob() == true){
+		if(node.isBlob()){
 			try {
-				if (dbType.equals("POSTGRESQL") || dbType.equals("INTERSYSTEMS IRIS"))
+				if (dbType.equalsIgnoreCase("POSTGRESQL")
+						|| dbType.equalsIgnoreCase("INTERSYSTEMS IRIS"))
 				{
 					if(rs.getString("c_comment") == null)
 						child.setComment(null);
@@ -2397,8 +2503,8 @@ class GetModNodeMapper implements RowMapper<ModifierType> {
 
 			String c_xml = null;
 			try {
-
-				if (dbType.equals("POSTGRESQL"))
+				if (dbType.equalsIgnoreCase("POSTGRESQL")
+						|| dbType.equalsIgnoreCase("INTERSYSTEMS IRIS"))
 					c_xml = rs.getString("c_metadataxml");
 				else  if (rs.getClob("c_metadataxml") != null)
 					c_xml = JDBCUtil.getClobString(rs.getClob("c_metadataxml"));
@@ -2465,26 +2571,21 @@ class GetConceptXMLMapper implements RowMapper<ConceptType> {
 
 	DBInfoType dbInfo;
 
-
-
-
-
 	public void setdbInfo(DBInfoType dbInfo) {
 		this.dbInfo = dbInfo;
 	}
 
 
-	@Override	
-
+	@Override
 	public ConceptType mapRow(ResultSet rs, int rowNum) throws SQLException {
 		ConceptType concept = new ConceptType();
 		//			        	ResultSetMetaData rsmd = rs.getMetaData();
 		//			        	rsmd.get
-
 		String c_xml = null;
 		try {
 
-			if (dbInfo.getDb_serverType().equals("POSTGRESQL") || dbInfo.getDb_serverType().equals("INTERSYSTEMS IRIS"))
+			if (dbInfo.getDb_serverType().equalsIgnoreCase("POSTGRESQL")
+					|| dbInfo.getDb_serverType().equalsIgnoreCase("INTERSYSTEMS IRIS"))
 				c_xml = rs.getString("c_metadataxml");
 			else  if (rs.getClob("c_metadataxml") != null)
 				c_xml = JDBCUtil.getClobString(rs.getClob("c_metadataxml"));
@@ -2520,7 +2621,8 @@ class GetConceptXMLMapper implements RowMapper<ConceptType> {
 		}	
 
 		try {
-			if (dbInfo.getDb_serverType().equals("POSTGRESQL") || dbInfo.getDb_serverType().equals("INTERSYSTEMS IRIS"))
+			if (dbInfo.getDb_serverType().equalsIgnoreCase("POSTGRESQL")
+					|| dbInfo.getDb_serverType().equalsIgnoreCase("INTERSYSTEMS IRIS"))
 			{
 				concept.setComment(rs.getString("c_comment"));
 			} else  if (rs.getClob("c_comment") != null)

@@ -60,6 +60,7 @@ public class QueryResultPatientVitalCdCountGenerator extends CRCDAO implements
 				+ "  "
 				+ " group by case when cl.name_char IS NULL then pd.vital_status_cd else cl.name_char end";
 
+		log.info("Script: " + demographics_count_sql);
 		boolean errorFlag = false;
 		int totalCount = 0;
 		try {

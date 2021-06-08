@@ -183,8 +183,9 @@ public class PdoQueryConceptDao extends CRCDAO implements IPdoQueryConceptDao {
 	 * @throws I2B2DAOException
 	 */
 	@Override
-	public ConceptSet getChildrentByItemKey(String itemKey, boolean detailFlag,
-			boolean blobFlag, boolean statusFlag) throws I2B2DAOException {
+	public ConceptSet getChildrentByItemKey(String itemKey, boolean detailFlag, boolean blobFlag, boolean statusFlag)
+			throws I2B2DAOException {
+		log.info("PdoQueryConceptDao.class: getChildrentByItemKey(String itemKey, boolean detailFlag, boolean blobFlag, boolean statusFlag)");
 		ConceptSet conceptDimensionSet = new ConceptSet();
 		if (itemKey != null) {
 			if (itemKey.lastIndexOf('\\') == itemKey.length() - 1) {
@@ -221,8 +222,7 @@ public class PdoQueryConceptDao extends CRCDAO implements IPdoQueryConceptDao {
 						+ getDbSchemaName()
 						+ "concept_dimension concept WHERE concept_path LIKE ? order by concept_path) ";
 
-			} else if (serverType.equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
-						|| serverType.equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
+			} else if (serverType.equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)) {
 				finalSql = "Select * from ( SELECT "
 						+ selectClause
 						+ " ROW_NUMBER() OVER (ORDER BY concept_path) AS RowNum"
@@ -230,7 +230,16 @@ public class PdoQueryConceptDao extends CRCDAO implements IPdoQueryConceptDao {
 						+ getDbSchemaName()
 						+ "concept_dimension concept WHERE concept_path LIKE ? order by concept_path) ";
 				itemKey = itemKey.replaceAll("\\\\", "\\\\\\\\");
+			} else if (serverType.equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
+				//TODO: check if [ is enough
+				finalSql = "Select * from ( SELECT "
+						+ selectClause
+						+ " %VID AS RowNum"
+						+ "  FROM "
+						+ getDbSchemaName()
+						+ "concept_dimension concept WHERE concept_path [ ? order by concept_path)";
 			}
+			log.info("Script: " + finalSql);
 			log.debug("Pdo Concept sql [" + finalSql + "]");
 			query = conn.prepareStatement(finalSql);
 			query.setString(1, itemKey);

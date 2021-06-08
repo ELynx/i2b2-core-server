@@ -14,7 +14,6 @@
  */
 package edu.harvard.i2b2.ontology.dao;
 
-import java.io.IOException;
 import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -29,17 +28,12 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.support.JdbcDaoSupport;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 
 import edu.harvard.i2b2.common.exception.I2B2Exception;
-import edu.harvard.i2b2.common.util.db.JDBCUtil;
 import edu.harvard.i2b2.common.util.jaxb.DTOFactory;
-import edu.harvard.i2b2.common.util.xml.XMLUtil;
 import edu.harvard.i2b2.ontology.datavo.pm.ProjectType;
 import edu.harvard.i2b2.ontology.datavo.vdo.ConceptType;
 import edu.harvard.i2b2.ontology.datavo.vdo.VocabRequestType;
-import edu.harvard.i2b2.ontology.datavo.vdo.XmlValueType;
 import edu.harvard.i2b2.ontology.util.OntologyUtil;
 import edu.harvard.i2b2.ontology.util.Roles;
 import edu.harvard.i2b2.ontology.util.StringUtil;
@@ -54,6 +48,7 @@ public class GetCodeInfoDao extends JdbcDaoSupport {
 	final static String BLOB = ", c_metadataxml, c_comment ";	
 
 	public List findCodeInfo(final VocabRequestType vocabType, final List categories, ProjectType projectInfo) throws DataAccessException, I2B2Exception{
+		log.info("GetCodeInfoDao.class: findCodeInfo(final VocabRequestType vocabType, final List categories, ProjectType projectInfo)");
 		DataSource ds = null;
 		try {
 			ds = OntologyUtil.getInstance().getDataSource("java:OntologyLocalDS");
@@ -72,7 +67,7 @@ public class GetCodeInfoDao extends JdbcDaoSupport {
 		else if (vocabType.getType().equals("all")){
 			parameters = ALL;
 		}
-		if(vocabType.isBlob() == true)
+		if(vocabType.isBlob())
 			parameters = parameters + BLOB;
 
 		//extract table code
@@ -124,11 +119,12 @@ public class GetCodeInfoDao extends JdbcDaoSupport {
 		}
 
 		String hidden = "";
-		if(vocabType.isHiddens() == false)
-			hidden = " and c_visualattributes not like '_H%'";
+		//TODO: only for the IRIS
+		if(!vocabType.isHiddens())
+			hidden = " and (not c_visualattributes %STARTSWITH '_H')";
 
 		String synonym = "";
-		if(vocabType.isSynonyms() == false)
+		if(!vocabType.isSynonyms())
 			synonym = " and c_synonym_cd = 'N'";
 
 		String codeInfoSql = null;
@@ -151,9 +147,8 @@ public class GetCodeInfoDao extends JdbcDaoSupport {
 
 		log.debug(codeInfoSql);
 		final  boolean obfuscatedUserFlag = Roles.getInstance().isRoleOfuscated( projectInfo );
-		
 
-
+		log.info("Script: " + codeInfoSql);
 		List queryResult = null;
 		try {
 			if(tableNames != null)
@@ -178,7 +173,7 @@ public class GetCodeInfoDao extends JdbcDaoSupport {
 
 			// Cant gather clobs when you perform unions....
 			//  So you have to loop through all the results and gather clobs			
-			if (vocabType.isBlob() == true){
+			if (vocabType.isBlob()){
 				Iterator itr = queryResult.iterator();
 				while (itr.hasNext()){
 					ConceptType child = (ConceptType) itr.next();
@@ -302,7 +297,7 @@ class GetExpandedConcept implements RowMapper<ExpandedConceptType> {
 			entry.setSynonymCd(rs.getString("c_synonym_cd"));
 			entry.setVisualattributes(rs.getString("c_visualattributes"));
 			Integer totalNum = rs.getInt("c_totalnum");
-			if (obfuscatedUserFlag == false) { 
+			if (!obfuscatedUserFlag) {
 				entry.setTotalnum(totalNum);
 			}
 			entry.setFacttablecolumn(rs.getString("c_facttablecolumn" ));

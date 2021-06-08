@@ -58,7 +58,7 @@ public class QueryResultPatientRaceCdCountGenerator extends CRCDAO implements
 				+ TEMP_DX_TABLE
 				+ " dx where pd.patient_num = dx.patient_num"
 				+ " group by case when cl.name_char IS NULL then pd.race_cd else cl.name_char end";
-
+		log.info("Script: " + demographics_count_sql);
 		boolean errorFlag = false;
 		int totalCount = 0;
 		try {

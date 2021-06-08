@@ -55,15 +55,13 @@ public class GetChildrenDao extends JdbcDaoSupport {
 	final static String BLOB = ", c_metadataxml, c_comment ";
 
 	public List findChildrenByParent(final GetChildrenType childrenType, final List categories, final ProjectType projectInfo) throws DataAccessException{
-
+		log.info("GetChildrenDao.class: findChildrenByParent(final GetChildrenType childrenType, final List categories, final ProjectType projectInfo)");
 		DataSource ds = null;
 		try {
 			ds = OntologyUtil.getInstance().getDataSource("java:OntologyLocalDS");
 		} catch (I2B2Exception e2) {
 			log.error(e2.getMessage());
 		} 
-
-
 
 		JdbcTemplate jt = new JdbcTemplate(ds);
 
@@ -75,7 +73,7 @@ public class GetChildrenDao extends JdbcDaoSupport {
 		else if (childrenType.getType().equals("all")){
 			parameters = ALL;
 		}
-		if(childrenType.isBlob() == true)
+		if(childrenType.isBlob())
 			parameters = parameters + BLOB;
 
 		//extract table code
@@ -99,7 +97,8 @@ public class GetChildrenDao extends JdbcDaoSupport {
 
 		// Lookup to get chlevel + 1 ---  dont allow synonyms so we only get one result back
 
-		String levelSql = "select c_hlevel from " + metadataSchema+tableName  + " where c_fullname like ?  and c_synonym_cd = 'N'";
+		//TODO: only for the IRIS
+		String levelSql = "select c_hlevel from " + metadataSchema+tableName  + " where c_fullname [ ?  and c_synonym_cd = 'N'";
 
 		int level = 0;
 		try {
@@ -111,24 +110,25 @@ public class GetChildrenDao extends JdbcDaoSupport {
 		}
 
 		String hidden = "";
-		if(childrenType.isHiddens() == false)
-			hidden = " and c_visualattributes not like '_H%'";
+		//TODO: only for the IRIS
+		if(!childrenType.isHiddens())
+			hidden = " and (not c_visualattributes %STARTSWITH '_H')";
 
 		String synonym = "";
-		if(childrenType.isSynonyms() == false)
+		if(!childrenType.isSynonyms())
 			synonym = " and c_synonym_cd = 'N'";
-
-		String sql = "select " + parameters +" from " + metadataSchema+tableName  + " where c_fullname like ? and c_hlevel = ? "; 
+		//TODO: only for the IRIS
+		//TODO: check if [ is enough for IRIS
+		String sql = "select " + parameters +" from " + metadataSchema + tableName  +
+				" where c_fullname [ ? and c_hlevel = ? ";
 		sql = sql + hidden + synonym + " order by c_name ";
 
 		//	log.info(sql + path + level);
 		final  boolean obfuscatedUserFlag = Roles.getInstance().isRoleOfuscated( projectInfo );
 
+		log.info("Script [" + searchPath + ", " + (level + 1) + "]: " + sql);
 
-
-		//log.info(sql + " " + path + " " + level);
-
-		List queryResult = null;
+		List queryResult;
 		try {
 			queryResult = jt.query(sql, getChildrenType(obfuscatedUserFlag, childrenType), searchPath, (level + 1) );
 		} catch (DataAccessException e) {
@@ -193,7 +193,7 @@ class GetChildrenConcept implements RowMapper<ConceptType> {
 		child.setVisualattributes(rs.getString("c_visualattributes"));
 		Integer totalNum = rs.getInt("c_totalnum");
 
-		if (obfuscatedUserFlag == false ) { 
+		if (!obfuscatedUserFlag) {
 			child.setTotalnum(totalNum);
 		}
 		child.setFacttablecolumn(rs.getString("c_facttablecolumn" ));
@@ -203,7 +203,7 @@ class GetChildrenConcept implements RowMapper<ConceptType> {
 		child.setOperator(rs.getString("c_operator")); 
 		child.setDimcode(rs.getString("c_dimcode")); 
 		child.setTooltip(rs.getString("c_tooltip"));
-		if(childrenType.isBlob() == true){
+		if(childrenType.isBlob()){
 			try {
 				if(rs.getClob("c_comment") == null)
 					child.setComment(null);

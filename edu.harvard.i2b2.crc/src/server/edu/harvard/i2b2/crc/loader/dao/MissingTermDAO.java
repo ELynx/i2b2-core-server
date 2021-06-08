@@ -70,7 +70,6 @@ public class MissingTermDAO extends CRCLoaderDAO implements IMissingTermDAO {
 						+ this.getDbSchemaName() + "observation_fact obs" + uploadConstrainMappedSql;
 
 			} else if (setName.equals("concept_set")) {
-
 				unmappedSql = " select count(distinct concept_cd) from "
 						+ this.getDbSchemaName() + "observation_fact "
 						+ " where " + uploadConstrainSql
@@ -210,16 +209,14 @@ public class MissingTermDAO extends CRCLoaderDAO implements IMissingTermDAO {
 				uploadConstrainSql = " and obs.upload_id = " + uploadId;
 			}
 			conn = getDataSource().getConnection();
-			if (dataSourceLookup.getServerType().equalsIgnoreCase(
-					DataSourceLookupDAOFactory.SQLSERVER)) {
+			if (dataSourceLookup.getServerType().equalsIgnoreCase(DataSourceLookupDAOFactory.SQLSERVER)) {
 				sql = " select tot,modifier_cd, rnum  from ( "
 					+ " select count(*) tot, obs1.modifier_cd, row_number() over (order by obs1.modifier_cd asc)  rnum from "
 					+ this.getDbSchemaName() + "observation_fact obs1 where modifier_cd not in ( "
 					+ " select modifier_cd from " + this.getDbSchemaName()
 					+ "modifier_dimension)  "
 					+ uploadConstrainSql + " group by obs1.modifier_cd) f where rnum between " + startPos + " and "  + endPos ;
-			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(
-					DataSourceLookupDAOFactory.ORACLE)) {
+			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DataSourceLookupDAOFactory.ORACLE)) {
 				sql = " select tot, modifier_cd, rnum from (select count(*) tot, obs1.modifier_cd, rownum  rnum from "
 					+ this.getDbSchemaName()
 					+ "observation_fact obs1 where  "
@@ -281,16 +278,14 @@ public class MissingTermDAO extends CRCLoaderDAO implements IMissingTermDAO {
 				uploadConstrainSql = " and obs.upload_id = " + uploadId;
 			}
 			conn = getDataSource().getConnection();
-			if (dataSourceLookup.getServerType().equalsIgnoreCase(
-					DataSourceLookupDAOFactory.SQLSERVER)) {
+			if (dataSourceLookup.getServerType().equalsIgnoreCase(DataSourceLookupDAOFactory.SQLSERVER)) {
 				sql = " select tot,provider_id, rnum  from ( "
 					+ " select count(*) tot, obs1.provider_id, row_number() over (order by obs1.provider_id asc)  rnum from "
 					+ this.getDbSchemaName() + "observation_fact obs1 where provider_id not in ( "
 					+ " select provider_id from " + this.getDbSchemaName()
 					+ "provider_dimension)  "
 					+ uploadConstrainSql + " group by obs1.provider_id) f where rnum between " + startPos + " and "  + endPos ;
-			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(
-					DataSourceLookupDAOFactory.ORACLE)) {
+			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DataSourceLookupDAOFactory.ORACLE)) {
 				sql = " select tot,provider_id, rnum from (select count(*) tot, obs1.provider_id, rownum  rnum from "
 					+ this.getDbSchemaName()
 					+ "observation_fact obs1 where  "
