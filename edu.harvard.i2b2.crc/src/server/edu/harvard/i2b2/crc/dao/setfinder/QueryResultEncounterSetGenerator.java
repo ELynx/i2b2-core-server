@@ -195,7 +195,7 @@ public class QueryResultEncounterSetGenerator extends CRCDAO implements
 			boolean sameVisitFlag = queryTimingHandler
 					.isSameVisit(queryDefType);
 
-			if (sameVisitFlag == false) {
+			if (!sameVisitFlag) {
 				encounterSetSql = " select encounter_num, patient_num from "
 						+ sfDAOFactory.getDataSourceLookup().getFullSchema()
 						+ ".visit_dimension  "
