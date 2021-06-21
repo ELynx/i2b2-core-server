@@ -260,7 +260,7 @@ public class ConceptDao extends JdbcDaoSupport {
 			synonym = " and c_synonym_cd = 'N'";
 
 		String sql = "select " + parameters + " from " + metadataSchema + tableName + " where c_fullname " +
-				QueryUtil.getOperatorByValue(path) + " ? and c_hlevel = ? ";
+				QueryUtil.getOperatorByValue(searchPath) + " ? and c_hlevel = ? ";
 
 		sql = sql + hidden + synonym + " order by upper(c_name) ";
 		log.info("Script: " + sql);
@@ -269,11 +269,11 @@ public class ConceptDao extends JdbcDaoSupport {
 		//ParameterizedRowMapper<ConceptType> mapper = getMapper(new NodeType(childrenType),obfuscatedUserFlag, dbInfo.getDb_serverType());
 
 		log.info("Script: " + sql);
-		List<ConceptType> queryResult = null;
+		List<ConceptType> queryResult;
 		try {
 			queryResult = jt.query(sql,
 					getConceptNodeMapper(new NodeType(childrenType),obfuscatedUserFlag, dbInfo.getDb_serverType()),
-					QueryUtil.getCleanValue(path), (level + 1));
+					QueryUtil.getCleanValue(searchPath), (level + 1));
 		} catch (Exception e) {
 			log.error("Get Children " + e.getMessage());
 			throw new I2B2DAOException("Database Error");
@@ -713,7 +713,7 @@ public class ConceptDao extends JdbcDaoSupport {
 		else { // need escape logic for like operator
 			if (vocabType.getMatchStr().getStrategy().equals("left"))
 				whereClause = " where upper(c_basecode) " +
-						QueryUtil.getOperatorByValue(compareCode) + " '" +
+						QueryUtil.getOperatorByValue(compareCode + "%") + " '" +
 						QueryUtil.getCleanValue(compareCode + "%") + "' ";
 			else if(vocabType.getMatchStr().getStrategy().equals("right")) {
 				compareCode = compareCode.replaceFirst(":", ":%");
@@ -722,7 +722,8 @@ public class ConceptDao extends JdbcDaoSupport {
 			} else if(vocabType.getMatchStr().getStrategy().equals("contains")) {
 				compareCode = compareCode.replaceFirst(":", ":%");
 				whereClause = " where upper(c_basecode) " +
-						QueryUtil.getOperatorByValue(compareCode) + " '" + QueryUtil.getCleanValue(compareCode + "%") + "' ";
+						QueryUtil.getOperatorByValue(compareCode + "%") +
+						" '" + QueryUtil.getCleanValue(compareCode + "%") + "' ";
 			}
 		}
 		//	log.debug(vocabType.getMatchStr().getStrategy() + whereClause);
@@ -1039,9 +1040,9 @@ public class ConceptDao extends JdbcDaoSupport {
 		String appliedExclConcept = StringUtil.getLiteralPath(modifierChildrenType.getAppliedConcept());
 		// I have to do this the hard way because there are a dynamic number of applied paths to check
 		//   prevent SQL injection
-		if(appliedExclConcept.contains("'")){
+		if(appliedExclConcept.contains("'"))
 			appliedExclConcept = appliedExclConcept.replaceAll("'", "''");
-		}
+
 		while (appliedExclConcept.length() > 2) {
 			if (appliedExclConcept.endsWith("%")) {
 				appliedExclConcept = appliedExclConcept.substring(0, appliedExclConcept.length()-2);
@@ -1058,7 +1059,7 @@ public class ConceptDao extends JdbcDaoSupport {
 		log.info("Script: " + sql);
 		try {
 			queryResult = jt.query(sql, getModNodeMapper(new NodeType(modifierChildrenType),
-					ofuscatedUserFlag, dbInfo.getDb_serverType()), (level+1), searchPath,
+					ofuscatedUserFlag, dbInfo.getDb_serverType()), (level+1), QueryUtil.getCleanValue(searchPath),
 					StringUtil.getLiteralPath(modifierChildrenType.getAppliedConcept()),
 					StringUtil.getLiteralPath(modifierChildrenType.getAppliedConcept()));
 		} catch (DataAccessException e) {

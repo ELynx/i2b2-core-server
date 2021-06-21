@@ -124,7 +124,8 @@ public class GetNameInfoDao extends JdbcDaoSupport {
 		log.info("Script: " + nameInfoSql);
 		List queryResult;
 		try {
-			queryResult = jt.query(nameInfoSql, getNamesInfoMapper(obfuscatedUserFlag,vocabType,dbType), QueryUtil.getCleanValue(compareName));
+			queryResult = jt.query(nameInfoSql, getNamesInfoMapper(obfuscatedUserFlag,vocabType,dbType),
+					QueryUtil.getCleanValue(compareName));
 		} catch (DataAccessException e) {
 			log.error(e.getMessage());
 			throw e;

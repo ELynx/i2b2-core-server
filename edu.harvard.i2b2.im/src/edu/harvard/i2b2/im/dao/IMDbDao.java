@@ -84,7 +84,7 @@ public class IMDbDao extends JdbcDaoSupport {
 		String metadataSchema = getIMSchema();
 		String sql = "select * from " + metadataSchema + "im_db_lookup where LOWER(c_domain_id) = ? " +
 				"and LOWER(c_project_path) " + QueryUtil.getOperatorByValue(projectId.toLowerCase()) +
-				" ? and (LOWER(c_owner_id) =? or c_owner_id = '@') order by c_project_path"; // desc  c_owner_id desc";
+				" ? and (LOWER(c_owner_id) = ? or c_owner_id = '@') order by c_project_path"; // desc  c_owner_id desc";
 		log.info("Script [" + domainId + ", " + projectId + ", " + ownerId + "]: " + sql);
 		List queryResult;
 		try {
