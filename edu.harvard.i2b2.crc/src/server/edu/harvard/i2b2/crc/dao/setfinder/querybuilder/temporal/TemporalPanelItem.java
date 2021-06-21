@@ -21,6 +21,7 @@ import java.util.List;
 import javax.xml.stream.XMLStreamException;
 
 import org.apache.axis2.AxisFault;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.w3c.dom.Element;
@@ -29,7 +30,6 @@ import edu.harvard.i2b2.common.exception.I2B2DAOException;
 import edu.harvard.i2b2.common.exception.I2B2Exception;
 import edu.harvard.i2b2.common.exception.StackTraceUtil;
 import edu.harvard.i2b2.common.util.jaxb.JAXBUtilException;
-import edu.harvard.i2b2.crc.dao.DAOFactoryHelper;
 import edu.harvard.i2b2.crc.dao.setfinder.querybuilder.ConceptNotFoundException;
 import edu.harvard.i2b2.crc.dao.setfinder.querybuilder.DateConstrainUtil;
 import edu.harvard.i2b2.crc.dao.setfinder.querybuilder.OntologyException;
@@ -50,7 +50,6 @@ import edu.harvard.i2b2.crc.delegate.ontology.CallOntologyUtil;
 import edu.harvard.i2b2.crc.util.ParamUtil;
 import edu.harvard.i2b2.crc.util.QueryProcessorUtil;
 import edu.harvard.i2b2.crc.util.SqlClauseUtil;
-import edu.harvard.i2b2.crc.util.StringUtil;
 
 
 /**
@@ -98,8 +97,7 @@ public abstract class TemporalPanelItem {
 	 * @param item - object representation of the xml from panel item contained in query definition xml 
 	 * @throws I2B2Exception - thrown when an i2b2 specific error is found
 	 */
-	public TemporalPanelItem(TemporalPanel parent, ItemType item)
-			throws I2B2Exception {
+	public TemporalPanelItem(TemporalPanel parent, ItemType item) throws I2B2Exception {
 		this.parent = parent;
 		this.baseItem = item;
 		parseItem();
@@ -113,8 +111,7 @@ public abstract class TemporalPanelItem {
 	 * @param conceptType - object representation of the item obtained from the Ontology cell
 	 * @throws I2B2Exception - thrown when an i2b2 specific error is found
 	 */
-	public TemporalPanelItem(TemporalPanel parent, ItemType item, ConceptType conceptType)
-			throws I2B2Exception {
+	public TemporalPanelItem(TemporalPanel parent, ItemType item, ConceptType conceptType) throws I2B2Exception {
 		this.parent = parent;
 		this.baseItem = item;
 		this.conceptType = conceptType;
@@ -131,13 +128,12 @@ public abstract class TemporalPanelItem {
 	 * @throws I2B2Exception - thrown when an i2b2 specific error is found
 	 */
 	protected void parseItem() throws I2B2Exception {
-		if (conceptType==null){
+		if (conceptType == null)
 			conceptType = getConceptType();
-		}
 		if (conceptType != null) {
-			if (conceptType.getTotalnum() != null) {
+			if (conceptType.getTotalnum() != null)
 				conceptTotal = conceptType.getTotalnum();
-			}
+
 			factTableColumn = conceptType.getFacttablecolumn();
 			tableName = conceptType.getTablename();
 			dimCode = conceptType.getDimcode();
@@ -146,22 +142,23 @@ public abstract class TemporalPanelItem {
 			metaDataXml = conceptType.getMetadataxml();
 			ontologyProtection = conceptType.getOntologyProtection();
 			if (conceptType.getProtectedAccess() != null)
-				isProtected = (conceptType.getProtectedAccess().equalsIgnoreCase("Y")?true:false);
+				isProtected = conceptType.getProtectedAccess().equalsIgnoreCase("Y");
 			
 			// If protected check roles
-			if (isProtected)
-			{
-				Boolean protectedAccess = false;
+			if (isProtected) {
+				boolean protectedAccess = false;
 				String[] dataProt = {"DATA_PROT"};
-				List<String> ontologyProtection = Arrays.asList(conceptType.getOntologyProtection() == null || conceptType.getOntologyProtection().equals("")?dataProt:conceptType.getOntologyProtection().split(","));
+				List<String> ontologyProtection = Arrays.asList(conceptType.getOntologyProtection() == null
+						|| conceptType.getOntologyProtection().equals(StringUtils.EMPTY)
+						? dataProt : conceptType.getOntologyProtection().split(","));
 				for (String s: parent.getUserRoles()) {
-					if (ontologyProtection.contains(s))
+					if (ontologyProtection.contains(s)) {
 						protectedAccess = true;
-					
+						break;
+					}
 				}
-				
-				if (protectedAccess == false)
-				 throw new I2B2DAOException("This query contains protected.");
+				if (!protectedAccess)
+					throw new I2B2DAOException("This query contains protected.");
 			}
 			//OMOP addition
 			parseFactColumn(factTableColumn);
@@ -206,17 +203,15 @@ public abstract class TemporalPanelItem {
 		String havingClause = buildHavingSql();
 		log.info("Script - havingClause: " + havingClause);
 
-		if (parent.getAccuracyScale()>0&&
-				valueConstraintSql[1]!=null&&
-				valueConstraintSql[1].trim().length()>0) { 
+		if (parent.getAccuracyScale() > 0 &&
+				valueConstraintSql[1] != null &&
+				valueConstraintSql[1].trim().length() > 0)
 			fromSql += valueConstraintSql[1];
-		}
 
-		if (parent.getAccuracyScale() >0&
-				modifierValueConstrainSql[1]!=null&&
-				modifierValueConstrainSql[1].trim().length()>0) { 
+		if (parent.getAccuracyScale() > 0 &
+				modifierValueConstrainSql[1] != null &&
+				modifierValueConstrainSql[1].trim().length() > 0)
 			fromSql += modifierValueConstrainSql[1];
-		}
 
 		String derivedTableSql = " select " + sqlHintClause 
 				+ selectSql
@@ -245,12 +240,8 @@ public abstract class TemporalPanelItem {
 	 * @return String formatted sql string
 	 */
 	private String formatSql(String sql){
-		if (sql!=null&&sql.trim().length()>0)
-			return "\n" + sql;
-		else
-			return "";
+		return sql != null && sql.trim().length() > 0 ? ("\n" + sql) : StringUtils.EMPTY;
 	}
-
 
 	/**
 	 * Build Select Sql
@@ -264,6 +255,15 @@ public abstract class TemporalPanelItem {
 		return buildSelectSql(getPrimaryTableAlias());
 	}
 
+	private static String buildTableAlias(String tableAlias) {
+		if (tableAlias != null && tableAlias.trim().length() > 0) {
+			if(!tableAlias.trim().endsWith("."))
+				tableAlias += ".";
+		} else
+			tableAlias =StringUtils.EMPTY;
+		return tableAlias;
+	}
+
 	/**
 	 * Build Select Sql
 	 * 
@@ -275,8 +275,7 @@ public abstract class TemporalPanelItem {
 	 */
 	protected String buildSelectSql(String tableAlias){
 
-		if (tableAlias!=null&&tableAlias.trim().length()>0)
-			tableAlias += ".";
+		tableAlias = buildTableAlias(tableAlias);
 
 		String selectClause = tableAlias + "patient_num ";
 
@@ -294,7 +293,7 @@ public abstract class TemporalPanelItem {
 
 		if (parent.hasPanelOccurrenceConstraint() &&
 				parent.applyOccurrenceToPanelLevel() &&
-				(parent.getItemList().size()>1 ||
+				(parent.getItemList().size() > 1 ||
 						!parent.isPatientOnlyQuery())){
 			selectClause += ", " + buildFactCountSql(tableAlias) + " ";
 		}
@@ -367,17 +366,11 @@ public abstract class TemporalPanelItem {
 	 * @return String sql FROM clause that contains tables used in this item query 
 	 */
 	protected String buildDimensionJoinSql(String tableAlias) {
-		String dimensionSql = "";
-		if (tableAlias!=null&&tableAlias.trim().length()>0)
-			tableAlias += ".";
+		String dimensionSql;
 
-		if (parent.getServerType().equalsIgnoreCase("POSTGRESQL") && this.operator != null
-				&& this.operator.equalsIgnoreCase("LIKE") && this.dimCode != null)
-			this.dimCode = this.dimCode.replaceAll("\\\\", "\\\\\\\\");
+		tableAlias = buildTableAlias(tableAlias);
 
-		if(parent.getServerType().equalsIgnoreCase("InterSystems IRIS")
-				&& this.operator != null && this.operator.endsWith("LIKE")
-				&& this.dimCode != null) {
+		if(this.operator != null && this.operator.endsWith("LIKE") && this.dimCode != null) {
 			String operator = null;
 			if ('%' == this.dimCode.charAt(0))
 				operator = "[";
@@ -389,18 +382,13 @@ public abstract class TemporalPanelItem {
 					+ this.factTableColumn + " from " + noLockSqlServer
 					+ parent.getDatabaseSchema() + this.tableName
 					+ "  " + " where " + this.columnName + " "
-					+ operator + " " + this.dimCode.replaceAll("%", "");
+					+ operator + " " + this.dimCode.replaceAll("%", StringUtils.EMPTY);
 		} else
 			dimensionSql = tableAlias + this.factTableColumn + " IN (select "
 					+ this.factTableColumn + " from " + noLockSqlServer
 					+ parent.getDatabaseSchema() + this.tableName
 					+ "  " + " where " + this.columnName + " "
 					+ this.operator + " " + this.dimCode;
-
-		if (!parent.getServerType().equalsIgnoreCase("InterSystems IRIS")
-				&& this.operator != null && this.operator.equalsIgnoreCase("LIKE")
-				&& this.dimCode != null && this.dimCode.contains("?"))
-			dimensionSql +=  (!parent.getDataSourceLookup().getServerType().toUpperCase().equals("POSTGRESQL") ? " {ESCAPE '?'} " : "" ) ;
 		dimensionSql += ")";
 		return dimensionSql;
 	}
@@ -429,52 +417,37 @@ public abstract class TemporalPanelItem {
 	 */
 	protected String buildItemDateConstraintSql(String tableAlias) {
 		// generate sql for item date constrain
-		DateConstrainUtil dateConstrainUtil = new DateConstrainUtil(
-				parent.getDataSourceLookup());
-		String itemDateConstrainSql = dateConstrainUtil
-				.buildItemDateSql(baseItem, tableAlias);
-		if (itemDateConstrainSql != null
-				&& itemDateConstrainSql.trim().length() > 0) {
+		DateConstrainUtil dateConstrainUtil = new DateConstrainUtil(parent.getDataSourceLookup());
+		String itemDateConstrainSql = dateConstrainUtil.buildItemDateSql(baseItem, tableAlias);
+		if (itemDateConstrainSql != null && itemDateConstrainSql.trim().length() > 0) {
 			log.info("Item date constrain sql" + itemDateConstrainSql);
 			itemDateConstrainSql = "  AND ( " + itemDateConstrainSql + " ) ";
-		} else {
-			itemDateConstrainSql = "";
-		}
+		} else
+			itemDateConstrainSql = StringUtils.EMPTY;
 		return itemDateConstrainSql;
 	}
 
-	protected String[] buildValueConstraintSql()
-			throws I2B2DAOException {
-
+	protected String[] buildValueConstraintSql() throws I2B2DAOException {
 		// generate sql for unit_cd conversion
-		String unitCdSwitchClause = "", unitCdInClause = "";
-
+		String unitCdSwitchClause = StringUtils.EMPTY, unitCdInClause = StringUtils.EMPTY;
 		if (parent.getProjectParameterMap() != null
 				&& parent.getProjectParameterMap().get(ParamUtil.CRC_ENABLE_UNITCD_CONVERSION) != null) {
 			String unitCdConversionFlag = (String) parent.getProjectParameterMap().get(ParamUtil.CRC_ENABLE_UNITCD_CONVERSION);
-			if (unitCdConversionFlag != null
-					&& unitCdConversionFlag.equalsIgnoreCase("ON")) {
-				if (metaDataXml != null
-						&& metaDataXml.getAny().get(0) != null) {
+			if (unitCdConversionFlag != null && unitCdConversionFlag.equalsIgnoreCase("ON")) {
+				if (metaDataXml != null && metaDataXml.getAny().get(0) != null) {
 					Element valueMetadataElement = metaDataXml.getAny().get(0);
 					UnitConverstionUtil unitConverstionUtil = new UnitConverstionUtil();
-					unitCdSwitchClause = unitConverstionUtil
-							.buildUnitCdSwitchClause(valueMetadataElement,
-									false, "");
-					log.debug("concept unit Conversion sql "
-							+ unitCdSwitchClause);
-					unitCdInClause = unitConverstionUtil.buildUnitCdInClause(
-							valueMetadataElement, "");
-
+					unitCdSwitchClause = unitConverstionUtil.buildUnitCdSwitchClause(valueMetadataElement,
+									false, StringUtils.EMPTY);
+					log.debug("concept unit Conversion sql " + unitCdSwitchClause);
+					unitCdInClause = unitConverstionUtil.buildUnitCdInClause(valueMetadataElement, StringUtils.EMPTY);
 				}
 			}
 		}
 
 		ValueConstrainsHandler valueConstrainHandler = new ValueConstrainsHandler();
-		if (unitCdSwitchClause.length() > 0) {
-			valueConstrainHandler.setUnitCdConversionFlag(true, unitCdInClause,
-					unitCdSwitchClause);
-		}
+		if (unitCdSwitchClause.length() > 0)
+			valueConstrainHandler.setUnitCdConversionFlag(true, unitCdInClause, unitCdSwitchClause);
 
 		String[] itemValueConstrainSql = valueConstrainHandler
 				.constructValueConstainClause(baseItem.getConstrainByValue(),
@@ -482,86 +455,57 @@ public abstract class TemporalPanelItem {
 						parent.getAccuracyScale(), true);
 		log.info("Item value constrain sql " + itemValueConstrainSql);
 
-		if (itemValueConstrainSql != null
-				&& itemValueConstrainSql[0].trim().length() > 0) {
-
-			itemValueConstrainSql[0] = "  AND  ( " + itemValueConstrainSql[0]
-					+ " )";
-		} else {
-			itemValueConstrainSql[0] = "";
-		}
+		if (itemValueConstrainSql != null && itemValueConstrainSql[0].trim().length() > 0)
+			itemValueConstrainSql[0] = "  AND  ( " + itemValueConstrainSql[0] + " )";
+		else
+			itemValueConstrainSql[0] = StringUtils.EMPTY;
 		return itemValueConstrainSql;
 	}
 
-	protected String[] buildModifierValueConstraintSql()
-			throws I2B2DAOException {
-
-		if (modifierType==null){
+	protected String[] buildModifierValueConstraintSql() throws I2B2DAOException {
+		if (modifierType == null)
 			modifierType = getModifierMetadataFromOntology();
-		}
+		if (modifierType == null)
+			return new String[] { StringUtils.EMPTY, StringUtils.EMPTY };
 
-		if (modifierType==null)
-			return new String[] { "", "" };
+		String modifierUnitCdSwitchClause = StringUtils.EMPTY, modifierUnitCdInClause = StringUtils.EMPTY;
 
-		String modifierUnitCdSwitchClause = "", modifierUnitCdInClause = "";
-
-		if (parent.getProjectParameterMap() != null
-				&& parent.getProjectParameterMap().get(
+		if (parent.getProjectParameterMap() != null && parent.getProjectParameterMap().get(
 						ParamUtil.CRC_ENABLE_UNITCD_CONVERSION) != null) {
-			String unitCdConversionFlag = (String) parent
-					.getProjectParameterMap().get(
+			String unitCdConversionFlag = (String) parent.getProjectParameterMap().get(
 							ParamUtil.CRC_ENABLE_UNITCD_CONVERSION);
-			if (unitCdConversionFlag != null
-					&& unitCdConversionFlag.equalsIgnoreCase("ON")) {
-				if (modifierType != null
-						&& modifierType.getMetadataxml() != null
+			if (unitCdConversionFlag != null && unitCdConversionFlag.equalsIgnoreCase("ON")) {
+				if (modifierType != null && modifierType.getMetadataxml() != null
 						&& modifierType.getMetadataxml().getAny().get(0) != null) {
-					Element valueMetadataElement = modifierType
-							.getMetadataxml().getAny().get(0);
+					Element valueMetadataElement = modifierType.getMetadataxml().getAny().get(0);
 					UnitConverstionUtil unitConverstionUtil = new UnitConverstionUtil();
 					modifierUnitCdSwitchClause = unitConverstionUtil
-							.buildUnitCdSwitchClause(valueMetadataElement,
-									false, "");
-					log.debug("modifier unit Conversion sql "
-							+ modifierUnitCdSwitchClause);
-					modifierUnitCdInClause = unitConverstionUtil
-							.buildUnitCdInClause(valueMetadataElement, "");
-
+							.buildUnitCdSwitchClause(valueMetadataElement, false, StringUtils.EMPTY);
+					log.debug("modifier unit Conversion sql " + modifierUnitCdSwitchClause);
+					modifierUnitCdInClause = unitConverstionUtil.buildUnitCdInClause(valueMetadataElement, StringUtils.EMPTY);
 				}
 			}
 		}
-
 		ValueConstrainsHandler valueConstrainHandler = new ValueConstrainsHandler();
-		if (modifierUnitCdSwitchClause.length() > 0) {
-			valueConstrainHandler.setUnitCdConversionFlag(true,
-					modifierUnitCdInClause, modifierUnitCdSwitchClause);
-		}
+		if (modifierUnitCdSwitchClause.length() > 0)
+			valueConstrainHandler.setUnitCdConversionFlag(true, modifierUnitCdInClause, modifierUnitCdSwitchClause);
 
+		String itemModifierValueConstrainSql[] = new String[] { StringUtils.EMPTY, StringUtils.EMPTY };
 
-		String itemModifierValueConstrainSql[] = new String[] { "", "" };
-
-		if (baseItem.getConstrainByModifier() != null
-				&& baseItem.getConstrainByModifier().getConstrainByValue() != null) {
-			List<ItemType.ConstrainByValue> itemValueConstrainList = getModifierItemValueConstrain(baseItem.getConstrainByModifier().getConstrainByValue());
+		if (baseItem.getConstrainByModifier() != null && baseItem.getConstrainByModifier().getConstrainByValue() != null) {
+			List<ItemType.ConstrainByValue> itemValueConstrainList =
+					getModifierItemValueConstrain(baseItem.getConstrainByModifier().getConstrainByValue());
 			itemModifierValueConstrainSql = valueConstrainHandler
 					.constructValueConstainClause(itemValueConstrainList,
-							parent.getServerType(), parent.getDatabaseSchema(),
-							parent.getAccuracyScale(), false);
-			if (itemModifierValueConstrainSql != null
-					&& itemModifierValueConstrainSql[0].length() > 0) {
-				log.info("Modifier constrian value constrain sql "
-						+ itemModifierValueConstrainSql);
-			}
+							parent.getServerType(), parent.getDatabaseSchema(), parent.getAccuracyScale(), false);
+			if (itemModifierValueConstrainSql != null && itemModifierValueConstrainSql[0].length() > 0)
+				log.info("Modifier constrian value constrain sql " + itemModifierValueConstrainSql);
 		}
 
-		if (itemModifierValueConstrainSql[0] != null
-				&& itemModifierValueConstrainSql[0].trim().length() > 0) {
-
-			itemModifierValueConstrainSql[0] = "  AND  ( "
-					+ itemModifierValueConstrainSql[0] + " )";
-		} else {
-			itemModifierValueConstrainSql[0] = "";
-		}
+		if (itemModifierValueConstrainSql[0] != null && itemModifierValueConstrainSql[0].trim().length() > 0)
+			itemModifierValueConstrainSql[0] = "  AND  ( " + itemModifierValueConstrainSql[0] + " )";
+		else
+			itemModifierValueConstrainSql[0] = StringUtils.EMPTY;
 		return itemModifierValueConstrainSql;
 	}
 
@@ -570,16 +514,16 @@ public abstract class TemporalPanelItem {
 	}
 
 	protected String buildModifierConstraintSql(String tableAlias) throws I2B2DAOException {
-		if (modifierType==null)
+		if (modifierType == null)
 			modifierType = getModifierMetadataFromOntology();
 
-		if (modifierType==null)
-			return "";			
+		if (modifierType == null)
+			return StringUtils.EMPTY;
 
-		if (tableAlias!=null&&tableAlias.trim().length()>0)
-			tableAlias += ".";
+		tableAlias = buildTableAlias(tableAlias);
 
-		String dimPath = "", dimColumnName = "", dimCode = "", dimOperator = "", dimTableName = "", factTableColumn = "";
+		String dimPath = StringUtils.EMPTY, dimColumnName = StringUtils.EMPTY, dimCode = StringUtils.EMPTY,
+				dimOperator = StringUtils.EMPTY, dimTableName = StringUtils.EMPTY, factTableColumn = StringUtils.EMPTY;
 
 		String itemModifierConstrainSql = null;
 		if (modifierType != null) {
@@ -605,32 +549,18 @@ public abstract class TemporalPanelItem {
 		}
 
 		dimPath.replaceAll("'", "''");
-
-		if ((dimOperator != null) && (dimOperator.toUpperCase().equals("LIKE") 
-				&& (parent.getDataSourceLookup().getServerType().toUpperCase().equals("POSTGRESQL"))))
-			dimCode = dimCode.replaceAll("\\\\", "\\\\\\\\");
-
-				
-
 		itemModifierConstrainSql = " (" + tableAlias + factTableColumn + " IN  "
 				+ "(select " + factTableColumn 
 				+ " from " + parent.getDatabaseSchema() + dimTableName 
 				+ " where " + dimColumnName + " " + dimOperator + " " + dimCode;
 
-		if ((dimOperator != null) && (dimOperator.toUpperCase().equals("LIKE"))
-				&& (dimCode != null) && (dimCode.contains("?"))) {
-			itemModifierConstrainSql +=  (!parent.getDataSourceLookup().getServerType().toUpperCase().equals("POSTGRESQL") ? " {ESCAPE '?'} " : "" ) ;
-		}
 		itemModifierConstrainSql += ")) ";
 
-		if (itemModifierConstrainSql != null
-				&& itemModifierConstrainSql.trim().length() > 0) {
+		if (itemModifierConstrainSql != null && itemModifierConstrainSql.trim().length() > 0) {
 			log.info("Item modifier constrain sql" + itemModifierConstrainSql);
 			itemModifierConstrainSql = " AND " + itemModifierConstrainSql;
-		} else {
+		} else
 			itemModifierConstrainSql = " ";
-		}
-
 		return itemModifierConstrainSql;
 	}
 
@@ -640,10 +570,8 @@ public abstract class TemporalPanelItem {
 
 	protected String buildPanelDateConstraintSql(String tableAlias){
 		String panelDateConstraintSql = parent.buildDateConstraintSql(tableAlias);
-		if (panelDateConstraintSql!=null&&panelDateConstraintSql.trim().length() > 0) {
+		if (panelDateConstraintSql!=null&&panelDateConstraintSql.trim().length() > 0)
 			panelDateConstraintSql = "  AND  ( " + panelDateConstraintSql + " )";
-		}
-
 		return panelDateConstraintSql;
 	}
 
@@ -653,32 +581,22 @@ public abstract class TemporalPanelItem {
 
 	protected String buildGroupBySql(String tableAlias){
 		// check if the dimensionJoinSql is query in query with fact constrains
-		String groupbyClause = "";
-
-		if (tableAlias!=null&&tableAlias.trim().length()>0)
-			tableAlias += ".";
-
-		if (this.returnInstanceNum()) {
+		String groupbyClause = StringUtils.EMPTY;
+		tableAlias = buildTableAlias(tableAlias);
+		if (this.returnInstanceNum())
 			groupbyClause = " " + tableAlias + "encounter_num ,"
 					+ tableAlias + "instance_num, "
 					+ tableAlias + "concept_cd," + tableAlias
 					+ "start_date," + tableAlias + "provider_id,";
-		}
-		else if (this.returnEncounterNum()){
+		else if (this.returnEncounterNum())
 			groupbyClause = " " + tableAlias + "encounter_num ,";
-		}
-
 		groupbyClause += " " + tableAlias + "patient_num ";
-
 		return groupbyClause;
 	}
 
 	protected String buildFactCountSql(String tableAlias){
 		TotalItemOccurrences totalOccur = parent.getTotalOccurrences();
-
-		if (tableAlias!=null&&tableAlias.trim().length()>0&&!tableAlias.endsWith("."))
-			tableAlias += ".";
-
+		tableAlias = buildTableAlias(tableAlias);
 		if (totalOccur != null) {
 			if ((totalOccur.getOperator() != null
 					&& totalOccur.getOperator().value() != null 
@@ -686,21 +604,13 @@ public abstract class TemporalPanelItem {
 					&& totalOccur.getValue() == 1) {
 			} else {
 				String countDistinct = "*";
-				if (parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.SQLSERVER) ) {
-					countDistinct = " distinct cast(" + tableAlias + "patient_num as varchar) + '|' +  cast(" + tableAlias + "encounter_num as varchar) + '|' + "
-							+ " " + tableAlias + "provider_id + '|' + cast(" + tableAlias + "start_date as varchar) + '|' + cast(" + tableAlias + "instance_num as varchar) + '|' + " + tableAlias + "concept_cd";
-				} else if (parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE)
-						|| parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
-						|| parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
-					countDistinct = " distinct " + tableAlias + "patient_num || '|' || " + tableAlias + "encounter_num || '|' || " 
-							+ tableAlias + "provider_id || '|' || " + tableAlias + "instance_num || '|' ||" + tableAlias + "concept_cd || '|' ||cast(" + tableAlias + "start_date as varchar(50))";
-				}
-
+				countDistinct = " distinct " + tableAlias + "patient_num || '|' || " + tableAlias + "encounter_num || '|' || "
+						+ tableAlias + "provider_id || '|' || " + tableAlias + "instance_num || '|' ||"
+						+ tableAlias + "concept_cd || '|' ||cast(" + tableAlias + "start_date as varchar(50))";
 				return "count(" + countDistinct + ") as fact_count";
 			}
 		}
-
-		return "";
+		return StringUtils.EMPTY;
 	}
 
 	protected String buildHavingSql(){
@@ -714,57 +624,41 @@ public abstract class TemporalPanelItem {
 		String totalItemOccurrenceClause = totalItemOccurrencHandler.buildTotalItemOccurrenceClause(totalOccur);
 
 		String havingSql = " ";
-
-		if (tableAlias!=null&&tableAlias.trim().length()>0)
-			tableAlias += ".";
-
-		if ((!parent.applyOccurrenceToPanelLevel()||parent.getItemList().size()==1) && totalOccur != null) {
+		tableAlias = buildTableAlias(tableAlias);
+		if ((!parent.applyOccurrenceToPanelLevel() || parent.getItemList().size() == 1) && totalOccur != null) {
 			if ((totalOccur.getOperator() != null
 					&& totalOccur.getOperator().value() != null 
 					&& totalOccur.getOperator().value().equalsIgnoreCase(TotOccuranceOperatorType.GE.value()))
 					&& totalOccur.getValue() == 1) {
 			} else {
-				log.debug("Setfinder query total occurrences operator value ["
-						+ totalOccur.getOperator().value() + "]");
+				log.debug("Setfinder query total occurrences operator value [" + totalOccur.getOperator().value() + "]");
 				String countDistinct = "*";
-				if (parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.SQLSERVER) ) {
-					countDistinct = " distinct cast(" + tableAlias + "patient_num as varchar) + '|' +  cast(" + tableAlias + "encounter_num as varchar) + '|' + "
-							+ " " + tableAlias + "provider_id + '|' + cast(" + tableAlias + "start_date as varchar) + '|' + cast(" + tableAlias + "instance_num as varchar) + '|' + " + tableAlias + "concept_cd";
-				} else if (parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE)
-						|| parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
-						|| parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
-					countDistinct = " distinct " + tableAlias + "patient_num || '|' || " + tableAlias + "encounter_num || '|' || " 
-							+ tableAlias + "provider_id || '|' || " + tableAlias + "instance_num || '|' ||" + tableAlias + "concept_cd || '|' ||cast(" + tableAlias + "start_date as varchar(50))";
-				} 
-				havingSql = " having count(" + countDistinct + ") "
-						+ totalItemOccurrenceClause;
+				countDistinct = " distinct " + tableAlias + "patient_num || '|' || " + tableAlias + "encounter_num || '|' || "
+						+ tableAlias + "provider_id || '|' || " + tableAlias + "instance_num || '|' ||"
+						+ tableAlias + "concept_cd || '|' ||cast(" + tableAlias + "start_date as varchar(50))";
+				havingSql = " having count(" + countDistinct + ") " + totalItemOccurrenceClause;
 			}
 		}
-
 		return havingSql;
 	}
 	
 	public void parseFactColumn(String factColumnName){
 		this.factTable= "observation_fact";
 		this.factTableColumn = factColumnName;
-		if (this.parent.getQueryOptions()!=null&&this.parent.getQueryOptions().useDerivedFactTable())
-		{
-			if (factColumnName!=null&&factColumnName.contains(".")){
+		if (this.parent.getQueryOptions() != null && this.parent.getQueryOptions().useDerivedFactTable()) {
+			if (factColumnName != null && factColumnName.contains(".")) {
 				int lastIndex = factColumnName.lastIndexOf(".");
 				this.factTable= factColumnName.substring(0, lastIndex);
-				if ((lastIndex+1)<factColumnName.length()){
-					this.factTableColumn = factColumnName.substring(lastIndex+1);
-				}
+				if ((lastIndex + 1) < factColumnName.length())
+					this.factTableColumn = factColumnName.substring(lastIndex + 1);
 			}
 	//		log.info("using derived fact table: " + factTable);
 		}
 	}
 
-
 	protected String getJoinTable(){
 		return factTable;
 	}
-
 
 	protected void checkLargeTextConstrainPermission() throws I2B2DAOException{
 		for (ConstrainByValue cvt : baseItem.getConstrainByValue()) {
@@ -778,11 +672,10 @@ public abstract class TemporalPanelItem {
 
 	protected ModifierType getModifierMetadataFromOntology()
 			throws ConceptNotFoundException, OntologyException{
-		if (modifierType==null){
+		if (modifierType == null){
 			ItemType.ConstrainByModifier modifierConstrain = baseItem.getConstrainByModifier();
-			if (modifierConstrain == null) {
+			if (modifierConstrain == null)
 				return null;
-			}
 			String modifierKey = modifierConstrain.getModifierKey();
 			String modifierAppliedPath = modifierConstrain.getAppliedPath();
 			modifierType = getModifierMetadataFromOntology(modifierKey, modifierAppliedPath);
@@ -790,42 +683,31 @@ public abstract class TemporalPanelItem {
 		return modifierType;
 	}
 
-	protected List<ItemType.ConstrainByValue> getModifierItemValueConstrain(
-			List<ItemType.ConstrainByModifier.ConstrainByValue> modifierConstrainList) {
+	protected List<ItemType.ConstrainByValue> getModifierItemValueConstrain(List<ItemType.ConstrainByModifier.ConstrainByValue> modifierConstrainList) {
 		List<ItemType.ConstrainByValue> itemValueConstrainList = new ArrayList<ItemType.ConstrainByValue>();
 		for (ItemType.ConstrainByModifier.ConstrainByValue modifierValueConstrain : modifierConstrainList) {
 			ItemType.ConstrainByValue constrainByValue = new ItemType.ConstrainByValue();
-			constrainByValue.setValueConstraint(modifierValueConstrain
-					.getValueConstraint());
-			constrainByValue.setValueOperator(modifierValueConstrain
-					.getValueOperator());
-			constrainByValue
-			.setValueType(modifierValueConstrain.getValueType());
-			constrainByValue.setValueUnitOfMeasure(modifierValueConstrain
-					.getValueUnitOfMeasure());
+			constrainByValue.setValueConstraint(modifierValueConstrain.getValueConstraint());
+			constrainByValue.setValueOperator(modifierValueConstrain.getValueOperator());
+			constrainByValue.setValueType(modifierValueConstrain.getValueType());
+			constrainByValue.setValueUnitOfMeasure(modifierValueConstrain.getValueUnitOfMeasure());
 			itemValueConstrainList.add(constrainByValue);
 		}
 		return itemValueConstrainList;
 	}
 
-	protected ConceptType getConceptType() throws ConceptNotFoundException,
-	OntologyException {
-		if (conceptType==null){
+	protected ConceptType getConceptType() throws ConceptNotFoundException, OntologyException {
+		if (conceptType==null)
 			conceptType = getMetaDataFromOntologyCell(baseItem.getItemKey());
-		}
-
 		return conceptType;
 	}
 
-	protected ConceptType getMetaDataFromOntologyCell(String itemKey)
-			throws ConceptNotFoundException, OntologyException {
+	protected ConceptType getMetaDataFromOntologyCell(String itemKey) throws ConceptNotFoundException, OntologyException {
 		ConceptType conceptType = null;
 		try {
-			conceptType = CallOntologyUtil.callOntology(itemKey,
-					parent.getSecurityType(), parent.getProjectId(),
+			conceptType = CallOntologyUtil.callOntology(itemKey, parent.getSecurityType(), parent.getProjectId(),
 					QueryProcessorUtil.getInstance().getOntologyUrl());
 		} catch (JAXBUtilException e) {
-
 			log.error("Error while fetching metadata [" + itemKey
 					+ "] from ontology ", e);
 			throw new OntologyException("Error while fetching metadata ["
@@ -848,42 +730,23 @@ public abstract class TemporalPanelItem {
 					+ StackTraceUtil.getStackTrace(e));
 		}
 
-		if (conceptType == null) {
+		if (conceptType == null)
 			throw new ConceptNotFoundException("[" + itemKey + "] ");
-
-		} else {
+		else {
 			String theData = conceptType.getDimcode();
-			if (conceptType.getColumndatatype() != null
-					&& conceptType.getColumndatatype().equalsIgnoreCase("T")) {
-
-				if(parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)){
-					conceptType.setDimcode(StringUtil.escapeSQLSERVER(conceptType.getDimcode()));
-				}
-				else if(parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE)){
-					conceptType.setDimcode(StringUtil.escapeORACLE(conceptType.getDimcode()));
-				}
-
-				theData = SqlClauseUtil.handleMetaDataTextValue(
-						conceptType.getOperator(), conceptType.getDimcode());
-			} else if (conceptType.getColumndatatype() != null
-					&& conceptType.getColumndatatype().equalsIgnoreCase("N")) {
-				theData = SqlClauseUtil.handleMetaDataNumericValue(
-						conceptType.getOperator(), conceptType.getDimcode());
-			} else if (conceptType.getColumndatatype() != null
-					&& conceptType.getColumndatatype().equalsIgnoreCase("D")) {
-				theData = SqlClauseUtil.handleMetaDataDateValue(
-						conceptType.getOperator(), conceptType.getDimcode());
-			}
+			if (conceptType.getColumndatatype() != null && conceptType.getColumndatatype().equalsIgnoreCase("T"))
+				theData = SqlClauseUtil.handleMetaDataTextValue(conceptType.getOperator(), conceptType.getDimcode());
+			else if (conceptType.getColumndatatype() != null && conceptType.getColumndatatype().equalsIgnoreCase("N"))
+				theData = SqlClauseUtil.handleMetaDataNumericValue(conceptType.getOperator(), conceptType.getDimcode());
+			else if (conceptType.getColumndatatype() != null && conceptType.getColumndatatype().equalsIgnoreCase("D"))
+				theData = SqlClauseUtil.handleMetaDataDateValue(conceptType.getOperator(), conceptType.getDimcode());
 			conceptType.setDimcode(theData);
 		}
-
 		return conceptType;
 	}
 
-
 	protected ModifierType getModifierMetadataFromOntology(String modifierKey,
-			String appliedPath) throws ConceptNotFoundException,
-			OntologyException {
+														   String appliedPath) throws ConceptNotFoundException, OntologyException {
 		ModifierType modifierType = null;
 		try {
 			QueryProcessorUtil qpUtil = QueryProcessorUtil.getInstance();
@@ -891,17 +754,13 @@ public abstract class TemporalPanelItem {
 					.getCRCPropertyValue(QueryProcessorUtil.ONTOLOGYCELL_ROOT_WS_URL_PROPERTIES);
 			String getModifierOperationName = qpUtil
 					.getCRCPropertyValue(QueryProcessorUtil.ONTOLOGYCELL_GETMODIFIERINFO_URL_PROPERTIES);
-			String ontologyGetModifierInfoUrl = ontologyUrl
-					+ getModifierOperationName;
-			log.debug("Ontology getModifierinfo url from property file ["
-					+ ontologyGetModifierInfoUrl + "]");
+			String ontologyGetModifierInfoUrl = ontologyUrl+ getModifierOperationName;
+			log.debug("Ontology getModifierinfo url from property file [" + ontologyGetModifierInfoUrl + "]");
 
 			modifierType = CallOntologyUtil.callGetModifierInfo(modifierKey,
 					appliedPath, parent.getSecurityType(),
 					parent.getProjectId(), ontologyGetModifierInfoUrl);
-
 		} catch (JAXBUtilException e) {
-
 			log.error("Error while fetching metadata [" + modifierKey
 					+ "] from ontology ", e);
 			throw new OntologyException("Error while fetching metadata ["
@@ -924,42 +783,31 @@ public abstract class TemporalPanelItem {
 					+ StackTraceUtil.getStackTrace(e));
 		}
 
-		if (modifierType == null) {
+		if (modifierType == null)
 			throw new ConceptNotFoundException(
 					"Error getting modifierinfo for modifier key ["
-							+ modifierKey + "] and appliedPath [" + appliedPath
-							+ "]");
-
-		} else {
+							+ modifierKey + "] and appliedPath [" + appliedPath + "]");
+		else {
 			String theData = modifierType.getDimcode();
-			if (modifierType.getColumndatatype() != null
-					&& modifierType.getColumndatatype().equalsIgnoreCase("T")) {
-				theData = SqlClauseUtil.handleMetaDataTextValue(
-						modifierType.getOperator(), modifierType.getDimcode());
-			} else if (modifierType.getColumndatatype() != null
-					&& modifierType.getColumndatatype().equalsIgnoreCase("N")) {
-				theData = SqlClauseUtil.handleMetaDataNumericValue(
-						modifierType.getOperator(), modifierType.getDimcode());
-			} else if (modifierType.getColumndatatype() != null
-					&& modifierType.getColumndatatype().equalsIgnoreCase("D")) {
-				theData = SqlClauseUtil.handleMetaDataDateValue(
-						modifierType.getOperator(), modifierType.getDimcode());
-			}
+			if (modifierType.getColumndatatype() != null && modifierType.getColumndatatype().equalsIgnoreCase("T"))
+				theData = SqlClauseUtil.handleMetaDataTextValue(modifierType.getOperator(), modifierType.getDimcode());
+			else if (modifierType.getColumndatatype() != null && modifierType.getColumndatatype().equalsIgnoreCase("N"))
+				theData = SqlClauseUtil.handleMetaDataNumericValue(modifierType.getOperator(), modifierType.getDimcode());
+			else if (modifierType.getColumndatatype() != null && modifierType.getColumndatatype().equalsIgnoreCase("D"))
+				theData = SqlClauseUtil.handleMetaDataDateValue(modifierType.getOperator(), modifierType.getDimcode());
+
 			modifierType.setDimcode(theData);
 		}
-
 		return modifierType;
 	}
 
 	protected String getPrimaryTableAlias(){
 		String joinTableName = getJoinTable();
-
 		String tableAlias = "f";
 		if (joinTableName.equalsIgnoreCase("visit_dimension"))
 			tableAlias = "e";
 		else if (joinTableName.equalsIgnoreCase("patient_dimension"))
 			tableAlias = "p";
-
 		return tableAlias;
 	}
 
@@ -976,20 +824,16 @@ public abstract class TemporalPanelItem {
 	}
 	public boolean hasModiferConstraint(){
 		ItemType.ConstrainByModifier modifierConstrain = baseItem.getConstrainByModifier();
-		if (modifierConstrain != null) {
-			return true;
-		}
-		else
-			return false;
+		return modifierConstrain != null;
 	}
 
 	public boolean hasValueConstraint(){
 		List<ConstrainByValue> valueConstrainList = baseItem.getConstrainByValue();
-		if (valueConstrainList==null||valueConstrainList.size()==0)
+		if (valueConstrainList == null || valueConstrainList.size() == 0)
 			return false;
 		else {
 			for (ConstrainByValue valueConstrain : valueConstrainList){
-				if (valueConstrain!=null&&valueConstrain.getValueType()!=null)
+				if (valueConstrain != null && valueConstrain.getValueType() != null)
 					return true;
 			}
 			return false;
@@ -998,10 +842,10 @@ public abstract class TemporalPanelItem {
 
 	public boolean hasItemDateConstraint(){
 		List<ConstrainByDate> constrainByDateList = baseItem.getConstrainByDate();
-		if (constrainByDateList!=null){
+		if (constrainByDateList != null) {
 			for (ConstrainByDate constrainByDate : constrainByDateList) {
-				if (constrainByDate!=null){
-					if (constrainByDate.getDateTo()!=null||constrainByDate.getDateFrom()!=null)
+				if (constrainByDate != null) {
+					if (constrainByDate.getDateTo() != null || constrainByDate.getDateFrom() != null)
 						return true;
 				}
 			}
@@ -1018,22 +862,15 @@ public abstract class TemporalPanelItem {
 	}
 
 	public boolean returnEncounterNum(){
-		if (parent.getPanelTiming().equalsIgnoreCase(QueryTimingHandler.SAME)||
-				parent.getPanelTiming().equalsIgnoreCase(QueryTimingHandler.SAMEVISIT))
-			return true;
-		else
-			return false;
+		return parent.getPanelTiming().equalsIgnoreCase(QueryTimingHandler.SAME) ||
+				parent.getPanelTiming().equalsIgnoreCase(QueryTimingHandler.SAMEVISIT);
 	}
 
 	public boolean returnInstanceNum(){
-		if (parent.getPanelTiming().equalsIgnoreCase(QueryTimingHandler.SAMEINSTANCENUM))
-			return true;
-		else
-			return false;		
+		return parent.getPanelTiming().equalsIgnoreCase(QueryTimingHandler.SAMEINSTANCENUM);
 	}
 
 	public void addIgnoredMessage(String errorMessage) {
 		parent.addIgnoredMessage(errorMessage);
 	}
-
 }

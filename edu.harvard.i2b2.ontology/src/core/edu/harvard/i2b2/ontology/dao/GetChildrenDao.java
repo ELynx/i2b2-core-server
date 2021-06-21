@@ -23,11 +23,12 @@ import java.util.List;
 
 import javax.sql.DataSource;
 
+import edu.harvard.i2b2.common.util.db.QueryUtil;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.support.JdbcDaoSupport;
 import org.w3c.dom.Document;
@@ -67,12 +68,11 @@ public class GetChildrenDao extends JdbcDaoSupport {
 
 		// find return parameters
 		String parameters = DEFAULT;		
-		if (childrenType.getType().equals("core")){
+		if (childrenType.getType().equals("core"))
 			parameters = CORE;
-		}
-		else if (childrenType.getType().equals("all")){
+		else if (childrenType.getType().equals("all"))
 			parameters = ALL;
-		}
+
 		if(childrenType.isBlob())
 			parameters = parameters + BLOB;
 
@@ -81,7 +81,7 @@ public class GetChildrenDao extends JdbcDaoSupport {
 
 		// table code to table name conversion
 		// Get metadata schema name from properties file.
-		String metadataSchema = "";
+		String metadataSchema = StringUtils.EMPTY;
 		try {
 			metadataSchema = OntologyUtil.getInstance().getMetaDataSchemaName();
 		} catch (I2B2Exception e1) {
@@ -97,30 +97,27 @@ public class GetChildrenDao extends JdbcDaoSupport {
 
 		// Lookup to get chlevel + 1 ---  dont allow synonyms so we only get one result back
 
-		//TODO: only for the IRIS
-		String levelSql = "select c_hlevel from " + metadataSchema+tableName  + " where c_fullname [ ?  and c_synonym_cd = 'N'";
+		String levelSql = "select c_hlevel from " + metadataSchema + tableName +
+				" where c_fullname " + QueryUtil.getOperatorByValue(path) + " ?  and c_synonym_cd = 'N'";
 
 		int level = 0;
 		try {
-			level = jt.queryForObject(levelSql, Integer.class, path);
+			level = jt.queryForObject(levelSql, Integer.class, QueryUtil.getCleanValue(path));
 		} catch (DataAccessException e1) {
 			// should only get 1 result back  (path == c_fullname which should be unique)
 			log.error(e1.getMessage());
 			throw e1;
 		}
 
-		String hidden = "";
-		//TODO: only for the IRIS
+		String hidden = StringUtils.EMPTY;
 		if(!childrenType.isHiddens())
 			hidden = " and (not c_visualattributes %STARTSWITH '_H')";
 
-		String synonym = "";
+		String synonym = StringUtils.EMPTY;
 		if(!childrenType.isSynonyms())
 			synonym = " and c_synonym_cd = 'N'";
-		//TODO: only for the IRIS
-		//TODO: check if [ is enough for IRIS
 		String sql = "select " + parameters +" from " + metadataSchema + tableName  +
-				" where c_fullname [ ? and c_hlevel = ? ";
+				" where c_fullname " + QueryUtil.getOperatorByValue(searchPath) + " ? and c_hlevel = ? ";
 		sql = sql + hidden + synonym + " order by c_name ";
 
 		//	log.info(sql + path + level);
@@ -130,7 +127,8 @@ public class GetChildrenDao extends JdbcDaoSupport {
 
 		List queryResult;
 		try {
-			queryResult = jt.query(sql, getChildrenType(obfuscatedUserFlag, childrenType), searchPath, (level + 1) );
+			queryResult = jt.query(sql, getChildrenType(obfuscatedUserFlag, childrenType), 
+					QueryUtil.getCleanValue(searchPath), (level + 1) );
 		} catch (DataAccessException e) {
 			log.error(e.getMessage());
 			throw e;
@@ -138,9 +136,9 @@ public class GetChildrenDao extends JdbcDaoSupport {
 		log.debug("result size = " + queryResult.size());
 
 		//		Fix the key so it equals "\\tableCd\fullname"
-		if(queryResult != null) {
+		if (queryResult != null) {
 			Iterator it = queryResult.iterator();
-			while (it.hasNext()){
+			while (it.hasNext()) {
 				ConceptType child = (ConceptType) it.next();
 				child.setKey("\\\\" + tableCd + child.getKey());
 			}
@@ -159,18 +157,16 @@ public class GetChildrenDao extends JdbcDaoSupport {
 	}
 
 	private GetChildrenConcept getChildrenType(boolean obfuscatedUserFlag, GetChildrenType childrenType) {
-
 		GetChildrenConcept mapper = new GetChildrenConcept();
 		mapper.setChildrenType(childrenType);
 		mapper.setObfuscatedUserFlag(obfuscatedUserFlag);
 		return mapper;
 	}
-
 }
 
 
-
 class GetChildrenConcept implements RowMapper<ConceptType> {
+
 	boolean obfuscatedUserFlag;
 	GetChildrenType childrenType;
 	
@@ -193,9 +189,8 @@ class GetChildrenConcept implements RowMapper<ConceptType> {
 		child.setVisualattributes(rs.getString("c_visualattributes"));
 		Integer totalNum = rs.getInt("c_totalnum");
 
-		if (!obfuscatedUserFlag) {
+		if (!obfuscatedUserFlag)
 			child.setTotalnum(totalNum);
-		}
 		child.setFacttablecolumn(rs.getString("c_facttablecolumn" ));
 		child.setTablename(rs.getString("c_tablename")); 
 		child.setColumnname(rs.getString("c_columnname")); 
@@ -213,18 +208,16 @@ class GetChildrenConcept implements RowMapper<ConceptType> {
 				child.setComment(null);
 			} 
 
-			if(rs.getClob("c_metadataxml") == null){
+			if(rs.getClob("c_metadataxml") == null)
 				child.setMetadataxml(null);
-			}else {
+			else {
 				String c_xml = null;
 				try {
 					c_xml = JDBCUtil.getClobString(rs.getClob("c_metadataxml"));
 				} catch (IOException e) {
 					child.setMetadataxml(null);
 				}
-				if ((c_xml!=null)&&(c_xml.trim().length()>0)&&(!c_xml.equals("(null)")))
-				{
-
+				if (c_xml != null && c_xml.trim().length() > 0 && !c_xml.equals("(null)")) {
 					Element rootElement = null;
 					try {
 						Document doc = XMLUtil.loadXMLFrom(new java.io.ByteArrayInputStream(c_xml.getBytes()));
@@ -242,10 +235,10 @@ class GetChildrenConcept implements RowMapper<ConceptType> {
 				}else {
 					child.setMetadataxml(null);
 				}
-			}	
-
+			}
 		}
-		if((childrenType.getType().equals("all"))){
+
+		if (childrenType.getType().equals("all")) {
 			DTOFactory factory = new DTOFactory();
 			// make sure date isnt null before converting to XMLGregorianCalendar
 			Date date = rs.getDate("update_date");

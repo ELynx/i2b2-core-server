@@ -23,50 +23,29 @@ import edu.harvard.i2b2.crc.util.QueryProcessorUtil;
 public class DataSourceLookupDAOFactory {
 
 	/** log **/
-	protected final static Log log = LogFactory
-			.getLog(DataSourceLookupDAOFactory.class);
+	protected final static Log log = LogFactory.getLog(DataSourceLookupDAOFactory.class);
 
-	public static final String ORACLE = "ORACLE";
-	public static final String SQLSERVER = "MICROSOFT SQL SERVER";
-	public static final String POSTGRESQL = "POSTGRESQL";
 	public static final String IRIS = "INTERSYSTEMS IRIS";
 
-//	private static String dataSourceName = null;
 	private static String serverType = null;
 	private static String schemaName = null;
 	private static DataSource lookupDataSource = null;
 
-	// private static ServiceLocator serviceLocator =
-	// ServiceLocator.getInstance();
-	// private static QueryProcessorUtil crcUtil = QueryProcessorUtil
-	// .getInstance();
 
-	public static DataSourceLookupDAO getDataSourceLookupDAO()
-			throws I2B2DAOException {
-		if (serverType == null) {
+	public static DataSourceLookupDAO getDataSourceLookupDAO() throws I2B2DAOException {
+		if (serverType == null)
 			getLookupDataSourceFromPropertyFile();
-		}
-		if (serverType.equalsIgnoreCase(ORACLE)) {
+		if(serverType.equalsIgnoreCase(IRIS))
 			return new OracleDataSourceLookupDAO(lookupDataSource, schemaName);
-		} else if (serverType.equalsIgnoreCase(SQLSERVER)) {
-			return new OracleDataSourceLookupDAO(lookupDataSource, schemaName);
-		} else if (serverType.equalsIgnoreCase(POSTGRESQL)) {
-			return new OracleDataSourceLookupDAO(lookupDataSource, schemaName);
-		} else if(serverType.equalsIgnoreCase(IRIS)) {
-			return new OracleDataSourceLookupDAO(lookupDataSource, schemaName);
-		} else {
-			throw new I2B2DAOException(
-					"DataSourceLookupDAOFactory.getDataSourceLookupDAO: serverType="
+		else
+			throw new I2B2DAOException("DataSourceLookupDAOFactory.getDataSourceLookupDAO: serverType="
 							+ serverType + " not valid");
-		}
 	}
 
 	public static CRCQueueDAO getCRCQueueDAO() throws I2B2DAOException {
-		if (serverType == null) {
+		if (serverType == null)
 			getLookupDataSourceFromPropertyFile();
-		}
-		CRCQueueDAO queueDAO = new CRCQueueDAO(lookupDataSource, schemaName);
-		return queueDAO;
+		return new CRCQueueDAO(lookupDataSource, schemaName);
 	}
 
 	private static void getLookupDataSourceFromPropertyFile()
@@ -76,25 +55,19 @@ public class DataSourceLookupDAOFactory {
 		//	dataSourceName = crcUtil.getCRCDBLookupDataSource();
 		//	serverType = crcUtil.getCRCDBLookupServerType();
 		//	schemaName = crcUtil.getCRCDBLookupSchemaName();
-			lookupDataSource = crcUtil
-					.getDataSource("java:/CRCBootStrapDS");
-			
+			lookupDataSource = crcUtil.getDataSource("java:/CRCBootStrapDS");
 			Connection conn = lookupDataSource.getConnection();
-			
 			serverType = conn.getMetaData().getDatabaseProductName().toUpperCase();
 			schemaName = conn.getSchema();
 			conn.close();
 		} catch (I2B2Exception i2b2Ex) {
-			log.error(
-					"DataSourceLookupDAOFactory.getLookupDataSourceFromPropertyFile"
+			log.error("DataSourceLookupDAOFactory.getLookupDataSourceFromPropertyFile"
 							+ i2b2Ex.getMessage(), i2b2Ex);
-			throw new I2B2DAOException(
-					"DataSourceLookupDAOFactory.getLookupDataSourceFromPropertyFile"
+			throw new I2B2DAOException("DataSourceLookupDAOFactory.getLookupDataSourceFromPropertyFile"
 							+ i2b2Ex.getMessage(), i2b2Ex);
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
-			throw new I2B2DAOException(
-					"DataSourceLookupDAOFactory.getLookupDataSourceFromPropertyFile SQL Error"
+			throw new I2B2DAOException("DataSourceLookupDAOFactory.getLookupDataSourceFromPropertyFile SQL Error"
 							+ e.getMessage(), e);
 		}
 	}

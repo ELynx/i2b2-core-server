@@ -73,15 +73,14 @@ public class CalulatePatientCountMainFromItemKey extends CRCDAO {
 		int i = 0;
 		while (i < args.length) {
 			arg = args[i++];
-			if (arg.startsWith("-domain_id")) {
+			if (arg.startsWith("-domain_id"))
 				domainId = arg.substring(arg.indexOf('=') + 1);
-			} else if (arg.startsWith("-project_id")) {
+			else if (arg.startsWith("-project_id"))
 				projectId = arg.substring(arg.indexOf('=') + 1);
-			} else if (arg.startsWith("-user_id")) {
+			else if (arg.startsWith("-user_id"))
 				userId = arg.substring(arg.indexOf('=') + 1);
-			} else if (arg.startsWith("-instance_id")) {
+			else if (arg.startsWith("-instance_id"))
 				instanceId = arg.substring(arg.indexOf('=') + 1);
-			}
 		}
 		System.out.println("domainId = " + domainId + " project " + projectId
 				+ " userid" + userId + " instanceId " + instanceId);
@@ -92,61 +91,48 @@ public class CalulatePatientCountMainFromItemKey extends CRCDAO {
 	}
 
 	public void calculateAndWriteResultXml(String projectId, String userId,
-			String domainId, String patientSetId, String instanceId,
-			String conceptPath) throws Exception {
+										   String domainId, String patientSetId,
+										   String instanceId, String conceptPath) throws Exception {
 		boolean errorFlag = false;
 		String resultInstanceId = "";
 		SetFinderDAOFactory setfinderDaoFactory = null;
 		Throwable throwable = null;
 		try {
-
 			// find out datasource for the matching domain,project and user id
 			DataSourceLookupHelper dataSourceLookupHelper = new DataSourceLookupHelper();
 			DataSourceLookup dataSourceLookup = dataSourceLookupHelper
 					.matchDataSource(domainId, projectId, userId);
-
 			// inside analysis plugin always instanciate datasource using
 			// spring, the
 			// jboss container datasource will not work
 			QueryProcessorUtil qpUtil = QueryProcessorUtil.getInstance();
-			DataSource dataSource = qpUtil.getDataSource(dataSourceLookup
-					.getDataSource());
-			DAOFactoryHelper daoHelper = new DAOFactoryHelper(dataSourceLookup,
-					dataSource);
+			DataSource dataSource = qpUtil.getDataSource(dataSourceLookup.getDataSource());
+			DAOFactoryHelper daoHelper = new DAOFactoryHelper(dataSourceLookup, dataSource);
 
 			// from the dao helper, get the setfinder dao factory
-			setfinderDaoFactory = daoHelper.getDAOFactory()
-					.getSetFinderDAOFactory();
+			setfinderDaoFactory = daoHelper.getDAOFactory().getSetFinderDAOFactory();
 
 			// read the analysis definition from the master to perform the
 			// calculation
 			// //step 1:get master id from the instance id
-			IQueryInstanceDao queryInstanceDao = setfinderDaoFactory
-					.getQueryInstanceDAO();
-			QtQueryInstance queryInstance = queryInstanceDao
-					.getQueryInstanceByInstanceId(instanceId);
-			String masterId = queryInstance.getQtQueryMaster()
-					.getQueryMasterId();
+			IQueryInstanceDao queryInstanceDao = setfinderDaoFactory.getQueryInstanceDAO();
+			QtQueryInstance queryInstance = queryInstanceDao.getQueryInstanceByInstanceId(instanceId);
+			String masterId = queryInstance.getQtQueryMaster().getQueryMasterId();
 
 			// //step2:get analysis definition from the master id to read the
 			// parameters like concept_path,..
-			IQueryMasterDao queryMasterDao = setfinderDaoFactory
-					.getQueryMasterDAO();
-			QtQueryMaster qtQueryMaster = queryMasterDao
-					.getQueryDefinition(masterId);
+			IQueryMasterDao queryMasterDao = setfinderDaoFactory.getQueryMasterDAO();
+			QtQueryMaster qtQueryMaster = queryMasterDao.getQueryDefinition(masterId);
 			String requestXml = qtQueryMaster.getRequestXml();
 			System.out.println("The request xml " + requestXml);
 
 			String i2b2RequestXml = qtQueryMaster.getI2b2RequestXml();
-			I2B2RequestMessageHelper analysisRequestHelper = new I2B2RequestMessageHelper(
-					i2b2RequestXml);
+			I2B2RequestMessageHelper analysisRequestHelper = new I2B2RequestMessageHelper(i2b2RequestXml);
 			SecurityType securityType = analysisRequestHelper.getSecurityType();
 
 			QueryMaster queryMasterHelper = new QueryMaster(setfinderDaoFactory);
-			AnalysisDefinitionType analysisDefinition = queryMasterHelper
-					.getAnalysisDefinitionByMasterId(masterId);
-			AnalysisParamType conceptPathParam = analysisDefinition
-					.getCrcAnalysisInputParam().getParam().get(0);
+			AnalysisDefinitionType analysisDefinition = queryMasterHelper.getAnalysisDefinitionByMasterId(masterId);
+			AnalysisParamType conceptPathParam = analysisDefinition.getCrcAnalysisInputParam().getParam().get(0);
 			conceptPath = conceptPathParam.getValue();
 
 			// call ontology to get children
@@ -155,13 +141,11 @@ public class CalulatePatientCountMainFromItemKey extends CRCDAO {
 	
 	//		ConceptsType conceptsType = callOntologyUtil
 	//				.callGetChildrenWithHttpClient(conceptPath);
-			
-			
+
 			ConceptsType conceptsType = CallOntologyUtil.callGetChildrenWithHttpClient(conceptPath, securityType, projectId);
 			
 			// build result xml
-			String resultXml = buildXmlResult(dataSource, conceptsType,
-					setfinderDaoFactory);
+			String resultXml = buildXmlResult(dataSource, conceptsType, setfinderDaoFactory);
 
 			// to write the result xml get the result instance id by instance id
 			List<QtQueryResultInstance> resultInstanceList = setfinderDaoFactory
@@ -179,25 +163,19 @@ public class CalulatePatientCountMainFromItemKey extends CRCDAO {
 			throwable = e.getCause();
 			throw e;
 		} finally {
+			IQueryResultInstanceDao resultInstanceDao = setfinderDaoFactory.getPatientSetResultDAO();
 
-			IQueryResultInstanceDao resultInstanceDao = setfinderDaoFactory
-					.getPatientSetResultDAO();
-
-			if (errorFlag) {
+			if (errorFlag)
 				resultInstanceDao.updatePatientSet(resultInstanceId,
-						QueryStatusTypeId.STATUSTYPE_ID_ERROR, throwable
-								.getMessage(), 0, 0, "");
-			} else {
-				resultInstanceDao.updatePatientSet(resultInstanceId,
-						QueryStatusTypeId.STATUSTYPE_ID_FINISHED, 0);
-			}
+						QueryStatusTypeId.STATUSTYPE_ID_ERROR, throwable.getMessage(), 0, 0, "");
+			else
+				resultInstanceDao.updatePatientSet(resultInstanceId, QueryStatusTypeId.STATUSTYPE_ID_FINISHED, 0);
 		}
 
 	}
 
-	public String buildXmlResult(DataSource dataSource,
-			ConceptsType conceptsType, SetFinderDAOFactory sfDAOFactory)
-			throws I2B2DAOException {
+	public String buildXmlResult(DataSource dataSource, ConceptsType conceptsType,
+								 SetFinderDAOFactory sfDAOFactory) throws I2B2DAOException {
 		log.info("CalulatePatientCountMainFromItemKey.class: buildXmlResult(DataSource dataSource," +
 				" ConceptsType conceptsType, SetFinderDAOFactory sfDAOFactory)");
 		this.setDbSchemaName(sfDAOFactory.getDataSourceLookup().getFullSchema());
@@ -208,7 +186,6 @@ public class CalulatePatientCountMainFromItemKey extends CRCDAO {
 		String itemKey = "";
 		Connection conn = null;
 		try {
-			//TODO: check if [ is enough for IRIS
 			String itemCountSql = " select count(distinct PATIENT_NUM) as item_count  from "
 					+ this.getDbSchemaName()
 					+ "observation_fact obs_fact "
@@ -218,19 +195,16 @@ public class CalulatePatientCountMainFromItemKey extends CRCDAO {
 					+ "  ) "
 					+ " and obs_fact.concept_cd in (select concept_cd from "
 					+ this.getDbSchemaName()
-					+ "concept_dimension where concept_path " +
-					(sfDAOFactory.getDataSourceLookup().getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS) ? "[ ?)" : "like ?)");
+					+ "concept_dimension where concept_path %STARTSWITH ? )";
 			ResultType resultType = new ResultType();
 			resultType.setName(RESULT_NAME);
 			log.info("Script: " + itemCountSql);
 			conn = dataSource.getConnection();
 			stmt = conn.prepareStatement(itemCountSql);
 			for (ConceptType conceptType : conceptsType.getConcept()) {
-
 				// build results
-				stmt.setString(1, conceptType.getDimcode() + "%");
-				System.out
-						.println("Executing count sql [" + itemCountSql + "]");
+				stmt.setString(1, conceptType.getDimcode());
+				System.out.println("Executing count sql [" + itemCountSql + "]");
 				ResultSet resultSet = stmt.executeQuery();
 				resultSet.next();
 				String demoCount = resultSet.getString("item_count");
@@ -240,7 +214,6 @@ public class CalulatePatientCountMainFromItemKey extends CRCDAO {
 				mdataType.setType("int");
 				resultType.getData().add(mdataType);
 			}
-
 			edu.harvard.i2b2.crc.datavo.i2b2result.ObjectFactory of = new edu.harvard.i2b2.crc.datavo.i2b2result.ObjectFactory();
 			BodyType bodyType = new BodyType();
 			bodyType.getAny().add(of.createResult(resultType));
@@ -248,20 +221,13 @@ public class CalulatePatientCountMainFromItemKey extends CRCDAO {
 			resultEnvelop.setBody(bodyType);
 
 			JAXBUtil jaxbUtil = CRCJAXBUtil.getJAXBUtil();
-
 			StringWriter strWriter = new StringWriter();
-
-			jaxbUtil.marshaller(of.createI2B2ResultEnvelope(resultEnvelop),
-					strWriter);
-
+			jaxbUtil.marshaller(of.createI2B2ResultEnvelope(resultEnvelop), strWriter);
 			return strWriter.toString();
-
 		} catch (Exception sqlEx) {
-			log.error("CalulatePatientCountMainFromItemKey.buildXmlResult:"
-					+ sqlEx.getMessage(), sqlEx);
+			log.error("CalulatePatientCountMainFromItemKey.buildXmlResult:" + sqlEx.getMessage(), sqlEx);
 			throw new I2B2DAOException(
-					"CalulatePatientCountMainFromItemKey.buildXmlResult:"
-							+ sqlEx.getMessage(), sqlEx);
+					"CalulatePatientCountMainFromItemKey.buildXmlResult:" + sqlEx.getMessage(), sqlEx);
 		} finally {
 			try {
 				stmt.close();
@@ -271,7 +237,6 @@ public class CalulatePatientCountMainFromItemKey extends CRCDAO {
 				e.printStackTrace();
 			}
 		}
-
 	}
 
 	/*

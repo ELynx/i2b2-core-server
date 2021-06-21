@@ -15,30 +15,18 @@
  */
 package edu.harvard.i2b2.ontology.util;
 
-import java.io.IOException;
-import java.lang.management.ManagementFactory;
+
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Properties;
 
-import javax.management.ObjectName;
 import javax.sql.DataSource;
 
-import org.apache.axis2.AxisFault;
-import org.apache.axis2.context.ConfigurationContext;
-import org.apache.axis2.context.MessageContext;
-import org.apache.axis2.description.Parameter;
-import org.apache.axis2.description.TransportInDescription;
-import org.apache.axis2.transport.TransportListener;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.BeanFactory;
-import org.springframework.beans.factory.config.PropertiesFactoryBean;
-import org.springframework.context.support.FileSystemXmlApplicationContext;
-import org.springframework.core.io.FileSystemResource;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -47,7 +35,6 @@ import edu.harvard.i2b2.common.exception.I2B2DAOException;
 import edu.harvard.i2b2.common.exception.I2B2Exception;
 import edu.harvard.i2b2.common.util.ServiceLocator;
 import edu.harvard.i2b2.common.util.axis2.ServiceClient;
-import edu.harvard.i2b2.common.util.jaxb.DTOFactory;
 import edu.harvard.i2b2.ontology.datavo.i2b2message.ApplicationType;
 import edu.harvard.i2b2.ontology.datavo.i2b2message.MessageHeaderType;
 import edu.harvard.i2b2.ontology.datavo.pm.ParamType;
@@ -117,12 +104,9 @@ public class OntologyUtil {
 	 * @return OntologyUtil
 	 */
 	public static OntologyUtil getInstance() {
-		if (thisInstance == null) {
+		if (thisInstance == null)
 			thisInstance = new OntologyUtil();
-		}
-
 		serviceLocator = ServiceLocator.getInstance();
-
 		return thisInstance;
 	}
 
@@ -141,10 +125,8 @@ public class OntologyUtil {
 	public String getMetaDataSchemaName() throws I2B2Exception {
 		try {
 			Connection conn = dataSource.getConnection();
-			
-			String metadataSchema = "\"" + conn.getSchema() + "\".";
+			String metadataSchema = conn.getSchema() != null ? ("\"" + conn.getSchema() + "\".") : StringUtils.EMPTY;
 			conn.close();
-			
 			return metadataSchema ;
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
@@ -162,8 +144,6 @@ public class OntologyUtil {
 	public String getPmEndpointReference() throws I2B2Exception {
 		return getPropertyValue(PM_WS_EPR).trim();
 	}
-
-
 
 	/**
 	 * Return Ontology terminal delimiter
@@ -211,7 +191,6 @@ public class OntologyUtil {
 		return getPropertyValue(SERVICE_ACCOUNT_PASSWORD);
 	}
 
-
 	/**
 	 * Return app server datasource
 	 * 
@@ -222,11 +201,8 @@ public class OntologyUtil {
 	public DataSource getDataSource(String dataSourceName) throws I2B2Exception {
 		// DataSource dataSource = (DataSource) getSpringBeanFactory()
 		// .getBean(DATASOURCE_BEAN_NAME);
-
-		dataSource = (DataSource) serviceLocator
-				.getAppServerDataSource(dataSourceName);
+		dataSource = (DataSource) serviceLocator.getAppServerDataSource(dataSourceName);
 		return dataSource;
-
 	}
 
 	// ---------------------
@@ -239,28 +215,19 @@ public class OntologyUtil {
 	 * Load application property file into memory
 	 */
 	private String getPropertyValue(String propertyName) throws I2B2Exception {
-
 		if (appProperties == null) {
-
-
-
 			//		log.info(sql + domainId + projectId + ownerId);
 			//	List<ParamType> queryResult = null;
 			try {
 				DataSource   ds = this.getDataSource("java:/OntologyBootStrapDS");
-
 				JdbcTemplate jt =  new JdbcTemplate(ds);
 				Connection conn = ds.getConnection();
-				
 				String metadataSchema = "\"" + conn.getSchema() + "\"";
 				conn.close();
 				String sql =  "select * from " + metadataSchema + ".hive_cell_params where status_cd <> 'D' and cell_id = 'ONT'";
-
 				log.debug("Start query");
 				appProperties = jt.query(sql, new getHiveCellParam());
 				log.debug("End query");
-
-
 			} catch (DataAccessException e) {
 				log.error(e.getMessage());
 				e.printStackTrace();
@@ -271,19 +238,15 @@ public class OntologyUtil {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-
 		}
 
 		String propertyValue = null;//appProperties.getProperty(propertyName);
-		for (int i=0; i < appProperties.size(); i++)
-		{
-			if (appProperties.get(i).getName() != null)
-			{
+		for (int i=0; i < appProperties.size(); i++) {
+			if (appProperties.get(i).getName() != null) {
 				if (appProperties.get(i).getName().equalsIgnoreCase(propertyName))
 					if (appProperties.get(i).getDatatype().equalsIgnoreCase("U"))
 						try {
 							 propertyValue = ServiceClient.getContextRoot() + appProperties.get(i).getValue();
-
 						} catch (Exception e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
@@ -293,12 +256,10 @@ public class OntologyUtil {
 			}
 		}
 
-		if ((propertyValue == null) || (propertyValue.trim().length() == 0)) {
+		if ((propertyValue == null) || (propertyValue.trim().length() == 0))
 			throw new I2B2Exception("Application property file("
 					//	+ APPLICATION_PROPERTIES_FILENAME + ") missing "
 					+ propertyName + " entry");
-		}
-
 		return propertyValue;
 	}
 
@@ -320,7 +281,6 @@ public class OntologyUtil {
 class getHiveCellParam implements RowMapper<ParamType> {
 	@Override
 	public ParamType mapRow(ResultSet rs, int rowNum) throws SQLException {
-
 			ParamType param = new ParamType();
 			param.setId(rs.getInt("id"));
 			param.setName(rs.getString("param_name_cd"));

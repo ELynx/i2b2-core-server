@@ -40,10 +40,8 @@ public class PageTotalDao extends CRCDAO implements IPageDao {
 
 	@Override
 	public long getTotalForAllPanel(List<String> panelSqlList,
-			List<Integer> sqlParamCountList,
-			IInputOptionListHandler inputOptionListHandler)
-			throws I2B2DAOException {
-
+									List<Integer> sqlParamCountList,
+									IInputOptionListHandler inputOptionListHandler) throws I2B2DAOException {
 		long totalAcrossPanel = 0;
 		int i = 0, sqlParamCount = 0;
 		ResultSet resultSet = null;
@@ -52,26 +50,8 @@ public class PageTotalDao extends CRCDAO implements IPageDao {
 			// get connection
 			conn = this.getDataSource().getConnection();
 
-			if (dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.SQLSERVER)
-					&& inputOptionListHandler.isEnumerationSet()) {
+			if (inputOptionListHandler.isEnumerationSet())
 				inputOptionListHandler.uploadEnumerationValueToTempTable(conn);
-				// sqlserverLoadTempTable(conn, inputOptionListHandler);
-			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.ORACLE)
-					&& inputOptionListHandler.isEnumerationSet()) {
-				inputOptionListHandler.uploadEnumerationValueToTempTable(conn);
-			} else 		if (dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.POSTGRESQL)
-					&& inputOptionListHandler.isEnumerationSet()) {
-				inputOptionListHandler.uploadEnumerationValueToTempTable(conn);
-				// sqlserverLoadTempTable(conn, inputOptionListHandler);
-			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.IRIS)
-					&& inputOptionListHandler.isEnumerationSet()) {
-				inputOptionListHandler.uploadEnumerationValueToTempTable(conn);
-				// sqlserverLoadTempTable(conn, inputOptionListHandler);
-			}
 			long startTime = System.currentTimeMillis();
 
 			// iterate sql
@@ -89,7 +69,6 @@ public class PageTotalDao extends CRCDAO implements IPageDao {
 		} catch (SQLException sqlEx) {
 			throw new I2B2DAOException("", sqlEx);
 		} finally {
-
 			try {
 				inputOptionListHandler.deleteTempTable(conn);
 			} catch (SQLException e1) {
@@ -104,16 +83,13 @@ public class PageTotalDao extends CRCDAO implements IPageDao {
 				log.error("Error trying to close connection", e);
 			}
 		}
-
 		return totalAcrossPanel;
 	}
 
 	@Override
 	public HashMap getMinIndexAndCountAllPanel(List<String> panelSqlList,
-			List<Integer> sqlParamCountList,
-			IInputOptionListHandler inputOptionListHandler)
-			throws I2B2DAOException {
-
+											   List<Integer> sqlParamCountList,
+											   IInputOptionListHandler inputOptionListHandler) throws I2B2DAOException {
 		int i = 0, sqlParamCount = 0;
 		ResultSet resultSet = null;
 		Connection conn = null;
@@ -124,31 +100,8 @@ public class PageTotalDao extends CRCDAO implements IPageDao {
 		try {
 			// get connection
 			conn = this.getDataSource().getConnection();
-
-			if (dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.SQLSERVER)
-					&& inputOptionListHandler.isEnumerationSet()) {
-				// upLoadTempTableForMin(conn, inputOptionListHandler);
-				// sqlserverLoadTempTable(conn, inputOptionListHandler);
+			if (inputOptionListHandler.isEnumerationSet())
 				inputOptionListHandler.uploadEnumerationValueToTempTable(conn);
-			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.ORACLE)
-					&& inputOptionListHandler.isEnumerationSet()) {
-				// oracleLoadTempTable(conn, inputOptionListHandler);
-				inputOptionListHandler.uploadEnumerationValueToTempTable(conn);
-			} else 		if (dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.POSTGRESQL)
-					&& inputOptionListHandler.isEnumerationSet()) {
-				// upLoadTempTableForMin(conn, inputOptionListHandler);
-				// sqlserverLoadTempTable(conn, inputOptionListHandler);
-				inputOptionListHandler.uploadEnumerationValueToTempTable(conn);
-			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.IRIS)
-					&& inputOptionListHandler.isEnumerationSet()) {
-				// upLoadTempTableForMin(conn, inputOptionListHandler);
-				// sqlserverLoadTempTable(conn, inputOptionListHandler);
-				inputOptionListHandler.uploadEnumerationValueToTempTable(conn);
-			}
 
 			boolean firstTimeFlag = true;
 			// iterate sql
@@ -171,13 +124,6 @@ public class PageTotalDao extends CRCDAO implements IPageDao {
 		} catch (SQLException sqlEx) {
 			throw new I2B2DAOException("", sqlEx);
 		} finally {
-			if (dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.SQLSERVER)) {
-				deleteTempTable(conn);
-				if (inputOptionListHandler.isEnumerationSet()) {
-					deleteTemp1Table(conn);
-				}
-			}
 			// close connection
 			try {
 				JDBCUtil.closeJdbcResource(null, null, conn);
@@ -185,20 +131,15 @@ public class PageTotalDao extends CRCDAO implements IPageDao {
 				log.error("Error trying to close connection", e);
 			}
 		}
-
 		minAndTotalMap.put("MIN_INDEX", minIndex);
 		minAndTotalMap.put("MIN_INDEX_TOTAL", minIndexTotal);
-
 		return minAndTotalMap;
 	}
 
-	private ResultSet executeTotalSql(String totalSql, Connection conn,
-			int sqlParamCount, IInputOptionListHandler inputOptionListHandler)
-			throws SQLException {
-
+	private ResultSet executeTotalSql(String totalSql, Connection conn, int sqlParamCount,
+									  IInputOptionListHandler inputOptionListHandler) throws SQLException {
 		PreparedStatement stmt = conn.prepareStatement(totalSql);
 		ResultSet resultSet = null;
-
 		System.out.println(totalSql + " [ " + sqlParamCount + " ]");
 		if (inputOptionListHandler.isCollectionId()) {
 			for (int i = 1; i <= sqlParamCount; i++) {
@@ -206,25 +147,21 @@ public class PageTotalDao extends CRCDAO implements IPageDao {
 						.getCollectionId()));
 			}
 		}
-
 		resultSet = stmt.executeQuery();
-
 		return resultSet;
 	}
 
 	public void sqlserverLoadTempTable(Connection conn,
-			IInputOptionListHandler inputOptionListHandler) throws SQLException {
+									   IInputOptionListHandler inputOptionListHandler) throws SQLException {
 		// sqlserver
 		upLoadTempTable(conn, inputOptionListHandler);
-
 	}
 
 	@Override
 	public String buildTotalSql(IFactRelatedQueryHandler factHandler,
 			PanelType panel) throws I2B2DAOException {
 		// call factrelatedhandler to build sql
-		return factHandler.buildTotalQuery(panel,
-				PdoQueryHandler.PLAIN_PDO_TYPE);
+		return factHandler.buildTotalQuery(panel, PdoQueryHandler.PLAIN_PDO_TYPE);
 	}
 
 	public void getSelect() {
@@ -237,7 +174,7 @@ public class PageTotalDao extends CRCDAO implements IPageDao {
 	}
 
 	private void upLoadTempTable(Connection conn,
-			IInputOptionListHandler inputOptionListHandler) throws SQLException {
+								 IInputOptionListHandler inputOptionListHandler) throws SQLException {
 		List<String> enumList = inputOptionListHandler.getEnumerationList();
 		// create temp table
 		java.sql.Statement tempStmt = conn.createStatement();
@@ -255,16 +192,14 @@ public class PageTotalDao extends CRCDAO implements IPageDao {
 					+ SQLServerFactRelatedQueryHandler.TEMP_PDO_INPUTLIST_TABLE
 					+ " values ('" + singleValue + "' )");
 			i++;
-			if (i % 100 == 0) {
+			if (i % 100 == 0)
 				tempStmt.executeBatch();
-
-			}
 		}
 		tempStmt.executeBatch();
 	}
 
 	private void upLoadTempTableForMin(Connection conn,
-			IInputOptionListHandler inputOptionListHandler) throws SQLException {
+									   IInputOptionListHandler inputOptionListHandler) throws SQLException {
 		List<String> enumList = inputOptionListHandler.getEnumerationList();
 		deleteTempTable(conn);
 		// create temp table
@@ -284,20 +219,16 @@ public class PageTotalDao extends CRCDAO implements IPageDao {
 					+ "(set_index,char_param1)  values (" + j++ + ",'"
 					+ singleValue + "' )");
 			i++;
-			if (i % 100 == 0) {
+			if (i % 100 == 0)
 				tempStmt.executeBatch();
-
-			}
 		}
 		tempStmt.executeBatch();
 	}
 
 	private void deleteTempTable(Connection conn) {
-
 		Statement deleteStmt = null;
 		try {
 			deleteStmt = conn.createStatement();
-
 			//conn
 			//		.createStatement()
 			deleteStmt.executeUpdate(
@@ -314,11 +245,9 @@ public class PageTotalDao extends CRCDAO implements IPageDao {
 				e.printStackTrace();
 			}
 		}
-
 	}
 
 	private void deleteTemp1Table(Connection conn) {
-
 		Statement deleteStmt = null;
 		try {
 			deleteStmt = conn.createStatement();
@@ -338,7 +267,5 @@ public class PageTotalDao extends CRCDAO implements IPageDao {
 				e.printStackTrace();
 			}
 		}
-
 	}
-
 }

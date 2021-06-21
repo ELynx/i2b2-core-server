@@ -54,97 +54,80 @@ public class TableAccessDao extends JdbcDaoSupport {
 		this.jt = new JdbcTemplate(dataSource);
 	}
 
-	public List<String> getEditorTableName(ProjectType projectInfo,DBInfoType dbInfo, boolean synchronizeAllFlag)
-			throws I2B2Exception {
+	public List<String> getEditorTableName(ProjectType projectInfo, DBInfoType dbInfo,
+										   boolean synchronizeAllFlag) throws I2B2Exception {
 		log.info("TableAccessDao.class: getEditorTableName(ProjectType projectInfo,DBInfoType dbInfo, boolean synchronizeAllFlag)");
 		String metadataSchema = dbInfo.getDb_fullSchema();
-		if (jt == null) {
+		if (jt == null)
 			setDataSource(dbInfo.getDb_dataSource());
-		}
+
 		boolean protectedAccess = isProtectedAccess(projectInfo);
 		String sql = "select distinct(c_table_name) from " + metadataSchema + "table_access ";
 		if (!synchronizeAllFlag) {
-			//TODO: check if [ is enough for IRIS
-			sql += dbInfo.getDb_serverType().equalsIgnoreCase("INTERSYSTEMS IRIS")
-					? " where c_visualattributes [ '%E' "
-					: " where c_visualattributes like '%E' ";
-			if(!protectedAccess)
+			sql += " where c_visualattributes like '%E' ";
+			if (!protectedAccess)
 				sql += " and c_protected_access = ? ";
 		}
-		else if (!protectedAccess) {
+		else if (!protectedAccess)
 			sql += " where c_protected_access = ? ";
-		}
+
 		log.info("Script: " + sql);
-		List<String> tableNameList = null;
+		List<String> tableNameList;
 		log.debug("Executing sql [" + sql + "]");
-		if (!protectedAccess) {
+		if (!protectedAccess)
 			tableNameList = jt.queryForList(sql, String.class, "N");
-		} else {
+		else
 			tableNameList = jt.queryForList(sql, String.class);
-		}
 		return tableNameList;
 	}
 
 	public List<String> getAllTableName(ProjectType projectInfo,
-			DBInfoType dbInfo) throws I2B2Exception {
+										DBInfoType dbInfo) throws I2B2Exception {
 		String metadataSchema = dbInfo.getDb_fullSchema();
-		if (jt == null) {
+		if (jt == null)
 			setDataSource(dbInfo.getDb_dataSource());
-		}
 		boolean protectedAccess = isProtectedAccess(projectInfo);
 		String sql = "select distinct(c_table_name) from " + metadataSchema + "table_access ";
-		if (!protectedAccess) {
+		if (!protectedAccess)
 			sql += " where c_protected_access = ? ";
-		}
 
-		List<String> tableNameList = null;
 		log.debug("Executing sql [" + sql + "]");
-		if (!protectedAccess) {
-			tableNameList = jt.queryForList(sql, String.class, "N");
-		} else {
-			tableNameList = jt.queryForList(sql, String.class);
-		}
-		return tableNameList;
+		if (!protectedAccess)
+			return jt.queryForList(sql, String.class, "N");
+		else
+			return jt.queryForList(sql, String.class);
 	}
 
-	
 	public List<TableAccessType> getAllTableAccess(ProjectType projectInfo,
-			DBInfoType dbInfo) throws I2B2Exception {
+												   DBInfoType dbInfo) throws I2B2Exception {
 		String metadataSchema = dbInfo.getDb_fullSchema();
-		if (jt == null) {
+		if (jt == null)
 			setDataSource(dbInfo.getDb_dataSource());
-		}
 		boolean protectedAccess = isProtectedAccess(projectInfo);
-		String sql = "select * from " + metadataSchema
-				+ "table_access ";
-		if (!protectedAccess) {
+		String sql = "select * from " + metadataSchema + "table_access ";
+		if (!protectedAccess)
 			sql += " where c_protected_access = ? ";
-		}
 
-
-		List<TableAccessType> tableAccessList = null;
+		List<TableAccessType> tableAccessList;
 		log.debug("Executing sql [" + sql + "]");
-		if (!protectedAccess) {
+		if (!protectedAccess)
 			tableAccessList = jt.query(sql, new geTableAccess(), "N");
-		} else {
+		else
 			tableAccessList = jt.query(sql, new geTableAccess());
-		}
 		return tableAccessList;
 	}
-	private boolean isProtectedAccess(ProjectType projectInfo)
-			throws I2B2Exception {
+
+	private boolean isProtectedAccess(ProjectType projectInfo) throws I2B2Exception {
 		boolean protectedAccess = false;
 		if (projectInfo.getRole().size() == 0) {
-			log.error("no role found for this user in project: "
-					+ projectInfo.getName());
-			I2B2Exception e = new I2B2Exception("No role found for user");
-			throw e;
+			log.error("no role found for this user in project: " + projectInfo.getName());
+			throw new I2B2Exception("No role found for user");
 		}
 
 		Iterator it = projectInfo.getRole().iterator();
 		while (it.hasNext()) {
 			String role = (String) it.next();
-			if (role.toUpperCase().equals("DATA_PROT")) {
+			if (role.equalsIgnoreCase("DATA_PROT")) {
 				protectedAccess = true;
 				break;
 			}
@@ -154,8 +137,8 @@ public class TableAccessDao extends JdbcDaoSupport {
 }
 
 class geTableAccess implements RowMapper<TableAccessType> {
+
 	@Override
-	
 	public TableAccessType mapRow(ResultSet rs, int rowNum) throws SQLException {
 		TableAccessType tableAccessType = new TableAccessType();
 		tableAccessType.setTableName(rs.getString("c_table_name"));
@@ -166,4 +149,4 @@ class geTableAccess implements RowMapper<TableAccessType> {
 		tableAccessType.setDimCode(rs.getString("c_dimcode"));
 		return tableAccessType;
 	}
-};
+}

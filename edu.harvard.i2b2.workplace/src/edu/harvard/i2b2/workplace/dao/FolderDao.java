@@ -26,6 +26,8 @@ import java.util.List;
 import java.util.Date;
 import javax.sql.DataSource;
 
+import edu.harvard.i2b2.common.util.db.QueryUtil;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.dao.DataAccessException;
@@ -39,7 +41,6 @@ import edu.harvard.i2b2.common.exception.I2B2Exception;
 import edu.harvard.i2b2.common.util.db.JDBCUtil;
 import edu.harvard.i2b2.common.util.jaxb.DTOFactory;
 import edu.harvard.i2b2.common.util.xml.XMLUtil;
-import edu.harvard.i2b2.workplace.dao.GetFolderMapper;
 import edu.harvard.i2b2.workplace.datavo.i2b2message.SecurityType;
 import edu.harvard.i2b2.workplace.datavo.pm.ProjectType;
 import edu.harvard.i2b2.workplace.datavo.wdo.AnnotateChildType;
@@ -58,7 +59,6 @@ import edu.harvard.i2b2.workplace.delegate.crc.CallCRCUtil;
 import edu.harvard.i2b2.workplace.ejb.DBInfoType;
 import edu.harvard.i2b2.workplace.util.StringUtil;
 import edu.harvard.i2b2.workplace.util.WorkplaceUtil;
-
 
 public class FolderDao extends JdbcDaoSupport {
 
@@ -79,7 +79,6 @@ public class FolderDao extends JdbcDaoSupport {
 			ds = WorkplaceUtil.getInstance().getDataSource(dataSource);
 			//			metadataSchema = ds.getConnection().getSchema() + ".";
 			Connection conn = ds.getConnection();
-
 			metadataSchema = "\"" + conn.getSchema() + "\".";
 			conn.close();
 		} catch (I2B2Exception e2) {
@@ -92,7 +91,6 @@ public class FolderDao extends JdbcDaoSupport {
 	}
 
 	private String getMetadataSchema() throws I2B2Exception{
-
 		return metadataSchema; //WorkplaceUtil.getInstance().getMetaDataSchemaName();
 	}
 
@@ -101,9 +99,8 @@ public class FolderDao extends JdbcDaoSupport {
 
 		// find return parameters
 		String parameters = CORE;		
-		if (returnType.getType().equals("core")){
+		if (returnType.getType().equals("core"))
 			parameters = CORE;
-		}
 		/*		else if (returnType.getType().equals("all")){
 			parameters = ALL;
 		}
@@ -119,42 +116,34 @@ public class FolderDao extends JdbcDaoSupport {
 
 		//		 First step is to call PM to see what roles user belongs to.
 
-		if (projectInfo.getRole().size() == 0)
-		{
+		if (projectInfo.getRole().size() == 0) {
 			log.error("no role found for this user in project: " + projectInfo.getName());
-			I2B2Exception e = new I2B2Exception("No role found for user");
-			throw e;
+			throw new I2B2Exception("No role found for user");
 		}
 
 		boolean protectedAccess = false;
 		Iterator it = projectInfo.getRole().iterator();
-		while (it.hasNext()){
+		while (it.hasNext()) {
 			String role = (String) it.next();
-			if(role.toLowerCase().equalsIgnoreCase("DATA_PROT")) {
+			if (role.equalsIgnoreCase("DATA_PROT")) {
 				protectedAccess = true;
 				break;
 			}
 		}
 
 		//ParameterizedRowMapper<FolderType> mapper = getMapper(returnType.getType(), false, null, dbInfo.getDb_serverType());
-
 		GetFolderMapper mapper = GetTableMapper(returnType.getType(), false, null, dbInfo.getDb_serverType());
-
-
-		List<FolderType> queryResult = null;		
-		if (!protectedAccess){
+		List<FolderType> queryResult;
+		if (!protectedAccess) {
 			String tablesSql = "select distinct(c_table_cd), " + parameters + " from " +  metadataSchema +  "workplace_access where c_protected_access = ? and LOWER(c_group_id) = ? order by c_name"; //c_hierarchy";
-
 			try {
 				queryResult = jt.query(tablesSql, mapper, "N", projectInfo.getId().toLowerCase());
 			} catch (DataAccessException e) {
 				log.error(e.getMessage());
 				throw new I2B2DAOException("Database error");
 			}
-		}
-		else{
+		} else {
 			String tablesSql = "select distinct(c_table_cd), " + parameters + " from " +  metadataSchema +  "workplace_access where LOWER(c_group_id) = ? order by c_name"; //c_hierarchy";
-
 			try {
 				queryResult = jt.query(tablesSql, mapper, projectInfo.getId().toLowerCase());
 			} catch (DataAccessException e) {
@@ -162,14 +151,11 @@ public class FolderDao extends JdbcDaoSupport {
 				throw new I2B2DAOException("Database Error");
 			}
 		}
-
 		log.debug("result size = " + queryResult.size());
-
 		return queryResult;
 	}
 
 	public List findRootFoldersByUser(final GetReturnType returnType, final String userId, final ProjectType projectInfo, final DBInfoType dbInfo) throws DataAccessException, I2B2Exception{
-
 		// find return parameters
 		String parameters = CORE;		
 		if (returnType.getType().equals("core")){
@@ -183,14 +169,10 @@ public class FolderDao extends JdbcDaoSupport {
 		String metadataSchema = dbInfo.getDb_fullSchema();
 		setDataSource(dbInfo.getDb_dataSource());
 
-
 		// 1. check if user already has a folder
 		//       if not create one.
 		check_addRootNode(metadataSchema, userId, projectInfo, dbInfo);
-
-
-		if (projectInfo.getRole().size() == 0)
-		{
+		if (projectInfo.getRole().size() == 0) {
 			log.error("no role found for this user in project: " + projectInfo.getName());
 			I2B2Exception e = new I2B2Exception("No role found for user");
 			throw e;
@@ -198,23 +180,20 @@ public class FolderDao extends JdbcDaoSupport {
 
 		boolean protectedAccess = false;
 		Iterator it = projectInfo.getRole().iterator();
-		while (it.hasNext()){
+		while (it.hasNext()) {
 			String role = (String) it.next();
-			if(role.toLowerCase().equalsIgnoreCase("DATA_PROT")) {
+			if(role.equalsIgnoreCase("DATA_PROT")) {
 				protectedAccess = true;
 				break;
 			}
 		}
 
-
-		GetFolderMapper mapper  = GetTableMapper(returnType.getType(), false, null, dbInfo.getDb_serverType());		
-
-		List<FolderType> queryResult = null;		
+		GetFolderMapper mapper  = GetTableMapper(returnType.getType(), false, null, dbInfo.getDb_serverType());
+		List<FolderType> queryResult;
 		if (!protectedAccess){
 			String tablesSql = "select distinct(c_table_cd), " + parameters + " from " +
 					(metadataSchema != null ? ("\"" + metadataSchema + "\"." ) : "") +
 					"workplace_access where (c_share_id = 'Y' and LOWER(c_group_id) = ?) or (c_protected_access = ? and LOWER(c_user_id) = ? and LOWER(c_group_id) = ?) order by c_name"; //c_hierarchy";
-
 			//		log.info(tablesSql);
 			try {
 				queryResult = jt.query(tablesSql, mapper, projectInfo.getId().toLowerCase(), "N",userId.toLowerCase(), projectInfo.getId().toLowerCase());
@@ -222,15 +201,14 @@ public class FolderDao extends JdbcDaoSupport {
 				log.error(e.getMessage());
 				throw new I2B2DAOException("Database error findRootFoldersByUser");
 			}
-		}
-		else{
+		} else {
 			String tablesSql = "select distinct(c_table_cd), " + parameters + " from " +
 					(metadataSchema != null ? ("\"" + metadataSchema + "\"." ) : "") +
 					"workplace_access where (c_share_id = 'Y' and LOWER(c_group_id) = ?) or (LOWER(c_user_id) = ? and LOWER(c_group_id) = ?) order by c_name"; //c_hierarchy";
 			try {
 				queryResult =  jt.query(tablesSql, 
-						GetTableMapper(returnType.getType(), false, null, dbInfo.getDb_serverType())
-						, projectInfo.getId().toLowerCase(), userId.toLowerCase(), projectInfo.getId().toLowerCase());
+						GetTableMapper(returnType.getType(), false, null, dbInfo.getDb_serverType()),
+						projectInfo.getId().toLowerCase(), userId.toLowerCase(), projectInfo.getId().toLowerCase());
 			} catch (DataAccessException e) {
 				log.error(e.getMessage());
 				throw new I2B2DAOException("Database Error findRootFoldersByUser 2");
@@ -262,14 +240,11 @@ public class FolderDao extends JdbcDaoSupport {
 			}	
 		}*/
 		log.debug("result size = " + queryResult.size());
-
 		return queryResult;
 	}
 
 	public void check_addRootNode(String metadataSchema, String userId, ProjectType projectInfo, DBInfoType dbInfo) throws I2B2DAOException, I2B2Exception{
-
 		String entriesSql = "select c_name  from " +  (metadataSchema != null ? ("\"" + metadataSchema + "\"." ) : "") +  "workplace_access where LOWER(c_user_id) = ? and LOWER(c_group_id) = ?";
-
 		/*
 		ParameterizedRowMapper<String> map = new ParameterizedRowMapper<String>() {
 			@Override
@@ -285,7 +260,6 @@ public class FolderDao extends JdbcDaoSupport {
 		try {
 			//queryResult = jt.query(entriesSql, map, userId.toLowerCase(), projectInfo.getId().toLowerCase());
 			queryResult = jt.queryForList(entriesSql, String.class, userId.toLowerCase(), projectInfo.getId().toLowerCase());
-
 		} catch (DataAccessException e1) {
 			// TODO Auto-generated catch block
 			log.error(e1.getMessage());
@@ -299,24 +273,23 @@ public class FolderDao extends JdbcDaoSupport {
 		//    need to create a new entry for user
 
 		//1. get ProtectedAccess status for user
-		if (projectInfo.getRole().size() == 0)
-		{
+		if (projectInfo.getRole().size() == 0) {
 			log.error("no role found for this user in project: " + projectInfo.getName());
-			I2B2Exception e = new I2B2Exception("No role found for user");
-			throw e;
+			throw new I2B2Exception("No role found for user");
 		}
 
 		String protectedAccess = "N";
 		Iterator it = projectInfo.getRole().iterator();
-		while (it.hasNext()){
+		while (it.hasNext()) {
 			String role = (String) it.next();
-			if(role.toLowerCase().equals("protected_access")) {
+			if(role.equalsIgnoreCase("protected_access")) {
 				protectedAccess = "Y";
 				break;
 			}
 		}
 		// 2. Get tableCd tableName info 
-		String tableSql = "select distinct(c_table_cd), c_table_name from " +  metadataSchema +  "workplace_access"; 
+		String tableSql = "select distinct(c_table_cd), c_table_name from " +
+				metadataSchema +  "workplace_access";
 
 		/*
 		ParameterizedRowMapper<String> map2 = new ParameterizedRowMapper<String>() {
@@ -341,39 +314,31 @@ public class FolderDao extends JdbcDaoSupport {
 		String index = StringUtil.generateMessageId();
 		try {	
 			numRootsAdded = jt.update(addSql, tableCd, tableName, 0, protectedAccess,
-					userId, userId,index, "CA", "N", projectInfo.getId(), Calendar.getInstance().getTime()); 
-
+					userId, userId,index, "CA", "N", projectInfo.getId(), Calendar.getInstance().getTime());
 		} catch (DataAccessException e) {
 			log.error("Dao addChild failed");
 			log.error(e.getMessage());
 			throw new I2B2DAOException("Data access error check_addRootNode" , e);
 		}
-
 		//		log.info(addSql +  " " + numRowsAdded);
 		log.debug("Number of roots added: " + numRootsAdded);
-
 		return;
-
 	}
 
 	public String exportNode(final ExportChildType childrenType, ProjectType projectInfo, SecurityType securityType) throws I2B2DAOException, I2B2Exception{
-
 		// find return parameters
 		String type = "core";
 		String parameters = CORE;
-
-		if (projectInfo.getRole().size() == 0)
-		{
+		if (projectInfo.getRole().size() == 0) {
 			log.error("no role found for this user in project: " + projectInfo.getName());
-			I2B2Exception e = new I2B2Exception("No role found for user");
-			throw e;
+			throw new I2B2Exception("No role found for user");
 		}
 
 		boolean protectedAccess = false;
 		Iterator it = projectInfo.getRole().iterator();
 		while (it.hasNext()){
 			String role = (String) it.next();
-			if(role.toLowerCase().equalsIgnoreCase("DATA_PROT")) {
+			if(role.equalsIgnoreCase("DATA_PROT")) {
 				protectedAccess = true;
 				break;
 			}
@@ -415,16 +380,16 @@ public class FolderDao extends JdbcDaoSupport {
 		}
 		log.debug("result is: " + queryResult);
 		return queryResult;
-
 	}
 
-	public List findChildrenByParent(final GetChildrenType childrenType, ProjectType projectInfo, DBInfoType dbInfo)
-			throws I2B2DAOException, I2B2Exception{
+	public List findChildrenByParent(final GetChildrenType childrenType,
+									 ProjectType projectInfo,
+									 DBInfoType dbInfo) throws I2B2DAOException, I2B2Exception{
 		log.info("FolderDao.class: findChildrenByParent(final GetChildrenType childrenType, ProjectType projectInfo, DBInfoType dbInfo)");
 		// find return parameters
 		String type = "core";
 		String parameters = CORE;		
-		if (childrenType.getType().equals("all")){
+		if (childrenType.getType().equals("all")) {
 			parameters = ALL;
 			type = "all";
 		}
@@ -434,18 +399,16 @@ public class FolderDao extends JdbcDaoSupport {
 		String metadataSchema = dbInfo.getDb_fullSchema();
 		setDataSource(dbInfo.getDb_dataSource());
 
-		if (projectInfo.getRole().size() == 0)
-		{
+		if (projectInfo.getRole().size() == 0) {
 			log.error("no role found for this user in project: " + projectInfo.getName());
-			I2B2Exception e = new I2B2Exception("No role found for user");
-			throw e;
+			throw new I2B2Exception("No role found for user");
 		}
 
 		boolean protectedAccess = false;
 		Iterator it = projectInfo.getRole().iterator();
-		while (it.hasNext()){
+		while (it.hasNext()) {
 			String role = (String) it.next();
-			if(role.toLowerCase().equalsIgnoreCase("DATA_PROT")) {
+			if(role.equalsIgnoreCase("DATA_PROT")) {
 				protectedAccess = true;
 				break;
 			}
@@ -464,7 +427,7 @@ public class FolderDao extends JdbcDaoSupport {
 		//extract table code
 		String tableCd = StringUtil.getTableCd(childrenType.getParent());
 		//	log.debug(tableCd);
-		String tableName=null;
+		String tableName;
 		if (!protectedAccess){
 			String tableSql = "select distinct(c_table_name) from " + metadataSchema + "workplace_access where c_table_cd = ? and c_protected_access = ? ";
 			//log.info("getChildren " + tableSql + tableCd);
@@ -487,11 +450,9 @@ public class FolderDao extends JdbcDaoSupport {
 			}
 		}
 
-		String hidden = "";
-		if(!childrenType.isHiddens())
-			hidden = dbInfo.getDb_serverType().equalsIgnoreCase("InterSystems IRIS")
-					? " and (not c_visualattributes %STARTSWITH '_H') "
-					: " and c_visualattributes not like '_H%' ";
+		String hidden = StringUtils.EMPTY;
+		if (!childrenType.isHiddens())
+			hidden = " and (not c_visualattributes %STARTSWITH '_H') ";
 
 		String sql = "select " + parameters +" from " + metadataSchema + tableName  +
 				" where  c_parent_index = ? and (c_status_cd != 'D' or c_status_cd is null)";
@@ -504,8 +465,7 @@ public class FolderDao extends JdbcDaoSupport {
 		//		log.info(type + " " + tableCd );
 
 		GetFolderMapper mapper = GetTableMapper(type, childrenType.isBlob(), tableCd, dbInfo.getDb_serverType());
-
-		List<FolderType> queryResult = null;
+		List<FolderType> queryResult;
 		try {
 			queryResult = jt.query(sql, mapper, parentIndex );
 		} catch (DataAccessException e) {
@@ -513,8 +473,6 @@ public class FolderDao extends JdbcDaoSupport {
 			throw new I2B2DAOException("Database Error findChildrenByParent 3");
 		}
 		log.debug("result size = " + queryResult.size());
-
-
 		return queryResult;
 		// tested statement with aqua data studio   verified output from above against this. 
 		// select  c_fullname, c_name, c_synonym_cd, c_visualattributes  from metadata.testrpdr 
@@ -550,15 +508,14 @@ public class FolderDao extends JdbcDaoSupport {
 		// find return parameters
 		String type = "core"; // Default Type is core
 		String parameters = CORE; // parameters to be used in select statement 
-		String category = "";
-		String hiddenStr = "";
-		String maxString = "";
-		String searchWord = "";
+		String category = StringUtils.EMPTY;
+		String hiddenStr = StringUtils.EMPTY;
+		String maxString = StringUtils.EMPTY;
+		String searchWord = StringUtils.EMPTY;
 
-		if (returnType!=null){ 
-
+		if (returnType!=null) {
 			// determines which columns should be used in select statement
-			if(returnType.getType().equals("all")){
+			if (returnType.getType().equals("all")) {
 				parameters = ALL;
 				type = "all";
 			}
@@ -574,41 +531,26 @@ public class FolderDao extends JdbcDaoSupport {
 
 			// request parameter hidden indicates to display hidden files or not
 			if(!returnType.isHiddens())
-				hiddenStr = dbInfo.getDb_serverType().equalsIgnoreCase("InterSystems IRIS")
-						? " and (not c_visualattributes %STARTSWITH '_H') "
-						: " and c_visualattributes not like '_H%'";
+				hiddenStr =  " and (not c_visualattributes %STARTSWITH '_H') ";
 
 			// get strategy if content name starts with given word
 			// or it contains given word or it ends with given word
-			if (returnType.getMatchStr().getStrategy().equals("exact")) {
+			if (returnType.getMatchStr().getStrategy().equals("exact"))
 				searchWord = returnType.getMatchStr().getValue().toLowerCase();
-			} else if(returnType.getMatchStr().getStrategy().equals("left")){
+			else if(returnType.getMatchStr().getStrategy().equals("left"))
 				searchWord = returnType.getMatchStr().getValue().toLowerCase()+ "%";
-			} else if(returnType.getMatchStr().getStrategy().equals("right")) {
+			else if(returnType.getMatchStr().getStrategy().equals("right"))
 				searchWord ="%"+ returnType.getMatchStr().getValue().toLowerCase();
-			} else if(returnType.getMatchStr().getStrategy().equals("contains")) {
+			else if(returnType.getMatchStr().getStrategy().equals("contains"))
 				searchWord =  "%" +	returnType.getMatchStr().getValue().toLowerCase() + "%";
-			}
 
 			try {
 				// setting max number of rows to be returned
-				if(returnType.getMax() !=null && returnType.getMax()>0 && dbInfo!=null){
-					int fetchSize = returnType.getMax() +1 ;
-
-					// if server is oracle then use rownum to return max number of rows
-					if(dbInfo.getDb_serverType().equalsIgnoreCase("ORACLE"))
-						maxString = " and rownum>0 and rownum <=" + fetchSize; 
-
-					// if server is SQL SERVER then use 'TOP' clause to return max number of rows 
-					else if(dbInfo.getDb_serverType().equalsIgnoreCase("SQLSERVER")
-							|| dbInfo.getDb_serverType().equalsIgnoreCase("InterSystems IRIS")) {
-						maxString = "TOP " + fetchSize + " "; 
-						parameters = maxString + parameters; // appended maxstring infront of parameters
-						maxString = "";
-					} 
-					//else 	if(dbInfo.getDb_serverType().toUpperCase().equals("POSTGRESQL"))				
-					//	maxString = " limit " + fetchSize; 
-
+				if (returnType.getMax() != null && returnType.getMax() > 0 && dbInfo != null) {
+					int fetchSize = returnType.getMax() + 1;
+					maxString = "TOP " + fetchSize + " ";
+					parameters = maxString + parameters; // appended maxstring infront of parameters
+					maxString = StringUtils.EMPTY;
 				}
 			}
 			catch( Exception e){
@@ -616,30 +558,25 @@ public class FolderDao extends JdbcDaoSupport {
 			}
 		}
 
-		if (projectInfo.getRole().size() == 0)
-		{
+		if (projectInfo.getRole().size() == 0) {
 			log.error("no role found for this user in project: " + projectInfo.getName());
-			I2B2Exception e = new I2B2Exception("No role found for user");
-			throw e;
+			throw new I2B2Exception("No role found for user");
 		}
 
 		boolean protectedAccess = false;
 		Iterator it = projectInfo.getRole().iterator();
-		while (it.hasNext()){
+		while (it.hasNext()) {
 			String role = (String) it.next();
-			if(role.toLowerCase().equalsIgnoreCase("DATA_PROT")) {
+			if(role.equalsIgnoreCase("DATA_PROT")) {
 				protectedAccess = true;
 				break;
 			}
 		}
 
-		if(returnType.getCategory().trim().equalsIgnoreCase("@")){
+		if(returnType.getCategory().trim().equalsIgnoreCase("@"))
 			return findInAll(returnType, projectInfo, type, parameters, hiddenStr, maxString, searchWord, protectedAccess, dbInfo, userId );
-		}
-		else {
+		else
 			return findInCategory(returnType, projectInfo, type, parameters, category, hiddenStr, maxString, searchWord, dbInfo, protectedAccess);
-		}
-
 	}
 
 	/**
@@ -660,12 +597,13 @@ public class FolderDao extends JdbcDaoSupport {
 	 * 
 	 * @author Neha Patel
 	 */
-	private List findInCategory(final FindByChildType returnType, final ProjectType projectInfo, String type, String parameters, String category, String hiddenStr, String maxString,
-			String searchWord,  final DBInfoType dbInfo, boolean protectedAccess) throws I2B2DAOException {
+	private List findInCategory(final FindByChildType returnType, final ProjectType projectInfo,
+								String type, String parameters, String category,
+								String hiddenStr, String maxString, String searchWord,
+								final DBInfoType dbInfo, boolean protectedAccess) throws I2B2DAOException {
 
 		String metadataSchema = dbInfo.getDb_fullSchema();
 		setDataSource(dbInfo.getDb_dataSource());
-
 		/*
 		ParameterizedRowMapper<String> map = new ParameterizedRowMapper<String>() {
 			@Override
@@ -677,24 +615,22 @@ public class FolderDao extends JdbcDaoSupport {
 
 		 */
 		// Getting tablename where the content is saved from table 'WORKPLACE'
-		List<String> queryResult = null;
-
-		String resultStr=null;
+		List<String> queryResult;
+		String resultStr;
 		StringBuilder sqlToRetreiveTableNm = new StringBuilder( "select distinct c_table_cd, c_table_name from " + metadataSchema + "workplace_access where LOWER(c_user_id) = ? and LOWER(c_group_id) = ?");
-		if (!protectedAccess){
-
+		if (!protectedAccess) {
 			sqlToRetreiveTableNm.append(" and c_protected_access = ? ");
 			try {
 				queryResult = jt.query(sqlToRetreiveTableNm.toString(), new getFolderTableMapper(), category.toLowerCase(), projectInfo.getId().toLowerCase(), "N");	
-				resultStr = (String)queryResult.get(0);
+				resultStr = queryResult.get(0);
 			} catch (DataAccessException e) {
 				log.error(e.getMessage());
 				throw new I2B2DAOException("findWorkplaceByKeyword(): Database Error while accessing workplace_access table with protected access");
 			}
-		}else {
+		} else {
 			try {
 				queryResult = jt.query(sqlToRetreiveTableNm.toString(), new getFolderTableMapper(), category.toLowerCase(), projectInfo.getId().toLowerCase());	
-				resultStr = (String)queryResult.get(0);
+				resultStr = queryResult.get(0);
 			} catch (DataAccessException e) {
 				log.error(e.getMessage());
 				throw new I2B2DAOException("findWorkplaceByKeyword(): Database Error while accessing workplace_access table");
@@ -703,16 +639,13 @@ public class FolderDao extends JdbcDaoSupport {
 
 		String tableCd = StringUtil.getTableCd(resultStr);
 		String tableName = StringUtil.getIndex(resultStr);
-		//TODO: check if [ is enough for IRIS
-		StringBuilder sql = new StringBuilder ("select " + parameters +" from " + metadataSchema+tableName  +
+		StringBuilder sql = new StringBuilder("select " + parameters +" from " + metadataSchema+tableName  +
 				" where LOWER(c_user_id) = ? and LOWER(c_group_id) = ? and LOWER(c_name) " +
-				(dbInfo.getDb_serverType().equalsIgnoreCase("InterSystems IRIS") ? "[" : "like") +
+				QueryUtil.getOperatorByValue(searchWord) +
 				" ? and (c_status_cd != 'D' or c_status_cd is null) ");
 		sql.append( hiddenStr + maxString );
 
 		GetFolderMapper mapper = GetTableMapper(type, returnType.isBlob(), tableCd, dbInfo.getDb_serverType());
-
-
 		/*
 		 * commenting out protectedAcess code from workplace table for now
 		 * 		
@@ -722,20 +655,17 @@ public class FolderDao extends JdbcDaoSupport {
 		 */
 
 		sql.append( " order by c_name ");
-
 		// Executing the query to find the workplace content with the given name 
 		List<FolderType> queryResult2;
-
 		try {
-			queryResult2 = jt.query(sql.toString(), mapper, category.toLowerCase(), projectInfo.getId().toLowerCase(), searchWord );
+			queryResult2 = jt.query(sql.toString(), mapper, category.toLowerCase(),
+					projectInfo.getId().toLowerCase(), QueryUtil.getCleanValue(searchWord));
 		} catch (DataAccessException e) {
 			log.error(e.getMessage());
 			log.error("findWorkplaceByKeyword(): Database Error while accessing workplace table");
 			throw new I2B2DAOException("findWorkplaceByKeyword(): Database Error while accessing workplace table");
 		}
-
 		log.debug("result size = " + queryResult2.size());
-
 		return queryResult2;
 	}
 
@@ -759,10 +689,9 @@ public class FolderDao extends JdbcDaoSupport {
 	 * 
 	 * @author Neha Patel
 	 */
-	private List findInAll(final FindByChildType returnType, final ProjectType projectInfo, String type, String parameters, String hiddenStr, String maxString,
-			String searchWord, boolean protectedAccess, final DBInfoType dbInfo, final String userId) throws DataAccessException, I2B2Exception{
-
-
+	private List findInAll(final FindByChildType returnType, final ProjectType projectInfo, String type,
+						   String parameters, String hiddenStr, String maxString, String searchWord,
+						   boolean protectedAccess, final DBInfoType dbInfo, final String userId) throws DataAccessException, I2B2Exception{
 		// Check if user is a manager
 		boolean managerRole = false;
 		for(String param :projectInfo.getRole()) {
@@ -774,7 +703,6 @@ public class FolderDao extends JdbcDaoSupport {
 
 		String metadataSchema = dbInfo.getDb_fullSchema();
 		setDataSource(dbInfo.getDb_dataSource());
-
 		/*
 		ParameterizedRowMapper<String> map = new ParameterizedRowMapper<String>() {
 			@Override
@@ -786,63 +714,54 @@ public class FolderDao extends JdbcDaoSupport {
 		 */
 
 		// Getting tablename where the content is saved from table 'WORKPLACE'
-		List queryResult = null;
-
-		String resultStr=null;
+		List queryResult;
+		String resultStr;
 		StringBuilder sqlToRetreiveTableNm = new StringBuilder( "select distinct c_table_cd, c_table_name from " + metadataSchema + "workplace_access where ");
 
 		// if user is a manager then search in the whole project
-		if(managerRole){
+		if(managerRole)
 			sqlToRetreiveTableNm.append("LOWER(c_group_id) = ? ");
-		}
 		else {
 			// if user is not a manager then user should be able to search only in his folder or shared folder of the project 	
 			sqlToRetreiveTableNm.append("(LOWER(c_user_id) = ? and LOWER(c_group_id) = ?) or (LOWER(c_group_id) = ? and c_share_id = 'Y') ");
 		}
 
-		if (!protectedAccess){
+		if (!protectedAccess)
 			sqlToRetreiveTableNm.append(" and (c_protected_access = 'N' or c_protected_access is null) ");
-		}
 
 		try {
-			if(managerRole){
+			if(managerRole)
 				queryResult = jt.queryForList(sqlToRetreiveTableNm.toString(), new getFolderTableMapper(), projectInfo.getId().toLowerCase());
-			}
-			else {
-				queryResult = jt.queryForList(sqlToRetreiveTableNm.toString(), new getFolderTableMapper(), userId.toLowerCase(), projectInfo.getId().toLowerCase(),  projectInfo.getId().toLowerCase());
-			}
+			else
+				queryResult = jt.queryForList(sqlToRetreiveTableNm.toString(), new getFolderTableMapper(), userId.toLowerCase(),
+						projectInfo.getId().toLowerCase(),  projectInfo.getId().toLowerCase());
+
 			resultStr = (String)queryResult.get(0);
 		} catch (DataAccessException e) {
 			log.error(e.getMessage());
 			throw new I2B2DAOException("findWorkplaceByKeyword(): Database Error while accessing workplace_access table with protected access");
 		}
 
-		String tableCd = "";
-		String tableName = "";
+		String tableCd;
+		String tableName;
 		List returnResult = null;
 
 		// Run the query for each tablename. There could be more than one table where workplace content is stored
-		if(queryResult != null && !queryResult.isEmpty()){
+		if (queryResult != null && !queryResult.isEmpty()) {
 			Iterator itr = queryResult.iterator();
-			while(itr.hasNext()){
+			while (itr.hasNext()) {
 				resultStr = (String)itr.next();
 				tableCd = StringUtil.getTableCd(resultStr);
 				tableName = StringUtil.getIndex(resultStr);
-				//TODO: check if [ is enough for IRIS
-				StringBuilder sql = new StringBuilder ("select " + parameters +" from " + metadataSchema+tableName  +
-						" where LOWER(c_name) " +
-						(dbInfo.getDb_serverType().equalsIgnoreCase("InterSystems IRIS") ? "[" : "like") +
+				StringBuilder sql = new StringBuilder ("select " + parameters +" from " + metadataSchema + tableName  +
+						" where LOWER(c_name) " + QueryUtil.getOperatorByValue(searchWord) +
 						" ? and (c_status_cd != 'D' or c_status_cd is null) ");
-
-				if(managerRole){
+				if(managerRole)
 					sql.append("and LOWER(c_group_id) = ? ");
-				}
-				else {
+				else
 					sql.append("and ((LOWER(c_user_id) = ? and LOWER(c_group_id) = ?) or (LOWER(c_group_id) = ? and c_share_id = 'Y')) ");
-				}
 
 				sql.append( hiddenStr + maxString );
-
 				GetFolderMapper mapper = GetTableMapper(type, returnType.isBlob(), tableCd, dbInfo.getDb_serverType());
 
 				/*
@@ -852,37 +771,31 @@ public class FolderDao extends JdbcDaoSupport {
 					sql.append(" and (c_protected_access != 'Y' or c_protected_access is null) ");
 				}
 				 */
-
 				sql.append( " order by c_name ");
 				log.info("Script: " + sql);
-
 				// Executing the query to find the workplace content with the given name 
 				List<FolderType> workplaceResult;
-
 				try {
-					if(managerRole){
-						workplaceResult = jt.query(JDBCUtil.escapeSingleQuote(sql.toString()), mapper, searchWord, projectInfo.getId().toLowerCase() );
-					}
-					else {
-						workplaceResult = jt.query(JDBCUtil.escapeSingleQuote(sql.toString()), mapper, searchWord, userId.toLowerCase(), projectInfo.getId().toLowerCase(), projectInfo.getId().toLowerCase() );
-					}
+					if(managerRole)
+						workplaceResult = jt.query(JDBCUtil.escapeSingleQuote(sql.toString()), mapper,
+								QueryUtil.getCleanValue(searchWord), projectInfo.getId().toLowerCase() );
+					else
+						workplaceResult = jt.query(JDBCUtil.escapeSingleQuote(sql.toString()), mapper,
+								QueryUtil.getCleanValue(searchWord), userId.toLowerCase(), 
+								projectInfo.getId().toLowerCase(), projectInfo.getId().toLowerCase() );
 				} catch (DataAccessException e) {
 					log.error(e.getMessage());
 					log.error("findWorkplaceByKeyword(): Database Error while accessing workplace table");
 					throw new I2B2DAOException("findWorkplaceByKeyword(): Database Error while accessing workplace table");
 				}
 
-				if(returnResult==null){
+				if(returnResult == null)
 					returnResult=workplaceResult;
-				}
-				else {
+				else 
 					returnResult.addAll(workplaceResult);
-				}
 			} // end while (itr.hasNext())
-
 		}
 		log.debug("result size = " + returnResult.size());
-
 		return returnResult;
 	}
 
@@ -900,11 +813,9 @@ public class FolderDao extends JdbcDaoSupport {
 	 * @author Neha Patel
 	 */
 	public boolean isShared(String category, final ProjectType projectInfo, final DBInfoType dbInfo) throws DataAccessException, I2B2Exception{
-
 		boolean isSharedBool= false;
 		String metadataSchema = dbInfo.getDb_fullSchema();
 		setDataSource(dbInfo.getDb_dataSource());
-
 		/*
 		ParameterizedRowMapper<String> map = new ParameterizedRowMapper<String>() {
 			@Override
@@ -916,49 +827,36 @@ public class FolderDao extends JdbcDaoSupport {
 		 */
 
 		// Getting column 'c_share_id' to check if the given category/folder is shared
-		List queryResult = null;
-		String resultStr="";
-
-		String sqlForCheckingShared = "select c_share_id from " + metadataSchema + "workplace_access where LOWER(c_user_id) = ? and LOWER(c_group_id) = ? and (c_status_cd != 'D' or c_status_cd is null)";
-
+		List queryResult;
+		String resultStr = StringUtils.EMPTY;
+		String sqlForCheckingShared = "select c_share_id from " + metadataSchema +
+				"workplace_access where LOWER(c_user_id) = ? and " +
+				"LOWER(c_group_id) = ? and (c_status_cd != 'D' or c_status_cd is null)";
 		try {
 			//queryResult = jt.query(sqlForCheckingShared.toString(), map, category.toLowerCase(), projectInfo.getId().toLowerCase());	
-			queryResult = jt.queryForList(sqlForCheckingShared.toString(), String.class, category.toLowerCase(), projectInfo.getId().toLowerCase());	
-
-			if(queryResult !=null && !queryResult.isEmpty()){
+			queryResult = jt.queryForList(sqlForCheckingShared.toString(), String.class, category.toLowerCase(), projectInfo.getId().toLowerCase());
+			if (!queryResult.isEmpty())
 				resultStr = (String)queryResult.get(0);
-			}
 		} catch (DataAccessException e) {
 			log.error(e.getMessage());
 			throw new I2B2DAOException("isShared(): Database Error while accessing workplace_access table");
 		}
-
-		if(resultStr!=null && resultStr.toUpperCase().trim().equals("Y")){
-			isSharedBool = true;
-		}
-		else 
-			isSharedBool = false;
-
-		return isSharedBool;
+		return resultStr != null && resultStr.toUpperCase().trim().equals("Y");
 	}
 
 	public int renameNode(final RenameChildType renameChildType, ProjectType projectInfo, DBInfoType dbInfo) throws I2B2DAOException, I2B2Exception{
-
 		String metadataSchema = dbInfo.getDb_fullSchema();
 		setDataSource(dbInfo.getDb_dataSource());
-
-		if (projectInfo.getRole().size() == 0)
-		{
+		if (projectInfo.getRole().size() == 0) {
 			log.error("no role found for this user in project: " + projectInfo.getName());
-			I2B2Exception e = new I2B2Exception("No role found for user");
-			throw e;
+			throw new I2B2Exception("No role found for user");
 		}
 
 		boolean protectedAccess = false;
 		Iterator it = projectInfo.getRole().iterator();
 		while (it.hasNext()){
 			String role = (String) it.next();
-			if(role.toLowerCase().equalsIgnoreCase("DATA_PROT")) {
+			if(role.equalsIgnoreCase("DATA_PROT")) {
 				protectedAccess = true;
 				break;
 			}
@@ -977,16 +875,17 @@ public class FolderDao extends JdbcDaoSupport {
 		//extract table code
 		String tableCd = StringUtil.getTableCd(renameChildType.getNode());
 		// table code to table name conversion
-		String tableName=null;
-		if (!protectedAccess){
-			String tableSql = "select distinct(c_table_name) from " + metadataSchema + "workplace_access where c_table_cd = ? and c_protected_access = ? ";
+		String tableName;
+		if (!protectedAccess) {
+			String tableSql = "select distinct(c_table_name) from " + metadataSchema +
+					"workplace_access where c_table_cd = ? and c_protected_access = ? ";
 			try {
 				tableName = jt.queryForObject(tableSql, String.class, tableCd, "N");	    
 			} catch (DataAccessException e) {
 				log.error(e.getMessage());
 				throw new I2B2DAOException("Database Error");
 			}
-		}else {
+		} else {
 			String tableSql = "select distinct(c_table_name) from " + metadataSchema + "workplace_access where c_table_cd = ?";
 			try {
 				tableName = jt.queryForObject(tableSql, String.class, tableCd);	    
@@ -1013,7 +912,7 @@ public class FolderDao extends JdbcDaoSupport {
 			}
 		};
 		 */
-		List queryResult = null;
+		List queryResult;
 		try {
 			queryResult = jt.query(sql, new mapToFolderXML(), index);  
 		} catch (DataAccessException e) {
@@ -1022,7 +921,6 @@ public class FolderDao extends JdbcDaoSupport {
 			throw new I2B2DAOException("Data access error " , e);
 		}
 		FolderType node = (FolderType)queryResult.get(0);
-
 		//		String newTooltip = StringUtil.replaceEnd(node.getTooltip(),node.getName(), renameChildType.getName());
 		//		log.info(newTooltip);
 		int numRowsRenamed = -1;
@@ -1035,8 +933,7 @@ public class FolderDao extends JdbcDaoSupport {
 				log.error(e.getMessage());
 				throw new I2B2DAOException("Data access error " , e);
 			}
-		}
-		else {
+		} else {
 			String updateSql = "update " + metadataSchema+tableName  + " set c_name = ? where c_index = ? ";
 
 			/*
@@ -1058,26 +955,21 @@ public class FolderDao extends JdbcDaoSupport {
 		}
 		log.debug("Number of rows renamed: " + numRowsRenamed);
 		return numRowsRenamed;
-
 	}
 
 	public int moveNode(final ChildType childType, ProjectType projectInfo, DBInfoType dbInfo) throws I2B2DAOException, I2B2Exception{
-
 		String metadataSchema = dbInfo.getDb_fullSchema();
 		setDataSource(dbInfo.getDb_dataSource());
-
-		if (projectInfo.getRole().size() == 0)
-		{
+		if (projectInfo.getRole().size() == 0) {
 			log.error("no role found for this user in project: " + projectInfo.getName());
-			I2B2Exception e = new I2B2Exception("No role found for user");
-			throw e;
+			throw new I2B2Exception("No role found for user");
 		}
 
 		boolean protectedAccess = false;
 		Iterator it = projectInfo.getRole().iterator();
-		while (it.hasNext()){
+		while (it.hasNext()) {
 			String role = (String) it.next();
-			if(role.toLowerCase().equalsIgnoreCase("DATA_PROT")) {
+			if(role.equalsIgnoreCase("DATA_PROT")) {
 				protectedAccess = true;
 				break;
 			}
@@ -1096,9 +988,10 @@ public class FolderDao extends JdbcDaoSupport {
 		//extract table code
 		String tableCd = StringUtil.getTableCd(childType.getNode());
 		// table code to table name conversion
-		String tableName=null;
-		if (!protectedAccess){
-			String tableSql = "select distinct(c_table_name) from " + metadataSchema + "workplace_access where c_table_cd = ? and c_protected_access = ? ";
+		String tableName;
+		if (!protectedAccess) {
+			String tableSql = "select distinct(c_table_name) from " + metadataSchema +
+					"workplace_access where c_table_cd = ? and c_protected_access = ? ";
 			try {
 				tableName = jt.queryForObject(tableSql, String.class, tableCd, "N");	    
 			} catch (DataAccessException e) {
@@ -1118,7 +1011,7 @@ public class FolderDao extends JdbcDaoSupport {
 		String index = StringUtil.getIndex(childType.getNode());		
 		String updateSql = "update " + metadataSchema+tableName  + " set c_parent_index = ? where c_index = ? ";
 
-		int numRowsMoved = -1;
+		int numRowsMoved;
 		try {
 			numRowsMoved = jt.update(updateSql, childType.getParent(), index);
 		} catch (DataAccessException e) {
@@ -1129,26 +1022,22 @@ public class FolderDao extends JdbcDaoSupport {
 		//		log.info(updateSql + " " + path + " " + numRowsAnnotated);
 		log.debug("Number of rows moved: " + numRowsMoved);
 		return numRowsMoved;
-
 	}
 
-	public int annotateNode(final AnnotateChildType annotateChildType, ProjectType projectInfo, DBInfoType dbInfo) throws I2B2DAOException, I2B2Exception{
-
+	public int annotateNode(final AnnotateChildType annotateChildType,
+							ProjectType projectInfo, DBInfoType dbInfo) throws I2B2DAOException, I2B2Exception{
 		String metadataSchema = dbInfo.getDb_fullSchema();
 		setDataSource(dbInfo.getDb_dataSource());
-
-		if (projectInfo.getRole().size() == 0)
-		{
+		if (projectInfo.getRole().size() == 0) {
 			log.error("no role found for this user in project: " + projectInfo.getName());
-			I2B2Exception e = new I2B2Exception("No role found for user");
-			throw e;
+			throw new I2B2Exception("No role found for user");
 		}
 
 		boolean protectedAccess = false;
 		Iterator it = projectInfo.getRole().iterator();
 		while (it.hasNext()){
 			String role = (String) it.next();
-			if(role.toLowerCase().equalsIgnoreCase("DATA_PROT")) {
+			if (role.equalsIgnoreCase("DATA_PROT")) {
 				protectedAccess = true;
 				break;
 			}
@@ -1167,16 +1056,17 @@ public class FolderDao extends JdbcDaoSupport {
 		//extract table code
 		String tableCd = StringUtil.getTableCd(annotateChildType.getNode());
 		// table code to table name conversion
-		String tableName=null;
+		String tableName;
 		if (!protectedAccess){
-			String tableSql = "select distinct(c_table_name) from " + metadataSchema + "workplace_access where c_table_cd = ? and c_protected_access = ? ";
+			String tableSql = "select distinct(c_table_name) from " + metadataSchema +
+					"workplace_access where c_table_cd = ? and c_protected_access = ? ";
 			try {
 				tableName = jt.queryForObject(tableSql, String.class, tableCd, "N");	    
 			} catch (DataAccessException e) {
 				log.error(e.getMessage());
 				throw new I2B2DAOException("Database Error");
 			}
-		}else {
+		} else {
 			String tableSql = "select distinct(c_table_name) from " + metadataSchema + "workplace_access where c_table_cd = ?";
 			try {
 				tableName = jt.queryForObject(tableSql, String.class, tableCd);	    
@@ -1188,8 +1078,7 @@ public class FolderDao extends JdbcDaoSupport {
 
 		String index = StringUtil.getIndex(annotateChildType.getNode());	
 		String updateSql = "update " + metadataSchema+tableName  + " set c_tooltip = ? where c_index = ? ";
-
-		int numRowsAnnotated = -1;
+		int numRowsAnnotated;
 		try {
 			numRowsAnnotated = jt.update(updateSql, annotateChildType.getTooltip(), index);
 		} catch (DataAccessException e) {
@@ -1200,27 +1089,21 @@ public class FolderDao extends JdbcDaoSupport {
 		//		log.info(updateSql + " " + path + " " + numRowsAnnotated);
 		log.debug("Number of rows annotated: " + numRowsAnnotated);
 		return numRowsAnnotated;
-
 	}
 
-
 	public int addNode(final FolderType addChildType, ProjectType projectInfo, DBInfoType dbInfo) throws I2B2DAOException, I2B2Exception{
-
 		String metadataSchema = dbInfo.getDb_fullSchema();
 		setDataSource(dbInfo.getDb_dataSource());
-
-		if (projectInfo.getRole().size() == 0)
-		{
+		if (projectInfo.getRole().size() == 0) {
 			log.error("no role found for this user in project: " + projectInfo.getName());
-			I2B2Exception e = new I2B2Exception("No role found for user");
-			throw e;
+			throw new I2B2Exception("No role found for user");
 		}
 
 		boolean protectedAccess = false;
 		Iterator it = projectInfo.getRole().iterator();
 		while (it.hasNext()){
 			String role = (String) it.next();
-			if(role.toLowerCase().equalsIgnoreCase("DATA_PROT")) {
+			if(role.equalsIgnoreCase("DATA_PROT")) {
 				protectedAccess = true;
 				break;
 			}
@@ -1239,9 +1122,10 @@ public class FolderDao extends JdbcDaoSupport {
 		//extract table code
 		String tableCd = StringUtil.getTableCd(addChildType.getParentIndex());
 		// table code to table name conversion
-		String tableName=null;
-		if (!protectedAccess){
-			String tableSql = "select distinct(c_table_name) from " + metadataSchema + "workplace_access where c_table_cd = ? and c_protected_access = ? ";
+		String tableName;
+		if (!protectedAccess) {
+			String tableSql = "select distinct(c_table_name) from " + metadataSchema +
+					"workplace_access where c_table_cd = ? and c_protected_access = ? ";
 			try {
 				tableName = jt.queryForObject(tableSql, String.class, tableCd, "N");	    
 			} catch (DataAccessException e) {
@@ -1249,7 +1133,7 @@ public class FolderDao extends JdbcDaoSupport {
 				log.error(e.getMessage());
 				throw new I2B2DAOException("Database Error");
 			}
-		}else {
+		} else {
 			String tableSql = "select distinct(c_table_name) from " + metadataSchema + "workplace_access where c_table_cd = ?";
 			try {
 				tableName = jt.queryForObject(tableSql, String.class, tableCd);	    
@@ -1264,22 +1148,28 @@ public class FolderDao extends JdbcDaoSupport {
 			String xml = null;
 			XmlValueType workXml=addChildType.getWorkXml();
 			if (workXml != null) {
-				String addSql = "insert into " + metadataSchema+tableName  + 
-						"(c_name, c_user_id, c_index, c_parent_index, c_visualattributes, c_group_id, c_share_id, c_tooltip, c_entry_date, c_work_xml, c_work_xml_i2b2_type) values (?,?,?,?,?,?,?,?,?,?,?)";
+				String addSql = "insert into " + metadataSchema + tableName  +
+						"(c_name, c_user_id, c_index, c_parent_index, c_visualattributes, c_group_id, c_share_id, " +
+						"c_tooltip, c_entry_date, c_work_xml, c_work_xml_i2b2_type) values (?,?,?,?,?,?,?,?,?,?,?)";
 				Element element = workXml.getAny().get(0);
 				if(element != null)
 					xml = XMLUtil.convertDOMElementToString(element);
 				numRowsAdded = jt.update(addSql, 
-						addChildType.getName(), addChildType.getUserId(),addChildType.getIndex(), StringUtil.getIndex(addChildType.getParentIndex()), 
-						addChildType.getVisualAttributes(), addChildType.getGroupId(), addChildType.getShareId(), addChildType.getTooltip(),  Calendar.getInstance().getTime(),
+						addChildType.getName(), addChildType.getUserId(),addChildType.getIndex(),
+						StringUtil.getIndex(addChildType.getParentIndex()),
+						addChildType.getVisualAttributes(), addChildType.getGroupId(), addChildType.getShareId(),
+						addChildType.getTooltip(),  Calendar.getInstance().getTime(),
 						xml, addChildType.getWorkXmlI2B2Type()); 
 			}		
 			else {
 				String addSql = "insert into " + metadataSchema+tableName  + 
-						"(c_name, c_user_id, c_index, c_parent_index, c_visualattributes, c_group_id, c_share_id, c_tooltip, c_entry_date, c_work_xml_i2b2_type) values (?,?,?,?,?,?,?,?,?,?)";
+						"(c_name, c_user_id, c_index, c_parent_index, c_visualattributes, c_group_id, c_share_id, " +
+						"c_tooltip, c_entry_date, c_work_xml_i2b2_type) values (?,?,?,?,?,?,?,?,?,?)";
 				numRowsAdded = jt.update(addSql, 
-						addChildType.getName(), addChildType.getUserId(),addChildType.getIndex(), StringUtil.getIndex(addChildType.getParentIndex()), 
-						addChildType.getVisualAttributes(), addChildType.getGroupId(), addChildType.getShareId(), addChildType.getTooltip(),  Calendar.getInstance().getTime(),
+						addChildType.getName(), addChildType.getUserId(),addChildType.getIndex(),
+						StringUtil.getIndex(addChildType.getParentIndex()),
+						addChildType.getVisualAttributes(), addChildType.getGroupId(),
+						addChildType.getShareId(), addChildType.getTooltip(), Calendar.getInstance().getTime(),
 						addChildType.getWorkXmlI2B2Type()); 
 			}
 		} catch (DataAccessException e) {
@@ -1287,32 +1177,26 @@ public class FolderDao extends JdbcDaoSupport {
 			log.error(e.getMessage());
 			throw new I2B2DAOException("Data access error " , e);
 		}
-
 		//	log.info(addSql +  " " + numRowsAdded);
 		log.debug("Number of rows added: " + numRowsAdded);
-
 		return numRowsAdded;
-
 	}
-
 
 	public int deleteNode(final DeleteChildType deleteChildType, ProjectType projectInfo, DBInfoType dbInfo) throws DataAccessException, I2B2Exception{
 		String metadataSchema = dbInfo.getDb_fullSchema();
 		String serverType = dbInfo.getDb_serverType();
 		setDataSource(dbInfo.getDb_dataSource());
 
-		if (projectInfo.getRole().size() == 0)
-		{
+		if (projectInfo.getRole().size() == 0) {
 			log.error("no role found for this user in project: " + projectInfo.getName());
-			I2B2Exception e = new I2B2Exception("No role found for user");
-			throw e;
+			throw new I2B2Exception("No role found for user");
 		}
 
 		boolean protectedAccess = false;
 		Iterator it = projectInfo.getRole().iterator();
 		while (it.hasNext()){
 			String role = (String) it.next();
-			if(role.toLowerCase().equalsIgnoreCase("DATA_PROT")) {
+			if (role.equalsIgnoreCase("DATA_PROT")) {
 				protectedAccess = true;
 				break;
 			}
@@ -1330,16 +1214,17 @@ public class FolderDao extends JdbcDaoSupport {
 		//extract table code
 		String tableCd = StringUtil.getTableCd(deleteChildType.getNode());
 		// table code to table name conversion
-		String tableName=null;
-		if (!protectedAccess){
-			String tableSql = "select distinct(c_table_name) from " + metadataSchema + "workplace_access where c_table_cd = ? and c_protected_access = ? ";
+		String tableName;
+		if (!protectedAccess) {
+			String tableSql = "select distinct(c_table_name) from " + metadataSchema +
+					"workplace_access where c_table_cd = ? and c_protected_access = ? ";
 			try {
 				tableName = jt.queryForObject(tableSql, String.class, tableCd, "N");	    
 			} catch (DataAccessException e) {
 				log.error(e.getMessage());
 				throw new I2B2DAOException("Database Error");
 			}
-		}else {
+		} else {
 			String tableSql = "select distinct(c_table_name) from " + metadataSchema + "workplace_access where c_table_cd = ?";
 			try {
 				tableName = jt.queryForObject(tableSql, String.class, tableCd);	    
@@ -1365,7 +1250,6 @@ public class FolderDao extends JdbcDaoSupport {
 		}
 		log.debug("Number of rows deleted " + numRowsDeleted);
 		return numRowsDeleted;
-
 	}
 
 	/**
@@ -1389,25 +1273,22 @@ public class FolderDao extends JdbcDaoSupport {
 	 * @author Neha Patel
 	 */
 	public int setProtectedAccess(final ProtectedType requestType, final ProjectType projectInfo, final DBInfoType dbInfo, String userId) throws I2B2DAOException, I2B2Exception{
-
 		boolean settingRoot = false;
 		int numRowsSet = -1;
 		int numParentUpdated = -1;
 		int numWorkAccUpdated =-1;
-		String sharedStr ="";
-		String contentUserId = "";
-		String tableName = "";
+		String sharedStr;
+		String contentUserId;
+		String tableName = StringUtils.EMPTY;
 		boolean managerRole = false;
 		boolean isFolder = true;
 
 		String metadataSchema = dbInfo.getDb_fullSchema();
 		setDataSource(dbInfo.getDb_dataSource());
 
-		if (projectInfo.getRole().size() == 0)
-		{
+		if (projectInfo.getRole().size() == 0) {
 			log.error("no role found for this user in project: " + projectInfo.getName());
-			I2B2Exception e = new I2B2Exception("No role found for user");
-			throw e;
+			throw new I2B2Exception("No role found for user");
 		}
 
 		// Check if user is a manager
@@ -1434,9 +1315,9 @@ public class FolderDao extends JdbcDaoSupport {
 		String tableCd = StringUtil.getTableCd(requestType.getIndex());
 		String index = StringUtil.getIndex(requestType.getIndex());
 
-		List resultString = null;
-		StringBuilder sqlToRetrieveTableName = new StringBuilder("select distinct c_table_name, c_share_id, c_user_id from " 	+ metadataSchema 
-				+ "workplace_access where LOWER(c_group_id) = ?");	
+		List resultString;
+		StringBuilder sqlToRetrieveTableName = new StringBuilder("select distinct c_table_name, c_share_id, c_user_id from "
+				+ metadataSchema + "workplace_access where LOWER(c_group_id) = ?");
 
 		// Check if the user is setting access for root directory
 		// by looking for index in the current table
@@ -1448,11 +1329,10 @@ public class FolderDao extends JdbcDaoSupport {
 			throw new I2B2DAOException("Database Error");
 		}
 
-		String resultToSplit= "";
+		String resultToSplit;
 		// if the above query returned any result
 		// that means user was setting access for root directory
-		if(resultString!=null && !resultString.isEmpty()){
-
+		if (resultString != null && !resultString.isEmpty()) {
 			settingRoot = true;
 			isFolder = true;
 
@@ -1465,7 +1345,7 @@ public class FolderDao extends JdbcDaoSupport {
 			// if its not manager check if the file/folder is shared
 			// if not shared either, then verify that user is setting
 			// privilege for his/her file/folder
-			if(managerRole == false){
+			if (!managerRole) {
 				sharedStr = resultToSplit.substring(indexofShared+10, indexofUser);
 				contentUserId = resultToSplit.substring(indexofUser+9);
 
@@ -1482,7 +1362,6 @@ public class FolderDao extends JdbcDaoSupport {
 
 			// replace the last condition of 'and c_index=?' with 'and c_table_cd'
 			sqlToRetrieveTableName.replace(sqlToRetrieveTableName.lastIndexOf("and"), sqlToRetrieveTableName.length()-1, " and LOWER(c_table_cd) = ? ");
-
 			try {
 				resultString = jt.query(sqlToRetrieveTableName.toString(), new mapToShareAccess(), projectInfo.getId().toLowerCase(), tableCd.toLowerCase());	    
 			} catch (DataAccessException e) {
@@ -1491,10 +1370,8 @@ public class FolderDao extends JdbcDaoSupport {
 			}
 
 			resultToSplit = (String) resultString.get(0);
-
 			// getting tablename from the query result
 			tableName = resultToSplit.substring(11, resultToSplit.indexOf("\\share_id="));
-
 			List result;
 			/*
 			ParameterizedRowMapper<String> mapTocheckAccess = new ParameterizedRowMapper<String>() {
@@ -1510,7 +1387,8 @@ public class FolderDao extends JdbcDaoSupport {
 
 			// Run query in table workplace to find out if the content is shared or does it belong to user
 			// Also find the type of the file
-			String sql = "select  c_share_id, c_user_id, c_work_xml_i2b2_type from " + metadataSchema + tableName + " where c_index = ? and LOWER(c_group_id) = ?";
+			String sql = "select  c_share_id, c_user_id, c_work_xml_i2b2_type from " + metadataSchema + tableName +
+					" where c_index = ? and LOWER(c_group_id) = ?";
 			try{	
 				result = jt.query(sql, new mapTocheckAccess(), index, projectInfo.getId().toLowerCase());
 			} catch (DataAccessException e) {
@@ -1522,21 +1400,16 @@ public class FolderDao extends JdbcDaoSupport {
 			resultToSplit = (String) result.get(0);
 			String type = resultToSplit.substring(resultToSplit.lastIndexOf("\\")+6);
 
-			if(!type.equalsIgnoreCase("FOLDER")){
-				isFolder= false;
-			}
-			else 
-				isFolder=true;
+			isFolder= type.equalsIgnoreCase("FOLDER");
 
 			// if user is not a manager
 			// then check if file/folder is shared
 			// if not shared then verify file/folder belongs to user
-			if(!managerRole){
-
+			if (!managerRole) {
 				sharedStr = resultToSplit.substring(10, resultToSplit.indexOf("\\user_id="));
 				contentUserId = resultToSplit.substring(resultToSplit.indexOf("\\user_id=")+9, resultToSplit.lastIndexOf("\\"));	
 
-				if ((sharedStr!=null && !sharedStr.equalsIgnoreCase("Y")) && (!contentUserId.equalsIgnoreCase(userId))){
+				if (sharedStr != null && !sharedStr.equalsIgnoreCase("Y") && !contentUserId.equalsIgnoreCase(userId)){
 					log.debug( "User does not have privileges to set protected access for this content");
 					return -11111;
 				} // if (sharedStr==null || !sharedStr.equalsIgnoreCase("Y"))
@@ -1544,7 +1417,7 @@ public class FolderDao extends JdbcDaoSupport {
 		}
 
 		StringBuilder indexStr = new StringBuilder();
-		String protectedAccVal= "";
+		String protectedAccVal;
 
 		if(requestType.getProtectedAccess().trim().equalsIgnoreCase("true"))
 			protectedAccVal = "Y";
@@ -1557,8 +1430,7 @@ public class FolderDao extends JdbcDaoSupport {
 
 		// if initial request was for a folder only
 		// then run this part 
-		if(isFolder){
-
+		if (isFolder) {
 			List resultingIndx;
 			/*
 			ParameterizedRowMapper<String> mapForIndexes = new ParameterizedRowMapper<String>() {
@@ -1572,20 +1444,20 @@ public class FolderDao extends JdbcDaoSupport {
 
 			// Get all the parent indexes (folder indexes under the top level directory)
 			// and store it in an arraylist
-			String parentIdx = "";
-			for (int i = 0; i < parentIdxList.size(); i ++){
+			String parentIdx;
+			for (int i = 0; i < parentIdxList.size(); i ++) {
 				try {
 					parentIdx = parentIdxList.get(i);
-					if(i>0){
+					if(i > 0)
 						indexStr.append(", '" + parentIdx + "'");
-					}
-					String sqlToCollectIndex = "select c_index from " + metadataSchema + tableName + " where c_parent_index = ? and LOWER(c_group_id) = ? and c_work_xml_i2b2_type = 'FOLDER'";
+					String sqlToCollectIndex = "select c_index from " + metadataSchema + tableName +
+							" where c_parent_index = ? and LOWER(c_group_id) = ? and c_work_xml_i2b2_type = 'FOLDER'";
 					resultingIndx = jt.queryForList(sqlToCollectIndex, String.class, parentIdx, projectInfo.getId().toLowerCase());	    
 				} catch (DataAccessException e) {
 					log.error(e.getMessage());
 					throw new I2B2DAOException("Database Error");
 				}
-				if(resultingIndx != null)
+				if (resultingIndx != null)
 					parentIdxList.addAll(resultingIndx);	
 			}
 
@@ -1604,47 +1476,43 @@ public class FolderDao extends JdbcDaoSupport {
 		numRowsSet = updateProtectedAccess(metadataSchema,tableName, "c_index",indexStr.toString(), protectedAccVal);
 
 		// Return the correct number of updated rows 
-		if(isFolder)
+		if (isFolder)
 			numRowsSet += numParentUpdated;
 
-		if(settingRoot)
+		if (settingRoot)
 			numRowsSet += numWorkAccUpdated;
 
 		return numRowsSet;
 	}
 
 	/**
-	 * @param numRowsSet
 	 * @param metadataSchema
 	 * @param tableName
-	 * @param indexStr
+	 * @param ;indexStr
 	 * @param protectedAccVal
 	 * @return
 	 * @throws I2B2DAOException
 	 * 
 	 * @author Neha Patel
 	 */
-	private int updateProtectedAccess(String metadataSchema,String tableName, String columnName, String indexStr, String protectedAccVal)
-			throws I2B2DAOException {
-
-		String updateSql = "update " + metadataSchema+tableName  + " set c_protected_access = ? where " + columnName + " in ( " + indexStr + " )";
-		int numRowsSet=-1;
-
+	private int updateProtectedAccess(String metadataSchema,String tableName, String columnName,
+									  String indexStr, String protectedAccVal) throws I2B2DAOException {
+		String updateSql = "update " + metadataSchema+tableName  + " set c_protected_access = ? where " +
+				columnName + " in ( " + indexStr + " )";
 		try {
-			numRowsSet = jt.update(JDBCUtil.escapeSingleQuote(updateSql), protectedAccVal);
+			return jt.update(JDBCUtil.escapeSingleQuote(updateSql), protectedAccVal);
 		} catch (DataAccessException e) {
 			log.error("Dao updateProtectedAccess failed");
 			log.error(e.getMessage());
 			throw new I2B2DAOException("Data access error " , e);
 		}
-		return numRowsSet;
 	}
 
 
 	private void checkForChildrenDeletion(String nodeIndex, String tableName, String metadataSchema, DBInfoType dbInfo) throws DataAccessException {
-
 		// mark children for deletion
-		String updateSql = " update " + metadataSchema+tableName  + " set c_change_date = ?, c_status_cd = 'D'  where c_parent_index = ? ";
+		String updateSql = " update " + metadataSchema+tableName  +
+				" set c_change_date = ?, c_status_cd = 'D'  where c_parent_index = ? ";
 		int numChildrenDeleted = -1;
 		try {
 			//		log.info(sql + " " + w_index);
@@ -1656,13 +1524,8 @@ public class FolderDao extends JdbcDaoSupport {
 		}
 		log.debug("Number of children deleted: "+ numChildrenDeleted);
 		// look for children that are folders
-		//TODO: check if %STARTSWITH is enough for IRIS
-		String folderSql = "select c_index from " + metadataSchema+tableName +
-				" where c_parent_index = ? " +
-				(dbInfo.getDb_serverType().equalsIgnoreCase("InterSystems IRIS")
-						? " and c_visualattributes %STARTSWITH 'F' "
-						: " and c_visualattributes like 'F%' ");
-
+		String folderSql = "select c_index from " + metadataSchema + tableName +
+				" where c_parent_index = ? and c_visualattributes %STARTSWITH 'F' ";
 		/*
 		ParameterizedRowMapper<String> map = new ParameterizedRowMapper<String>() {
 			@Override
@@ -1673,7 +1536,7 @@ public class FolderDao extends JdbcDaoSupport {
 		};
 		 */
 		log.info("Script: " + folderSql);
-		List folders = null;
+		List folders;
 		try{
 			folders = jt.queryForList(folderSql, String.class, nodeIndex);
 		} catch (DataAccessException e) {
@@ -1681,28 +1544,23 @@ public class FolderDao extends JdbcDaoSupport {
 			throw e;
 		}
 		// recursively check folders for children to delete
-		if (folders != null){
+		if (folders != null) {
 			Iterator it = folders.iterator();
-			while(it.hasNext()){
+			while(it.hasNext()) {
 				String folderIndex = (String) it.next();
 				checkForChildrenDeletion(folderIndex, tableName, metadataSchema, dbInfo);
 			}
 		}
-
 	}
 
 	private GetFolderMapper GetTableMapper(final String type, final boolean isBlob, final String tableCd, final String dbType) {
-
-
 		GetFolderMapper folderMapper = new GetFolderMapper();
-
 		folderMapper.setType(type);
 		folderMapper.setBlob(isBlob);
 		folderMapper.setTableCd(tableCd);
 		folderMapper.setDbType(dbType);
 		return  folderMapper;
 	}
-
 }
 
 
@@ -1710,24 +1568,21 @@ class mapToShareAccess implements RowMapper<String> {
 	//ParameterizedRowMapper<String> map = new ParameterizedRowMapper<String>() {
 	@Override
 	public String mapRow(ResultSet rs, int rowNum) throws SQLException {
-
-		String resultRow = "\\tablename=" +  rs.getString("c_table_name") + "\\share_id=" + rs.getString("c_share_id") + "\\user_id=" + rs.getString("c_user_id") ;
-
-		return resultRow;
+		return "\\tablename=" +  rs.getString("c_table_name") +
+				"\\share_id=" + rs.getString("c_share_id") + "\\user_id=" + rs.getString("c_user_id");
 	}
-};
+}
 
 class mapTocheckAccess implements RowMapper<String> {
 	@Override
 	//ParameterizedRowMapper<String> mapTocheckAccess = new ParameterizedRowMapper<String>() {
 	//	@Override
 	public String mapRow(ResultSet rs, int rowNum) throws SQLException {
-
-		String resultRow = "\\share_id=" + rs.getString("c_share_id") + "\\user_id=" + rs.getString("c_user_id") + "\\type=" + rs.getString("c_work_xml_i2b2_type") ;
-
-		return resultRow;
+		return "\\share_id=" + rs.getString("c_share_id") +
+				"\\user_id=" + rs.getString("c_user_id") + "\\type=" +
+				rs.getString("c_work_xml_i2b2_type") ;
 	}
-};
+}
 
 class mapToFolderXML implements RowMapper<FolderType> {
 	//ParameterizedRowMapper<FolderType> map2 = new ParameterizedRowMapper<FolderType>() {
@@ -1737,19 +1592,15 @@ class mapToFolderXML implements RowMapper<FolderType> {
 		child.setName(rs.getString("c_name"));
 		//	            child.setTooltip(rs.getString("c_tooltip"));
 		child.setWorkXmlI2B2Type(rs.getString("c_work_xml_i2b2_type"));
-
 		return child;
 	}
-};
-
+}
 
 class getFolderTableMapper implements RowMapper<String> {
 	@Override
 	public String mapRow(ResultSet rs, int rowNum) throws SQLException {
-		String str =  "\\\\" + rs.getString("c_table_cd") + "\\" + rs.getString("c_table_name");
-		return str;
+		return "\\\\" + rs.getString("c_table_cd") + "\\" + rs.getString("c_table_name");
 	}
-
 }
 
 class getTableMapper implements RowMapper<DblookupType> {
@@ -1762,7 +1613,6 @@ class getTableMapper implements RowMapper<DblookupType> {
 		dblu.setDbFullschema(rs.getString("c_db_fullschema"));
 		dblu.setDbDatasource(rs.getString("c_db_datasource"));
 		dblu.setDbServertype(rs.getString("c_db_servertype"));
-		//TODO: IRIS
 //		dblu.setDbServertype("INTERSYSTEMS IRIS");
 		dblu.setDbNicename(rs.getString("c_db_nicename"));
 		dblu.setDbTooltip(rs.getString("c_db_tooltip"));
@@ -1789,33 +1639,30 @@ class GetFolderMapper implements RowMapper<FolderType> {
 	public void setTableCd(String tableCd) {
 		this.tableCd = tableCd;
 	}
+
 	String type;
 	boolean isBlob;
 	String tableCd;
 	String dbType;
+
 	@Override
 	public FolderType mapRow(ResultSet rs, int rowNum) throws SQLException {
-
-
-
 		//private ParameterizedRowMapper<FolderType> getMapper(final String type, final boolean isBlob, final String tableCd, final String dbType){
-
 		FolderType child = new FolderType();
 		//TODO fix this for all/+blob
-		if (tableCd == null){
+		if (tableCd == null) {
 			//	            	child.setHierarchy("\\\\" + rs.getString("c_table_cd")+ rs.getString("c_hierarchy")); 
 			child.setIndex("\\\\" + rs.getString("c_table_cd")+ "\\" + rs.getString("c_index")); 
 		}
-		else{
+		else {
 			//	            	child.setHierarchy("\\\\" + tableCd + rs.getString("c_hierarchy")); 
 			child.setIndex("\\\\" + tableCd + "\\" + rs.getString("c_index")); 
 		}
 		//      log.debug("getMapper: " + child.getIndex());
 		child.setName(rs.getString("c_name"));
-
 		child.setProtectedAccess(rs.getString("c_protected_access"));
 
-		if(!(type.equals("default"))) {
+		if (!type.equals("default")) {
 			child.setUserId(rs.getString("c_user_id"));
 			//         	child.setHlevel(rs.getInt("c_hlevel"));
 			child.setGroupId(rs.getString("c_group_id"));
@@ -1827,29 +1674,18 @@ class GetFolderMapper implements RowMapper<FolderType> {
 			// Building tooltip for the response 
 			// eg. project name - cname \n tooltip from db
 			String toolTip = rs.getString("c_group_id") + " - " + rs.getString("c_name") ;
-			if(rs.getString("c_tooltip")!=null && !rs.getString("c_tooltip").isEmpty()){
-				toolTip = toolTip + "\n" + rs.getString("c_tooltip"); 
-			}
-
+			if (rs.getString("c_tooltip") != null && !rs.getString("c_tooltip").isEmpty())
+				toolTip = toolTip + "\n" + rs.getString("c_tooltip");
 			//child.setTooltip(rs.getString("c_tooltip"));
 			child.setTooltip(toolTip);
-
-		}if(isBlob){
+		} if (isBlob) {
 			child.setWorkXmlI2B2Type(rs.getString("c_work_xml_i2b2_type"));
-
-			String c_xml = null;
+			String c_xml;
 			try {
-				if (dbType.equals("POSTGRESQL") || dbType.equalsIgnoreCase("InterSystems IRIS"))
-				{
-					c_xml = rs.getString("c_work_xml");
-				} else
-				{
-					c_xml = rs.getString("c_work_xml");  //JDBCUtil.getClobString(rs.getClob("c_work_xml"));
-				}
-				if (c_xml != null){
+				c_xml = rs.getString("c_work_xml");
+				if (c_xml != null) {
 					//c_xml = JDBCUtil.getClobString(xml_clob);
-					if ((c_xml!=null)&&(c_xml.trim().length()>0)&&(!c_xml.equals("(null)")))
-					{
+					if (c_xml!=null && c_xml.trim().length() > 0 && !c_xml.equals("(null)")) {
 						//SAXBuilder parser = new SAXBuilder();
 						//java.io.StringReader xmlStringReader = new java.io.StringReader(c_xml);
 						Element rootElement = null;
@@ -1888,8 +1724,7 @@ class GetFolderMapper implements RowMapper<FolderType> {
 				Clob xml_schema_clob = rs.getClob("c_work_xml_schema");
 				if (xml_schema_clob != null){
 					c_xml = JDBCUtil.getClobString(xml_schema_clob);
-					if ((c_xml!=null)&&(c_xml.trim().length()>0)&&(!c_xml.equals("(null)")))
-					{
+					if (c_xml != null && c_xml.trim().length() > 0 && !c_xml.equals("(null)")) {
 						Element rootElement = null;
 						try {
 							//org.jdom.Document metadataDoc = parser.build(xmlStringReader);
@@ -1897,7 +1732,6 @@ class GetFolderMapper implements RowMapper<FolderType> {
 							//org.jdom.output.DOMOutputter out = new DOMOutputter(); 
 							//Document doc = out.output(metadataDoc);
 							rootElement = doc.getDocumentElement();
-
 						} catch (IOException e1) {
 							child.setWorkXmlSchema(null);
 						}
@@ -1910,7 +1744,7 @@ class GetFolderMapper implements RowMapper<FolderType> {
 							//            					log.debug("rootElement is null");
 							child.setWorkXmlSchema(null);
 						}
-					}else {
+					} else {
 						//           				log.debug("work xml schema is null");
 						child.setWorkXmlSchema(null);
 					}
@@ -1923,7 +1757,8 @@ class GetFolderMapper implements RowMapper<FolderType> {
 				child.setWorkXmlSchema(null);
 			}
 		}
-		if((type.equals("all"))){
+
+		if (type.equals("all")) {
 			DTOFactory factory = new DTOFactory();
 			// make sure date isnt null before converting to XMLGregorianCalendar
 			Date date = rs.getDate("c_entry_date");
@@ -1939,11 +1774,8 @@ class GetFolderMapper implements RowMapper<FolderType> {
 				child.setChangeDate(factory.getXMLGregorianCalendar(date.getTime())); 
 
 			child.setStatusCd(rs.getString("c_status_cd"));
-
 		}
 		return child;
 	}
-
-
 }
 

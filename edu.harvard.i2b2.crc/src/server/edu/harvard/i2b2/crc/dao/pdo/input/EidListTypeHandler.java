@@ -23,11 +23,11 @@ import java.util.List;
 
 import edu.harvard.i2b2.common.exception.I2B2DAOException;
 import edu.harvard.i2b2.crc.dao.CRCDAO;
-import edu.harvard.i2b2.crc.dao.DAOFactoryHelper;
 import edu.harvard.i2b2.crc.datavo.db.DataSourceLookup;
 import edu.harvard.i2b2.crc.datavo.pdo.query.EidListType;
 import edu.harvard.i2b2.crc.datavo.pdo.query.EventListType;
 import edu.harvard.i2b2.crc.datavo.pdo.query.EidListType.Eid;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Handler class for pid list type to generate "where" clause for pdo request
@@ -40,7 +40,7 @@ public class EidListTypeHandler extends CRCDAO implements
 	private EidListType eidListType = null;
 	private int minIndex = 0;
 	private int maxIndex = 0;
-	private String encounterSetCollId = "";
+	private String encounterSetCollId = StringUtils.EMPTY;
 	private List<String> encounterNumList = null;
 	private DataSourceLookup dataSourceLookup = null;
 	private boolean deleteTempFlag = false;
@@ -87,11 +87,7 @@ public class EidListTypeHandler extends CRCDAO implements
 
 	@Override
 	public boolean isEnumerationSet() {
-		if ((eidListType.getEid() != null) && (eidListType.getEid().size() > 0)) {
-			return true;
-		} else {
-			return false;
-		}
+		return (eidListType.getEid() != null) && (eidListType.getEid().size() > 0);
 	}
 
 	@Override
@@ -107,14 +103,13 @@ public class EidListTypeHandler extends CRCDAO implements
 
 		String tempTableName = getTempTableName();
 
-		String sqlString = "SELECT "
+		return "SELECT "
 				+ " em.encounter_num "
 				+ " FROM "
 				+ getDbSchemaName()
 				+ "encounter_mapping em WHERE  exists (select  1 FROM "
 				+ tempTableName
 				+ " where char_param1 = em.encounter_ide and char_param2 = em.encounter_ide_source)  ";
-		return sqlString;
 	}
 
 	public String generatePatentSql() {
@@ -137,25 +132,13 @@ public class EidListTypeHandler extends CRCDAO implements
 
 		// create temp table
 		java.sql.Statement tempStmt = conn.createStatement();
-		if (dataSourceLookup.getServerType().equalsIgnoreCase(
-				DAOFactoryHelper.SQLSERVER)) {
-			String createTempInputListTable = "create table "
-					+ getTempTableName()
-					+ " (set_index int, char_param1 varchar(100), char_param2 varchar(100) )";
-			deleteTempFlag = true;
-			tempStmt.executeUpdate(createTempInputListTable);
-		} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
-					|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
-			String createTempInputListTable = "create "
-					+ (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL) ? " temp "
-						: (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS) ? " GLOBAL TEMPORARY " : ""))
-					+ " table "
-					+ getTempTableName()
-					+ " (set_index int, char_param1 varchar(100), char_param2 varchar(100) )";
-			deleteTempFlag = true;
-			tempStmt.executeUpdate(createTempInputListTable);
+
+		String createTempInputListTable = "create GLOBAL TEMPORARY table "
+				+ getTempTableName()
+				+ " (set_index int, char_param1 varchar(100), char_param2 varchar(100) )";
+		deleteTempFlag = true;
+		tempStmt.executeUpdate(createTempInputListTable);
 			
-		}
 		int i = 0, j = 1;
 
 		List<Eid> eidList = eidListType.getEid();
@@ -168,19 +151,17 @@ public class EidListTypeHandler extends CRCDAO implements
 			finalEidList = eidList.subList(minIndex, maxIndex);
 		} else if (minIndex == maxIndex && minIndex > 0) {
 			// check if maxIndex is equal to last index
-			if (maxIndex == eidListType.getEid().size() - 1) {
+			if (maxIndex == eidListType.getEid().size() - 1) 
 				finalEidList.add(eidList.get(maxIndex));
-			} else {
+			 else 
 				finalEidList = eidList.subList(minIndex, maxIndex);
-			}
 
 		} else {
 			maxIndex = eidList.size();
 			finalEidList = eidList.subList(minIndex, maxIndex);
 		}
 
-		PreparedStatement preparedStmt = conn.prepareStatement("insert into "
-				+ tempTableName
+		PreparedStatement preparedStmt = conn.prepareStatement("insert into " + tempTableName
 				+ "(set_index,char_param1,char_param2)  values (?,?,?)");
 		for (Eid eid : finalEidList) {
 			preparedStmt.setInt(1, j++);
@@ -188,10 +169,8 @@ public class EidListTypeHandler extends CRCDAO implements
 			preparedStmt.setString(3, eid.getSource());
 			preparedStmt.addBatch();
 			i++;
-			if (i % 100 == 0) {
+			if (i % 100 == 0) 
 				preparedStmt.executeBatch();
-
-			}
 			log.debug("loading " + eid.getValue() + " " + eid.getSource());
 		}
 		preparedStmt.executeBatch();
@@ -200,25 +179,12 @@ public class EidListTypeHandler extends CRCDAO implements
 	@Override
 	public void deleteTempTable(Connection conn) throws SQLException {
 		Statement deleteStmt = null;
-		if (!deleteTempFlag) {
+		if (!deleteTempFlag) 
 			return;
-		}
+		
 		try {
 			deleteStmt = conn.createStatement();
-
-			if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)
-					|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
-					|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
-			//	conn.createStatement().executeUpdate(
-			//			"drop table " + getTempTableName());
-				deleteStmt.executeUpdate(
-						"drop table " + getTempTableName());
-			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE)) {
-		//		conn.createStatement().executeUpdate(
-		//				"delete  " + getTempTableName());
-				deleteStmt.executeUpdate(
-						"delete  " + getTempTableName());
-			}
+			deleteStmt.executeUpdate("drop table " + getTempTableName());
 		} catch (SQLException sqle) {
 			throw sqle;
 		} finally {
@@ -234,7 +200,7 @@ public class EidListTypeHandler extends CRCDAO implements
 
 	@Override
 	public String getCollectionId() {
-		return "";
+		return StringUtils.EMPTY;
 	}
 
 	@Override
@@ -253,27 +219,16 @@ public class EidListTypeHandler extends CRCDAO implements
 	 */
 	@Override
 	public int getInputSize() throws I2B2DAOException {
-
 		return 0;
-
 	}
 
 	@Override
 	public void setMaxIndex(int maxIndex) {
 		eidListType.setMax(maxIndex);
-
 	}
 
 	public String getTempTableName() {
-		String tempTableName = "";
-		if (dataSourceLookup.getServerType().equalsIgnoreCase(
-				DAOFactoryHelper.ORACLE)) {
-			tempTableName = this.getDbSchemaName()
-					+ FactRelatedQueryHandler.TEMP_PARAM_TABLE;
-		} else {
-			tempTableName = this.getDbSchemaName()
+		return this.getDbSchemaName()
 					+ SQLServerFactRelatedQueryHandler.TEMP_PDO_INPUTLIST_TABLE;
-		}
-		return tempTableName;
 	}
 }

@@ -81,56 +81,40 @@ public class SqlClauseUtil {
 	 * @return
 	 * @throws I2B2Exception
 	 */
-	public static String buildBetweenClause(String betweenConstraint)
-			throws I2B2Exception {
+	public static String buildBetweenClause(String betweenConstraint) throws I2B2Exception {
 		StringTokenizer st = new StringTokenizer(betweenConstraint);
 		String firstElement = "", andElement = "", thirdElement = "";
 		if (st.countTokens() == 3) {
 			firstElement = st.nextToken();
 			andElement = st.nextToken();
 			thirdElement = st.nextToken();
-			if (!andElement.equalsIgnoreCase("and")) {
-				throw new I2B2Exception("Invalid between clause ["
-						+ betweenConstraint + "]");
-			}
-		} else {
-			throw new I2B2Exception("Invalid between clause ["
-					+ betweenConstraint + "]");
-		}
+			if (!andElement.equalsIgnoreCase("and"))
+				throw new I2B2Exception("Invalid between clause [" + betweenConstraint + "]");
+		} else
+			throw new I2B2Exception("Invalid between clause [" + betweenConstraint + "]");
 		return firstElement.replaceAll("'", "''") + " and "
 				+ thirdElement.replaceAll("'", "''");
 	}
-	
-	
+
 	public static boolean isEnclosedinSingleQuote(String value) {
-		if (value.startsWith("'") && value.endsWith("'")) {
-			return true;
-		} else { 
-			return false;
-		}
+		return value.startsWith("'") && value.endsWith("'");
 	}
+
 	public static boolean isEnclosedinBraces(String value) {
-		if (value.startsWith("(") && value.endsWith(")")) {
-			return true;
-		} else { 
-			return false;
-		}
+		return value.startsWith("(") && value.endsWith(")");
 	}
 	
 	public static String handleMetaDataTextValue(String operator,String value) { 
 		String  formattedValue = value;
-		if ((operator != null)
-				&& (operator.toUpperCase().equals("LIKE"))) {
+		if (operator != null && operator.equalsIgnoreCase("LIKE")) {
 			boolean needPercentFlag = false, needSlashFlag = false;
 			//if not enclosed in single quote
 			if (!SqlClauseUtil.isEnclosedinSingleQuote(formattedValue)) { 
 				//escape the single quote
 				formattedValue = JDBCUtil.escapeSingleQuote(formattedValue);
-				
 				// if missing \
-				if (formattedValue.lastIndexOf('%') != formattedValue.length() - 1) {
-					needPercentFlag = true; 
-				} 
+				if (formattedValue.lastIndexOf('%') != formattedValue.length() - 1)
+					needPercentFlag = true;
 				
 				//else if missing %
 				if (needPercentFlag) { 
@@ -144,40 +128,30 @@ public class SqlClauseUtil {
 						needSlashFlag = true;
 					}
 				}
-				
 				if (needSlashFlag) {
-					if (needPercentFlag) {
+					if (needPercentFlag)
 						formattedValue=formattedValue+"\\%";
-					} else {
+					else
 						formattedValue = formattedValue + "\\";
-					}
-				
-				} else if (needPercentFlag) { 
+				} else if (needPercentFlag)
 					formattedValue = formattedValue + "%";
-				}
 				formattedValue = "'" + formattedValue + "'";
-
 			}
-		} else if (operator.toUpperCase().equals("IN")) {
+		} else if (operator.equalsIgnoreCase("IN")) {
 			formattedValue = value;
 			formattedValue = SqlClauseUtil.buildINClause(formattedValue, true);
 			formattedValue = "(" + formattedValue  + ")";
-			
 		} else { 
 			boolean needSingleQuoteFlag = false;
-			
 			formattedValue = value;
 			//escape the single quote
 			formattedValue = JDBCUtil.escapeSingleQuote(formattedValue);
 			
-			
 			// if not enclosed in '', add it
-			if (!SqlClauseUtil.isEnclosedinSingleQuote(value)) { 
+			if (!SqlClauseUtil.isEnclosedinSingleQuote(value))
 					needSingleQuoteFlag = true;
-			}
-			if (needSingleQuoteFlag) { 
+			if (needSingleQuoteFlag)
 				formattedValue = "'" + formattedValue + "'";
-			}
 		}
 		return formattedValue;
 	}
@@ -187,15 +161,13 @@ public class SqlClauseUtil {
 		boolean needBracesFlag = false;
 		//if operator is IN, then add open and close braces if it is missing
 		if (operator.toUpperCase().equals("IN")) { 
-			if (!SqlClauseUtil.isEnclosedinBraces(value)) { 
+			if (!SqlClauseUtil.isEnclosedinBraces(value))
 				needBracesFlag = true;
-			}
 		}
-		if (needBracesFlag) { 
+		if (needBracesFlag)
 			formattedValue = "(" + value + ")";
-		} else { 
+		else
 			formattedValue = value;
-		}
 		return formattedValue;
 	}
 	
@@ -204,19 +176,13 @@ public class SqlClauseUtil {
 		boolean needBracesFlag = false;
 		//if operator is IN, then add open and close braces if it is missing
 		if (operator.toUpperCase().equals("IN")) { 
-			if (!SqlClauseUtil.isEnclosedinBraces(value)) { 
+			if (!SqlClauseUtil.isEnclosedinBraces(value))
 				needBracesFlag = true;
-			}
 		}
-		if (needBracesFlag) { 
+		if (needBracesFlag)
 			formattedValue = "(" + value + ")";
-		} else { 
+		else
 			formattedValue = value;
-		}
 		return formattedValue;
 	}
-	
-	
-	
-
 }

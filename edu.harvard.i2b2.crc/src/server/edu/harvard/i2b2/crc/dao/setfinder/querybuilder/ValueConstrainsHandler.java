@@ -17,13 +17,13 @@ package edu.harvard.i2b2.crc.dao.setfinder.querybuilder;
 
 import java.util.List;
 
+import edu.harvard.i2b2.common.util.db.QueryUtil;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import edu.harvard.i2b2.common.exception.I2B2DAOException;
 import edu.harvard.i2b2.common.exception.I2B2Exception;
 import edu.harvard.i2b2.common.exception.StackTraceUtil;
-import edu.harvard.i2b2.crc.dao.DAOFactoryHelper;
 import edu.harvard.i2b2.crc.datavo.setfinder.query.ConstrainOperatorType;
 import edu.harvard.i2b2.crc.datavo.setfinder.query.ConstrainValueType;
 import edu.harvard.i2b2.crc.datavo.setfinder.query.ItemType;
@@ -61,15 +61,14 @@ public class ValueConstrainsHandler {
 
 
 	public void setUnitCdConversionFlag(boolean unitCdConverstionFlag,
-			String unitCdInClause, String unitCdSwitchClause) {
+										String unitCdInClause, String unitCdSwitchClause) {
 		this.unitCdConverstionFlag = unitCdConverstionFlag;
 		this.unitCdInClause = unitCdInClause;
 		this.unitCdSwitchClause = unitCdSwitchClause;
 	}
 
-	public String[] constructValueConstainClause(
-			List<ItemType.ConstrainByValue> valueConstrainList,
-			String dbServerType, String dbSchemaName, int panelAccuracyScale) throws I2B2DAOException{
+	public String[] constructValueConstainClause(List<ItemType.ConstrainByValue> valueConstrainList,
+												 String dbServerType, String dbSchemaName, int panelAccuracyScale) throws I2B2DAOException{
 		//used for backward compatibility
 		defaultModifierConstraint = "";
 		return constructValueConstainClause(valueConstrainList, dbServerType, dbSchemaName, panelAccuracyScale, false);
@@ -86,8 +85,6 @@ public class ValueConstrainsHandler {
 		System.out.println("panel accuracy scale" + panelAccuracyScale);
 		panelAccuracyScale = 0;
 
-		boolean oracleFlag = dbServerType.equalsIgnoreCase(DAOFactoryHelper.ORACLE);
-
 		int j = 0;
 		for (ItemType.ConstrainByValue valueConstrain : valueConstrainList) {
 			ConstrainValueType valueType = valueConstrain.getValueType();
@@ -95,132 +92,76 @@ public class ValueConstrainsHandler {
 					.getValueOperator();
 			String value = valueConstrain.getValueConstraint();
 			String unitCd = valueConstrain.getValueUnitOfMeasure();
-
 			String constraintSql = "";
 			// check if value type is not null
-			if (valueType == null || operatorType == null) {
+			if (valueType == null || operatorType == null)
 				continue;
-			}
 			if (valueType.equals(ConstrainValueType.LARGETEXT)) {
 				ContainsUtil containsUtil = new ContainsUtil();
 				String containsSql = "";
-				if (operatorType.value().equalsIgnoreCase(ConstrainOperatorType.CONTAINS.value())) {
+				if (operatorType.value().equalsIgnoreCase(ConstrainOperatorType.CONTAINS.value()))
 					containsSql = containsUtil.formatValue(value, dbServerType);
-				} else if (operatorType.value().equalsIgnoreCase(ConstrainOperatorType.CONTAINS_DATABASE.value())) {
-					containsSql = containsUtil.formatValue("[" + value + "]",
-							dbServerType);
-				} else {
-					log.debug("LARGETEXT : Invalid operator skipped ["
-							+ operatorType.value() + "]");
+				else if (operatorType.value().equalsIgnoreCase(ConstrainOperatorType.CONTAINS_DATABASE.value()))
+					containsSql = containsUtil.formatValue("[" + value + "]", dbServerType);
+				else {
+					log.debug("LARGETEXT : Invalid operator skipped [" + operatorType.value() + "]");
 					continue;
 				}
 				// panelAccuracyScale = 100 - panelAccuracyScale;
-				if (useDefaultModifier 
-						&& defaultModifierConstraint != null
-						&& defaultModifierConstraint.trim().length() > 0)
+				if (useDefaultModifier && defaultModifierConstraint != null && defaultModifierConstraint.trim().length() > 0)
 					constraintSql += defaultModifierConstraint + " AND ";
 
 				// constraintSql += " AND valtype_cd = 'B' AND " ;
 				constraintSql += " valtype_cd = 'B' AND ";
 				// constrainSql = " valtype_cd = 'B' AND " ;
-				if (oracleFlag) {
-					constraintSql += " ( ";
-					for (String str: containsSql.split("\\s+")) {
-						constraintSql += " contains(observation_blob,'{" + str + "}') ";
+				if (panelAccuracyScale > 0) {
+					panelAccuracyScale = panelAccuracyScale * 10;
+					j++;
+					containsJoinSql += " INNER JOIN freetexttable("
+							+ dbSchemaName
+							+ "observation_fact,observation_blob,'"
+							+ containsSql + "') " + " AS ft" + j
+							+ " ON text_search_index = ft" + j + ".[KEY] ";
 
-						if (panelAccuracyScale > 0) {
-							constraintSql += " >= " + panelAccuracyScale + " ";
-						} else {
-							constraintSql += " > 0 ";
-						}
-						constraintSql += " OR ";
-					}
-					constraintSql += " 1=0 ) ";
+					constraintSql += " ft" + j + ".[RANK] >= " + panelAccuracyScale + " ";
+				} else
+					constraintSql += " observation_blob @@  to_tsquery('english', '" + containsSql + "') ";
 
-				} else {
-					if (panelAccuracyScale > 0) {
-						panelAccuracyScale = panelAccuracyScale * 10;
-						j++;
-						containsJoinSql += " INNER JOIN freetexttable("
-								+ dbSchemaName
-								+ "observation_fact,observation_blob,'"
-								+ containsSql + "') " + " AS ft" + j
-								+ " ON text_search_index = ft" + j + ".[KEY] ";
-
-						constraintSql += " ft" + j + ".[RANK] >= "
-								+ panelAccuracyScale + " ";
-
-					} else {
-						if (dbServerType.equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
-								|| dbServerType.equalsIgnoreCase(DAOFactoryHelper.IRIS) )
-							constraintSql += " observation_blob @@  to_tsquery('english', '"
-									+ containsSql + "') ";						
-						else
-							constraintSql += " CONTAINS(observation_blob,'"
-									+ containsSql + "') ";
-					}
-				}
 				log.debug("LARGETEXT where clause " + constraintSql);
-
 			} else if (valueType.equals(ConstrainValueType.TEXT)) {
 				// check if operator and value not null
-				if (operatorType == null || value == null) {
+				if (operatorType == null || value == null)
 					continue;
-				}
-
 				boolean notLikeFlag = false;
-
-				if (useDefaultModifier 
-						&& defaultModifierConstraint != null
-						&& defaultModifierConstraint.trim().length() > 0)
+				if (useDefaultModifier && defaultModifierConstraint != null && defaultModifierConstraint.trim().length() > 0)
 					constraintSql += defaultModifierConstraint + " AND ";
 
 				if (operatorType.value().startsWith(ConstrainOperatorType.LIKE.value())) {
 					// call the utility to find the like operation
-					String operatorOption = RegExUtil
-							.getOperatorOption(operatorType.value());
-					if (operatorOption == null) {
+					String operatorOption = RegExUtil.getOperatorOption(operatorType.value());
+					if (operatorOption == null)
 						operatorOption = "[begin]";
-					}
 					String likeValueFormat = "";
-					if (operatorOption.equalsIgnoreCase("[begin]")) {
-						likeValueFormat = "'" + value.replaceAll("'", "''")
-						+ "%'";
-					} else if (operatorOption.equalsIgnoreCase("[end]")) {
-						likeValueFormat = "'%" + value.replaceAll("'", "''")
-						+ "'";
-					} else if (operatorOption.equalsIgnoreCase("[contains]")) {
-						likeValueFormat = "'%" + value.replaceAll("'", "''")
-						+ "%'";
-					} else if (operatorOption.equalsIgnoreCase("[exact]")) {
-						likeValueFormat = "'" + value.replaceAll("'", "''")
-						+ "'";
-						if (oracleFlag) {
-							constraintSql += " valtype_cd = 'T' AND upper(tval_char) = "
-									+ " upper(" + likeValueFormat + ")";
-						} else {
-							constraintSql += " valtype_cd = 'T' AND tval_char = "
-									+ likeValueFormat;
-						}
+					if (operatorOption.equalsIgnoreCase("[begin]"))
+						likeValueFormat = "'" + value.replaceAll("'", "''") + "%'";
+					else if (operatorOption.equalsIgnoreCase("[end]"))
+						likeValueFormat = "'%" + value.replaceAll("'", "''") + "'";
+					else if (operatorOption.equalsIgnoreCase("[contains]"))
+						likeValueFormat = "'%" + value.replaceAll("'", "''") + "%'";
+					else if (operatorOption.equalsIgnoreCase("[exact]")) {
+						likeValueFormat = "'" + value.replaceAll("'", "''") + "'";
+						constraintSql += " valtype_cd = 'T' AND tval_char = " + likeValueFormat;
 						notLikeFlag = true;
 					}
-					if (!notLikeFlag) {
-						if (oracleFlag) {
-							constraintSql += " valtype_cd = 'T' AND upper(tval_char) LIKE " + " upper(" + likeValueFormat + ")";
-						} else if (dbServerType.equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
-							//TODO: check if [ is enough
-							constraintSql += " valtype_cd = 'T' AND tval_char [ " + likeValueFormat;
-						} else {
-							constraintSql += " valtype_cd = 'T' AND tval_char LIKE " + likeValueFormat;
-						}
-					}
-				} else if (operatorType.value().equalsIgnoreCase(ConstrainOperatorType.EQ.value())) {
-					constraintSql += " valtype_cd = 'T' AND tval_char   = '"
-							+ value.replaceAll("'", "''") + "' ";
-				} else if (operatorType.value().equalsIgnoreCase(ConstrainOperatorType.IN.value())) {
+					if (!notLikeFlag)
+						constraintSql += " valtype_cd = 'T' AND tval_char " +
+								QueryUtil.getOperatorByValue(likeValueFormat) + " " +
+								QueryUtil.getCleanValue(likeValueFormat);
+				} else if (operatorType.value().equalsIgnoreCase(ConstrainOperatorType.EQ.value()))
+					constraintSql += " valtype_cd = 'T' AND tval_char   = '" + value.replaceAll("'", "''") + "' ";
+				else if (operatorType.value().equalsIgnoreCase(ConstrainOperatorType.IN.value())) {
 					value = SqlClauseUtil.buildINClause(value, true);
-					constraintSql += " valtype_cd = 'T' AND tval_char   IN ("
-							+ value + ")";
+					constraintSql += " valtype_cd = 'T' AND tval_char IN (" + value + ")";
 				} else if (operatorType.value().equalsIgnoreCase(ConstrainOperatorType.BETWEEN.value())) {
 					throw new I2B2DAOException(
 							"Error in value constrain, BETWEEN operator not supported in TEXT value type ["
@@ -235,29 +176,21 @@ public class ValueConstrainsHandler {
 					 */
 				} else if (operatorType.value().equalsIgnoreCase(ConstrainOperatorType.NE.value())) {
 					String emptyStringCheck = " ";
-					if (!oracleFlag) {
-						emptyStringCheck = " AND tval_char <> '' ";
-					}
-					constraintSql += "  valtype_cd = 'T' AND  tval_char   <> '"
-							+ value.replaceAll("'", "''") + "' "
+					emptyStringCheck = " AND tval_char <> '' ";
+					constraintSql += "  valtype_cd = 'T' AND  tval_char <> '" + value.replaceAll("'", "''") + "' "
 							+ emptyStringCheck;
-				} else {
-					throw new I2B2DAOException(
-							"Error TEXT value constrain because operator("
-									+ operatorType.toString() + ")is invalid");
-				}
+				} else
+					throw new I2B2DAOException("Error TEXT value constrain because operator(" +
+							operatorType.toString() + ")is invalid");
 			} else if (valueType.equals(ConstrainValueType.NUMBER)) {
 				// check if operator and value not null
-				if (operatorType == null || value == null) {
+				if (operatorType == null || value == null)
 					continue;
-				}
 				value.replaceAll("'", "''");
-
 				String nvalNum = " nval_num ", unitsCdInClause = " ";
 				if (this.unitCdConverstionFlag) {
 					nvalNum = unitCdSwitchClause;
 					// unitsCdInClause = this.unitCdInClause + " AND ";
-
 					// commented not needed
 					// if (unitCd != null) {
 					// unitCd = unitCd.replace("'", "''");
@@ -267,8 +200,7 @@ public class ValueConstrainsHandler {
 					unitsCdInClause = " ";
 				}
 
-				if (useDefaultModifier 
-						&& defaultModifierConstraint != null
+				if (useDefaultModifier && defaultModifierConstraint != null
 						&& defaultModifierConstraint.trim().length() > 0)
 					constraintSql += defaultModifierConstraint + " AND ";
 
@@ -282,27 +214,22 @@ public class ValueConstrainsHandler {
 							+ nvalNum + " >= " + value
 							+ " AND  tval_char = 'G' )) ";
 				} else if (operatorType.value().equalsIgnoreCase(ConstrainOperatorType.GE.value())) {
-					constraintSql += unitsCdInClause
-							+ "   valtype_cd = 'N' AND  " + nvalNum + " >= "
+					constraintSql += unitsCdInClause+ " valtype_cd = 'N' AND " + nvalNum + " >= "
 							+ value + " AND  tval_char IN ('E','GE','G') ";
 				} else if (operatorType.value().equalsIgnoreCase(ConstrainOperatorType.LT.value())) {
 					constraintSql += unitsCdInClause
-							+ "  (( valtype_cd = 'N' AND  "
-							+ nvalNum
-							+ " < "
-							+ value
+							+ " (( valtype_cd = 'N' AND " + nvalNum
+							+ " < " + value
 							+ " AND  tval_char IN ('E','LE')) OR ( valtype_cd = 'N' AND  "
 							+ nvalNum + " <= " + value
 							+ " AND  tval_char = 'L' )) ";
-				} else if (operatorType.value().equalsIgnoreCase(ConstrainOperatorType.LE.value())) {
-					constraintSql += unitsCdInClause
-							+ "   valtype_cd = 'N' AND  " + nvalNum + " <= "
-							+ value + " AND  tval_char IN ('E','LE','L') ";
-				} else if (operatorType.value().equalsIgnoreCase(ConstrainOperatorType.EQ.value())) {
-					constraintSql += unitsCdInClause
-							+ "   valtype_cd = 'N' AND  " + nvalNum + " = "
+				} else if (operatorType.value().equalsIgnoreCase(ConstrainOperatorType.LE.value()))
+					constraintSql += unitsCdInClause + " valtype_cd = 'N' AND " + nvalNum + " <= "
+							+ value + " AND tval_char IN ('E','LE','L') ";
+				else if (operatorType.value().equalsIgnoreCase(ConstrainOperatorType.EQ.value()))
+					constraintSql += unitsCdInClause + " valtype_cd = 'N' AND  " + nvalNum + " = "
 							+ value + " AND  tval_char='E' ";
-				} else if (operatorType.value().equalsIgnoreCase(ConstrainOperatorType.BETWEEN.value())) {
+				else if (operatorType.value().equalsIgnoreCase(ConstrainOperatorType.BETWEEN.value())) {
 					try {
 						value = SqlClauseUtil.buildBetweenClause(value);
 					} catch (I2B2Exception e) {
@@ -310,18 +237,13 @@ public class ValueConstrainsHandler {
 								+ e.getMessage()
 								+ StackTraceUtil.getStackTrace(e));
 					}
-					constraintSql += unitsCdInClause
-							+ "   valtype_cd = 'N' AND  " + nvalNum
+					constraintSql += unitsCdInClause + "   valtype_cd = 'N' AND  " + nvalNum
 							+ " BETWEEN  " + value + " AND  tval_char ='E' ";
 				} else if (operatorType.value().equalsIgnoreCase(ConstrainOperatorType.NE.value())) {
 					constraintSql += unitsCdInClause
-							+ "  (( valtype_cd = 'N' AND  "
-							+ nvalNum
-							+ " <> "
-							+ value
+							+ "  (( valtype_cd = 'N' AND  " + nvalNum + " <> " + value
 							+ " AND  tval_char <> 'NE') OR ( valtype_cd = 'N' AND  "
-							+ nvalNum + " = " + value
-							+ " AND  tval_char ='NE' )) ";
+							+ nvalNum + " = " + value + " AND  tval_char ='NE' )) ";
 				} else {
 					throw new I2B2DAOException(
 							"Error NUMBER value constrain because operator("
@@ -329,23 +251,19 @@ public class ValueConstrainsHandler {
 				}
 			} else if (valueType.equals(ConstrainValueType.FLAG)) {
 				// check if operator and value not null
-				if (operatorType == null || value == null) {
+				if (operatorType == null || value == null)
 					continue;
-				}
 
-				if (useDefaultModifier 
-						&& defaultModifierConstraint != null
+				if (useDefaultModifier && defaultModifierConstraint != null
 						&& defaultModifierConstraint.trim().length() > 0)
 					constraintSql += defaultModifierConstraint + " AND ";
 
-				if (operatorType.value().equalsIgnoreCase(ConstrainOperatorType.EQ.value())) {
-					constraintSql += " valueflag_cd = '"
-							+ value.replaceAll("'", "''") + "' ";
-				} else if (operatorType.value().equalsIgnoreCase(ConstrainOperatorType.NE.value())) {
+				if (operatorType.value().equalsIgnoreCase(ConstrainOperatorType.EQ.value()))
+					constraintSql += " valueflag_cd = '" + value.replaceAll("'", "''") + "' ";
+				else if (operatorType.value().equalsIgnoreCase(ConstrainOperatorType.NE.value())) {
 					String emptyStringCheck = " ";
-					if (!oracleFlag) {
-						emptyStringCheck = " AND valueflag_cd <> '' ";
-					}
+					emptyStringCheck = " AND valueflag_cd <> '' ";
+
 					constraintSql += " valueflag_cd <> '"
 							+ value.replaceAll("'", "''") + "' "
 							+ emptyStringCheck;
@@ -354,40 +272,33 @@ public class ValueConstrainsHandler {
 					constraintSql += " valueflag_cd IN (" + value + ")";
 				} else {
 					throw new I2B2DAOException(
-							"Error FLAG value constrain because operator("
-									+ operatorType.toString() + ")is invalid");
+							"Error FLAG value constrain because operator(" + operatorType.toString() + ")is invalid");
 				}
 			} else if (valueType.equals(ConstrainValueType.MODIFIER)) {
 				// check if operator and value not null
-				if (operatorType == null || value == null) {
+				if (operatorType == null || value == null)
 					continue;
-				}
+
 				if (value != null) {
-					if (operatorType.value().equalsIgnoreCase(ConstrainOperatorType.EQ.value())) {
-						constraintSql = "  valtype_cd = 'M' and  tval_char = '"
-								+ value.replaceAll("'", "''") + "' ";
-					} else if (operatorType.value().equalsIgnoreCase(ConstrainOperatorType.NE.value())) {
+					if (operatorType.value().equalsIgnoreCase(ConstrainOperatorType.EQ.value()))
+						constraintSql = "  valtype_cd = 'M' and  tval_char = '" + value.replaceAll("'", "''") + "' ";
+					else if (operatorType.value().equalsIgnoreCase(ConstrainOperatorType.NE.value())) {
 						constraintSql = "  valtype_cd = 'M' and  tval_char <> '"
-								+ value.replaceAll("'", "''")
-								+ "' and tval_char <> ''";
+								+ value.replaceAll("'", "''") + "' and tval_char <> ''";
 					} else if (operatorType.value().equalsIgnoreCase(ConstrainOperatorType.IN.value())) {
 						value = SqlClauseUtil.buildINClause(value, true);
 						constraintSql = "  valtype_cd = 'M' and  tval_char IN ("
 								+ value + ") ";
 					}
-
 				}
-
 			} else {
 				throw new I2B2DAOException(
-						"Error value constrain, invalid value type ("
-								+ valueType.toString() + ")");
+						"Error value constrain, invalid value type (" + valueType.toString() + ")");
 			}
 
 			if (constraintSql != null && constraintSql.trim().length() > 0) {
-				if (fullConstrainSql.length() > 0) {
+				if (fullConstrainSql.length() > 0)
 					fullConstrainSql += " AND ";
-				}
 				fullConstrainSql += constraintSql;
 			}
 		}
@@ -396,5 +307,4 @@ public class ValueConstrainsHandler {
 
 		return new String[] { fullConstrainSql, containsJoinSql };
 	}
-
 }

@@ -24,10 +24,6 @@ import java.util.List;
 
 import javax.sql.DataSource;
 
-import oracle.sql.ArrayDescriptor;
-
-//import org.jboss.resource.adapter.jdbc.WrappedConnection;
-
 import edu.harvard.i2b2.common.exception.I2B2DAOException;
 import edu.harvard.i2b2.common.util.db.JDBCUtil;
 import edu.harvard.i2b2.crc.dao.CRCDAO;
@@ -89,56 +85,29 @@ public class PdoQueryEidDao extends CRCDAO implements IPdoQueryEidDao {
 					buildOutputOptionType(detailFlag, blobFlag, statusFlag));
 			String selectClause = eidRelated.getSelectClause();
 			ResultSet resultSet = null;
-			if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE)) {
 
-				String finalSql = "SELECT "
-						+ selectClause
-						+ " FROM "
-						+ getDbSchemaName()
-						+ "encounter_mapping em WHERE em.encounter_num IN (SELECT * FROM TABLE (cast (? as QT_PDO_QRY_STRING_ARRAY))) order by em_encounter_num";
-				log.debug("Executing [" + finalSql + "]");
+			// create temp table
+			// load to temp table
+			// execute sql
+			log.debug("creating temp table");
+			java.sql.Statement tempStmt = conn.createStatement();
 
-				oracle.jdbc.driver.OracleConnection conn1 = null;// (oracle.jdbc.driver.OracleConnection) ((WrappedConnection) conn)
-					//	.getUnderlyingConnection();
-				query = conn.prepareStatement(finalSql);
-				ArrayDescriptor desc = ArrayDescriptor.createDescriptor(
-						"QT_PDO_QRY_STRING_ARRAY", conn1);
+			uploadTempTable(tempStmt, encounterNumList);
+			String finalSql = "SELECT "
+					+ selectClause
+					+ " FROM "
+					+ getDbSchemaName()
+					+ "encounter_mapping em WHERE em.encounter_num IN (select distinct char_param1 FROM "
+					+ SQLServerFactRelatedQueryHandler.TEMP_PDO_INPUTLIST_TABLE
+					+ ") order by em_encounter_num";
+			log.debug("Size of the encounter list " + encounterNumList.size());
+			log.debug("Executing [" + finalSql + "]");
 
-				oracle.sql.ARRAY paramArray = new oracle.sql.ARRAY(desc, conn1,
-						encounterNumList.toArray(new String[] {}));
-				query.setArray(1, paramArray);
-				resultSet = query.executeQuery();
-			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)
-						|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
-						|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
-				// create temp table
-				// load to temp table
-				// execute sql
-				log.debug("creating temp table");
-				java.sql.Statement tempStmt = conn.createStatement();
+			query = conn.prepareStatement(finalSql);
+			resultSet = query.executeQuery();
 
-				uploadTempTable(tempStmt, encounterNumList,
-						dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL),
-						dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS));
-				String finalSql = "SELECT "
-						+ selectClause
-						+ " FROM "
-						+ getDbSchemaName()
-						+ "encounter_mapping em WHERE em.encounter_num IN (select distinct char_param1 FROM "
-						+ SQLServerFactRelatedQueryHandler.TEMP_PDO_INPUTLIST_TABLE
-						+ ") order by em_encounter_num";
-				log.debug("Size of the encounter list "
-						+ encounterNumList.size());
-				log.debug("Executing [" + finalSql + "]");
-
-				query = conn.prepareStatement(finalSql);
-				resultSet = query.executeQuery();
-			}
-
-			RPDRPdoFactory.EidBuilder eidBuilder = new RPDRPdoFactory.EidBuilder(
-					detailFlag, blobFlag, statusFlag);
+			RPDRPdoFactory.EidBuilder eidBuilder = new RPDRPdoFactory.EidBuilder(detailFlag, blobFlag, statusFlag);
 			eidSet = buildEidSetFromResultSet(resultSet, eidBuilder);
-
 		} catch (SQLException ex) {
 			log.error("", ex);
 			throw new I2B2DAOException("sql exception", ex);
@@ -148,19 +117,11 @@ public class PdoQueryEidDao extends CRCDAO implements IPdoQueryEidDao {
 		} catch (Throwable t) {
 			t.printStackTrace();
 		} finally {
-			if (dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.SQLSERVER)) {
-				deleteTempTable(
-						conn,
-						SQLServerFactRelatedQueryHandler.TEMP_PDO_INPUTLIST_TABLE);
-			}
 			try {
 				JDBCUtil.closeJdbcResource(null, query, conn);
-
 			} catch (SQLException sqlEx) {
 				sqlEx.printStackTrace();
 			}
-
 		}
 		return eidSet;
 	}
@@ -168,7 +129,7 @@ public class PdoQueryEidDao extends CRCDAO implements IPdoQueryEidDao {
 	/**
 	 * Get Patient dimension data based on patientlist present in input option
 	 * list
-	 * 
+	 *
 	 * @param patientListType
 	 *            {@link PatientListType}
 	 * @param detailFlag
@@ -179,15 +140,12 @@ public class PdoQueryEidDao extends CRCDAO implements IPdoQueryEidDao {
 	 */
 	@Override
 	public EidSet getEidFromPatientSet(PatientListType patientListType,
-			boolean detailFlag, boolean blobFlag, boolean statusFlag)
-			throws I2B2DAOException {
-
-		PatientListTypeHandler patientListTypeHandler = new PatientListTypeHandler(
-				dataSourceLookup, patientListType);
+									   boolean detailFlag, boolean blobFlag,
+									   boolean statusFlag) throws I2B2DAOException {
+		PatientListTypeHandler patientListTypeHandler = new PatientListTypeHandler(dataSourceLookup, patientListType);
 		String inSqlClause = patientListTypeHandler.generateWhereClauseSql();
 
-		EidFactRelated eidRelated = new EidFactRelated(buildOutputOptionType(
-				detailFlag, blobFlag, statusFlag));
+		EidFactRelated eidRelated = new EidFactRelated(buildOutputOptionType(detailFlag, blobFlag, statusFlag));
 		String selectClause = eidRelated.getSelectClause();
 		String mainSqlString = " SELECT " + selectClause + "  FROM "
 				+ getDbSchemaName() + "encounter_mapping em,"
@@ -202,28 +160,22 @@ public class PdoQueryEidDao extends CRCDAO implements IPdoQueryEidDao {
 		try {
 			// execute fullsql
 			conn = getDataSource().getConnection();
-
 			log.debug("Executing sql[" + mainSqlString + "]");
 
 			if (patientListTypeHandler.isCollectionId()) {
-				String patientSetCollectionId = patientListTypeHandler
-						.getCollectionId();
+				String patientSetCollectionId = patientListTypeHandler.getCollectionId();
 				preparedStmt = conn.prepareStatement(mainSqlString);
 				preparedStmt.setString(1, patientSetCollectionId);
-
 			} else if (patientListTypeHandler.isEnumerationSet()) {
-				String serverType = dataSourceLookup.getServerType();
 				patientListTypeHandler.uploadEnumerationValueToTempTable(conn);
 				preparedStmt = conn.prepareStatement(mainSqlString);
-
-			} else {
+			} else
 				preparedStmt = conn.prepareStatement(mainSqlString);
-			}
+
 			ResultSet resultSet = preparedStmt.executeQuery();
 			RPDRPdoFactory.EidBuilder pidBuilder = new RPDRPdoFactory.EidBuilder(
 					detailFlag, blobFlag, statusFlag);
 			eidSet = buildEidSetFromResultSet(resultSet, pidBuilder);
-
 		} catch (SQLException sqlEx) {
 			log.error("", sqlEx);
 			throw new I2B2DAOException("SQLException", sqlEx);
@@ -235,7 +187,6 @@ public class PdoQueryEidDao extends CRCDAO implements IPdoQueryEidDao {
 				try {
 					patientListTypeHandler.deleteTempTable(conn);
 				} catch (SQLException e) {
-
 					e.printStackTrace();
 				}
 			}
@@ -260,28 +211,23 @@ public class PdoQueryEidDao extends CRCDAO implements IPdoQueryEidDao {
 	 */
 	@Override
 	public EidSet getEidByEidList(EidListType eidList, boolean detailFlag,
-			boolean blobFlag, boolean statusFlag) throws I2B2DAOException {
-
+								  boolean blobFlag, boolean statusFlag) throws I2B2DAOException {
 		Connection conn = null;
 		PreparedStatement query = null;
 		EidSet eidSet = new EidSet();
-		EidListTypeHandler eidListHandler = new EidListTypeHandler(
-				dataSourceLookup, eidList);
+		EidListTypeHandler eidListHandler = new EidListTypeHandler(dataSourceLookup, eidList);
 		try {
 			// execute fullsql
 			conn = getDataSource().getConnection();
-			EidFactRelated eidRelated = new EidFactRelated(
-					buildOutputOptionType(detailFlag, blobFlag, statusFlag));
+			EidFactRelated eidRelated = new EidFactRelated(buildOutputOptionType(detailFlag, blobFlag, statusFlag));
 			String selectClause = eidRelated.getSelectClause();
 
 			ResultSet resultSet = null;
-
 			// create temp table
 			// load to temp table
 			// execute sql
 			log.debug("creating temp table");
 			java.sql.Statement tempStmt = conn.createStatement();
-
 			eidListHandler.uploadEnumerationValueToTempTable(conn);
 			String tempTableName = eidListHandler.getTempTableName();
 			String finalSql = "SELECT "
@@ -301,11 +247,9 @@ public class PdoQueryEidDao extends CRCDAO implements IPdoQueryEidDao {
 
 			query = conn.prepareStatement(finalSql);
 			resultSet = query.executeQuery();
-
 			RPDRPdoFactory.EidBuilder eidBuilder = new RPDRPdoFactory.EidBuilder(
 					detailFlag, blobFlag, statusFlag);
 			eidSet = buildEidSetFromResultSet(resultSet, eidBuilder);
-
 		} catch (SQLException ex) {
 			log.error("", ex);
 			throw new I2B2DAOException("sql exception", ex);
@@ -315,28 +259,22 @@ public class PdoQueryEidDao extends CRCDAO implements IPdoQueryEidDao {
 		} catch (Throwable t) {
 			t.printStackTrace();
 		} finally {
-
 			try {
 				eidListHandler.deleteTempTable(conn);
 			} catch (SQLException e) {
-
 				e.printStackTrace();
 			}
-
 			try {
 				JDBCUtil.closeJdbcResource(null, query, conn);
-
 			} catch (SQLException sqlEx) {
 				sqlEx.printStackTrace();
 			}
-
 		}
 		return eidSet;
 	}
 
 	private EidSet buildEidSetFromResultSet(ResultSet resultSet,
-			RPDRPdoFactory.EidBuilder eidBuilder) throws SQLException,
-			IOException {
+											RPDRPdoFactory.EidBuilder eidBuilder) throws SQLException, IOException {
 		String prevPatientNum = "";
 		EidType eidType = new EidType();
 		EidSet eidSet = new EidSet();
@@ -362,11 +300,9 @@ public class PdoQueryEidDao extends CRCDAO implements IPdoQueryEidDao {
 					if (!eidMapId.getSource().equalsIgnoreCase("hive")) {
 						eidType.getEventMapId().add(eidMapId);
 					}
-
 					// pidType.getPatientMapId().add(pidMapId);
 					firstFlag = false;
 				} else {
-
 					eidSet.getEid().add(eidType);
 					singleEventId = new EidType.EventId();
 					eidType = new EidType();
@@ -389,7 +325,6 @@ public class PdoQueryEidDao extends CRCDAO implements IPdoQueryEidDao {
 				eidType.setEventId(singleEventId);
 			}
 			prevPatientNum = tempSinglePidType;
-
 		}
 		// eidType.setEventId(singleEventId);
 		if ((eidType.getEventId() != null && eidType.getEventId().getValue() != null)
@@ -400,11 +335,8 @@ public class PdoQueryEidDao extends CRCDAO implements IPdoQueryEidDao {
 		return eidSet;
 	}
 
-	private void uploadTempTable(Statement tempStmt, List<String> patientNumList, boolean isPostgresql, boolean isIris)
-			throws SQLException {
-		String createTempInputListTable =  "create "
-				 + (isPostgresql ? " temp ": (isIris ? " GLOBAL TEMPORARY " : ""))
-				 + " table " 
+	private void uploadTempTable(Statement tempStmt, List<String> patientNumList) throws SQLException {
+		String createTempInputListTable =  "create GLOBAL TEMPORARY table "
 				+ SQLServerFactRelatedQueryHandler.TEMP_PDO_INPUTLIST_TABLE
 				+ " ( char_param1 varchar(100) )";
 		tempStmt.executeUpdate(createTempInputListTable);
@@ -432,13 +364,11 @@ public class PdoQueryEidDao extends CRCDAO implements IPdoQueryEidDao {
 	}
 
 	private void deleteTempTable(Connection conn, String tempTableName) {
-
 		Statement deleteStmt = null;
 		try {
 			deleteStmt = conn.createStatement();
 			//conn.createStatement().executeUpdate("drop table " + tempTableName);
 			deleteStmt.executeUpdate("drop table " + tempTableName);
-
 		} catch (SQLException sqle) {
 			;
 		} finally {
@@ -450,21 +380,12 @@ public class PdoQueryEidDao extends CRCDAO implements IPdoQueryEidDao {
 				e.printStackTrace();
 			}
 		}
-
 	}
 
-	private void upLoadEidListToTempTable(Connection conn,
-			String tempTableName, PidListType pidListType) throws SQLException {
-
+	private void upLoadEidListToTempTable(Connection conn, String tempTableName,
+										  PidListType pidListType) throws SQLException {
 		// create temp table
 		java.sql.Statement tempStmt = conn.createStatement();
-		if (dataSourceLookup.getServerType().equalsIgnoreCase(
-				DAOFactoryHelper.SQLSERVER)) {
-			String createTempInputListTable = "create table "
-					+ SQLServerFactRelatedQueryHandler.TEMP_PDO_INPUTLIST_TABLE
-					+ " (set_index int, char_param1 varchar(200), char_param2 varchar(200) )";
-			tempStmt.executeUpdate(createTempInputListTable);
-		}
 		// load to temp table
 		// TempInputListInsert inputListInserter = new
 		// TempInputListInsert(dataSource,TEMP_PDO_INPUTLIST_TABLE);
@@ -476,19 +397,16 @@ public class PdoQueryEidDao extends CRCDAO implements IPdoQueryEidDao {
 					+ pid.getIndex() + ",'" + pid.getSource() + "','"
 					+ pid.getValue() + "')");
 			i++;
-			if (i % 100 == 0) {
+			if (i % 100 == 0)
 				tempStmt.executeBatch();
-
-			}
 		}
 		tempStmt.executeBatch();
 	}
 
 	@Override
-	public EidSet getEidByFact(List<String> panelSqlList,
-			List<Integer> sqlParamCountList,
-			IInputOptionListHandler inputOptionListHandler, boolean detailFlag,
-			boolean blobFlag, boolean statusFlag) throws I2B2DAOException {
+	public EidSet getEidByFact(List<String> panelSqlList, List<Integer> sqlParamCountList,
+							   IInputOptionListHandler inputOptionListHandler, boolean detailFlag,
+							   boolean blobFlag, boolean statusFlag) throws I2B2DAOException {
 		EidSet eidSet = new EidSet();
 		RPDRPdoFactory.EidBuilder eidBuilder = new RPDRPdoFactory.EidBuilder(
 				detailFlag, blobFlag, statusFlag);
@@ -502,34 +420,24 @@ public class PdoQueryEidDao extends CRCDAO implements IPdoQueryEidDao {
 		PreparedStatement query = null;
 		try {
 			conn = dataSource.getConnection();
-			if (serverType.equalsIgnoreCase(DAOFactoryHelper.ORACLE)) {
-				tempTable = FactRelatedQueryHandler.TEMP_PARAM_TABLE;
-			} else if (serverType.equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)
-						|| serverType.equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
-						|| serverType.equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
-				log.debug("creating temp table");
-				java.sql.Statement tempStmt = conn.createStatement();
-				if (serverType.equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
-						|| serverType.equalsIgnoreCase(DAOFactoryHelper.IRIS))
-					tempTable = SQLServerFactRelatedQueryHandler.TEMP_PDO_INPUTLIST_TABLE.substring(1);
-				else
-					tempTable = SQLServerFactRelatedQueryHandler.TEMP_PDO_INPUTLIST_TABLE;
-				try {
-					tempStmt.executeUpdate("drop table " + tempTable);
-				} catch (SQLException sqlex) {
-					;
-				}
-				String createTempInputListTable = "create table " + tempTable
-						+ " ( set_index int, char_param1 varchar(500) )";
-				tempStmt.executeUpdate(createTempInputListTable);
-				log.debug("created temp table" + tempTable);
+			log.debug("creating temp table");
+			java.sql.Statement tempStmt = conn.createStatement();
+			tempTable = SQLServerFactRelatedQueryHandler.TEMP_PDO_INPUTLIST_TABLE.substring(1);
+			try {
+				tempStmt.executeUpdate("drop table " + tempTable);
+			} catch (SQLException sqlex) {
+				;
 			}
+			String createTempInputListTable = "create table " + tempTable
+					+ " ( set_index int, char_param1 varchar(500) )";
+			tempStmt.executeUpdate(createTempInputListTable);
+			log.debug("created temp table" + tempTable);
+
 			// if the inputlist is enumeration, then upload the enumerated input
 			// to temp table.
 			// the uploaded enumerated input will be used in the fact join.
-			if (inputOptionListHandler.isEnumerationSet()) {
+			if (inputOptionListHandler.isEnumerationSet())
 				inputOptionListHandler.uploadEnumerationValueToTempTable(conn);
-			}
 			String insertSql = "";
 			int i = 0;
 			int sqlParamCount = 0;
@@ -539,13 +447,11 @@ public class PdoQueryEidDao extends CRCDAO implements IPdoQueryEidDao {
 						+ tempTable
 						+ "(char_param1) select distinct obs_encounter_num from ( "
 						+ panelSql + ") b";
-
 				log.debug("Executing SQL [ " + insertSql + "]");
 				sqlParamCount = sqlParamCountList.get(i++);
 				// conn.createStatement().executeUpdate(insertSql);
 				executeUpdateSql(insertSql, conn, sqlParamCount,
 						inputOptionListHandler);
-
 			}
 
 			String finalSql = "SELECT "
@@ -557,9 +463,7 @@ public class PdoQueryEidDao extends CRCDAO implements IPdoQueryEidDao {
 					+ tempTable + ") order by encounter_num";
 			log.debug("Executing SQL [" + finalSql + "]");
 			System.out.println("Final Sql " + finalSql);
-
 			query = conn.prepareStatement(finalSql);
-
 			resultSet = query.executeQuery();
 
 			// while (resultSet.next()) {
@@ -574,38 +478,27 @@ public class PdoQueryEidDao extends CRCDAO implements IPdoQueryEidDao {
 			log.error("", ioEx);
 			throw new I2B2DAOException("IO exception", ioEx);
 		} finally {
-			
 				PdoTempTableUtil tempUtil = new PdoTempTableUtil(); 
 				tempUtil.clearTempTable(dataSourceLookup.getServerType(), conn, tempTable);
-			
-			if (inputOptionListHandler != null
-					&& inputOptionListHandler.isEnumerationSet()) {
+			if (inputOptionListHandler != null && inputOptionListHandler.isEnumerationSet()) {
 				try {
 					inputOptionListHandler.deleteTempTable(conn);
 				} catch (SQLException e) {
-
 					e.printStackTrace();
 				}
 			}
 			try {
-
 				JDBCUtil.closeJdbcResource(null, query, conn);
 			} catch (SQLException sqlEx) {
 				sqlEx.printStackTrace();
 			}
 		}
 		return eidSet;
-
 	}
 
-	
-
-	private void executeUpdateSql(String totalSql, Connection conn,
-			int sqlParamCount, IInputOptionListHandler inputOptionListHandler)
-			throws SQLException {
-
+	private void executeUpdateSql(String totalSql, Connection conn, int sqlParamCount,
+								  IInputOptionListHandler inputOptionListHandler) throws SQLException {
 		PreparedStatement stmt = conn.prepareStatement(totalSql);
-
 		System.out.println(totalSql + " [ " + sqlParamCount + " ]");
 		if (inputOptionListHandler.isCollectionId()) {
 			for (int i = 1; i <= sqlParamCount; i++) {
@@ -613,9 +506,7 @@ public class PdoQueryEidDao extends CRCDAO implements IPdoQueryEidDao {
 						.getCollectionId()));
 			}
 		}
-
 		int updatedRow = stmt.executeUpdate();
 		System.out.println("Total encounter num inserted [" + updatedRow + "]");
 	}
-
 }

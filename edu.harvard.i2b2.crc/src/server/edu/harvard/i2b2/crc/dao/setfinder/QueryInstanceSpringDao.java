@@ -14,8 +14,6 @@
  */
 package edu.harvard.i2b2.crc.dao.setfinder;
 
-import java.sql.CallableStatement;
-import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
@@ -24,6 +22,7 @@ import java.util.List;
 
 import javax.sql.DataSource;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -32,14 +31,11 @@ import org.springframework.jdbc.core.SqlParameter;
 import org.springframework.jdbc.object.SqlUpdate;
 
 import edu.harvard.i2b2.common.exception.I2B2DAOException;
-import edu.harvard.i2b2.common.exception.I2B2Exception;
 import edu.harvard.i2b2.crc.dao.CRCDAO;
-import edu.harvard.i2b2.crc.dao.DAOFactoryHelper;
 import edu.harvard.i2b2.crc.datavo.db.DataSourceLookup;
 import edu.harvard.i2b2.crc.datavo.db.QtQueryInstance;
 import edu.harvard.i2b2.crc.datavo.db.QtQueryMaster;
 import edu.harvard.i2b2.crc.datavo.db.QtQueryStatusType;
-import edu.harvard.i2b2.crc.dao.DataSourceLookupDAOFactory;
 
 /**
  * Class to handle persistance operation of Query instance i.e. each run of
@@ -58,8 +54,6 @@ public class QueryInstanceSpringDao extends CRCDAO implements IQueryInstanceDao 
 	
 	/** log **/
 	protected final Log log = LogFactory.getLog(getClass());
-	
-	
 
 	public QueryInstanceSpringDao(DataSource dataSource,
 			DataSourceLookup dataSourceLookup) {
@@ -82,7 +76,7 @@ public class QueryInstanceSpringDao extends CRCDAO implements IQueryInstanceDao 
 	 */
 	@Override
 	public String createQueryInstance(String queryMasterId, String userId,
-			String groupId, String batchMode, int statusId) {
+									  String groupId, String batchMode, int statusId) {
 		QtQueryInstance queryInstance = new QtQueryInstance();
 		queryInstance.setUserId(userId);
 		queryInstance.setGroupId(groupId);
@@ -99,10 +93,8 @@ public class QueryInstanceSpringDao extends CRCDAO implements IQueryInstanceDao 
 
 		Date startDate = new Date(System.currentTimeMillis());
 		queryInstance.setStartDate(startDate);
-		saveQueryInstance = new SaveQueryInstance(getDataSource(),
-				getDbSchemaName(), dataSourceLookup);
+		saveQueryInstance = new SaveQueryInstance(getDataSource(), getDbSchemaName(), dataSourceLookup);
 		saveQueryInstance.save(queryInstance);
-
 		return queryInstance.getQueryInstanceId();
 	}
 
@@ -136,7 +128,6 @@ public class QueryInstanceSpringDao extends CRCDAO implements IQueryInstanceDao 
 		QtQueryInstance queryInstance = (QtQueryInstance) jdbcTemplate
 				.queryForObject(sql, new Object[] { Integer.parseInt(queryInstanceId ) },
 						queryInstanceMapper);
-
 		return queryInstance;
 	}
 
@@ -149,232 +140,122 @@ public class QueryInstanceSpringDao extends CRCDAO implements IQueryInstanceDao 
 	 */
 	@Override
 	public QtQueryInstance update(QtQueryInstance queryInstance,
-			boolean appendMessageFlag) throws I2B2DAOException {
-
-		Integer statusTypeId = (queryInstance.getQtQueryStatusType() != null) ? queryInstance
-				.getQtQueryStatusType().getStatusTypeId()
-				: null;
-		String messageUpdate = "";
+								  boolean appendMessageFlag) throws I2B2DAOException {
+		Integer statusTypeId = (queryInstance.getQtQueryStatusType() != null)
+				? queryInstance.getQtQueryStatusType().getStatusTypeId() : null;
+		String messageUpdate;
 		if (appendMessageFlag) {
-			String concatOperator = "";
-			if (dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.ORACLE)) {
-				concatOperator = "||";
-				messageUpdate = " MESSAGE = nvl(MESSAGE,'') " + concatOperator
-						+ " ? ";
-			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)
-							|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
-							|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
-				//concatOperator = "+";
-				// messageUpdate = " MESSAGE = isnull(Cast(MESSAGE as nvarchar(4000)),'') "
-				//		+ concatOperator + " ? ";
-				// Cast(notes as nvarchar(4000))
-				
-				//update message field
-				updateMessage(queryInstance.getQueryInstanceId(),queryInstance.getMessage(),true);
-			
-				if (queryInstance.getEndDate() != null) { 
+			//String concatOperator = StringUtils.EMPTY;
+			//concatOperator = "+";
+			// messageUpdate = " MESSAGE = isnull(Cast(MESSAGE as nvarchar(4000)),'') "
+			//		+ concatOperator + " ? ";
+			// Cast(notes as nvarchar(4000))
+
+			//update message field
+			updateMessage(queryInstance.getQueryInstanceId(), queryInstance.getMessage(), true);
+
+			if (queryInstance.getEndDate() != null) {
+				//update rest of the fields
+				String sql = "UPDATE " + getDbSchemaName()
+						+ "QT_QUERY_INSTANCE set USER_ID = ?, GROUP_ID = ?,BATCH_MODE = ?,END_DATE = ? ,STATUS_TYPE_ID = ? "
+						+ " where query_instance_id = ? ";
+
+				jdbcTemplate.update(sql, new Object[] {
+						queryInstance.getUserId(),
+						queryInstance.getGroupId(),
+						queryInstance.getBatchMode(),
+						queryInstance.getEndDate(),
+						statusTypeId,
+						Integer.parseInt(queryInstance.getQueryInstanceId()) });
+			} else {
 				//update rest of the fields
 				String sql = "UPDATE "
-					+ getDbSchemaName()
-					+ "QT_QUERY_INSTANCE set USER_ID = ?, GROUP_ID = ?,BATCH_MODE = ?,END_DATE = ? ,STATUS_TYPE_ID = ? "
-					+ " where query_instance_id = ? ";
-			
-				jdbcTemplate.update(sql, new Object[] {
-					queryInstance.getUserId(),
-					queryInstance.getGroupId(),
-					queryInstance.getBatchMode(),
-					queryInstance.getEndDate(),
-					statusTypeId,
-					Integer.parseInt( queryInstance.getQueryInstanceId()) });
-				} else { 
-					//update rest of the fields
-					String sql = "UPDATE "
 						+ getDbSchemaName()
 						+ "QT_QUERY_INSTANCE set USER_ID = ?, GROUP_ID = ?,BATCH_MODE = ?,STATUS_TYPE_ID = ? "
 						+ " where query_instance_id = ? ";
-				
-					jdbcTemplate.update(sql, new Object[] {
+
+				jdbcTemplate.update(sql, new Object[] {
 						queryInstance.getUserId(),
 						queryInstance.getGroupId(),
 						queryInstance.getBatchMode(),
 						statusTypeId,
 						Integer.parseInt(queryInstance.getQueryInstanceId()) });
-				}
-				return queryInstance;
 			}
-
-		} else {
+			return queryInstance;
+		} else
 			messageUpdate = " MESSAGE = ?";
-		}
-		
-		if (queryInstance.getEndDate() != null) { 
-		String sql = "UPDATE "
-				+ getDbSchemaName()
-				+ "QT_QUERY_INSTANCE set USER_ID = ?, GROUP_ID = ?,BATCH_MODE = ?,END_DATE = ? ,STATUS_TYPE_ID = ?, "
-				+ messageUpdate + " where query_instance_id = ? ";
-		
-		jdbcTemplate.update(sql, new Object[] {
-				queryInstance.getUserId(),
-				queryInstance.getGroupId(),
-				queryInstance.getBatchMode(),
-				queryInstance.getEndDate(),
-				statusTypeId,
-				(queryInstance.getMessage() == null) ? "" : queryInstance
-						.getMessage(), Integer.parseInt(queryInstance.getQueryInstanceId()) });
-		} else { 
+
+		if (queryInstance.getEndDate() != null) {
 			String sql = "UPDATE "
-				+ getDbSchemaName()
-				+ "QT_QUERY_INSTANCE set USER_ID = ?, GROUP_ID = ?,BATCH_MODE = ?,STATUS_TYPE_ID = ?, "
-				+ messageUpdate + " where query_instance_id = ? ";
-		
-		jdbcTemplate.update(sql, new Object[] {
-				queryInstance.getUserId(),
-				queryInstance.getGroupId(),
-				queryInstance.getBatchMode(),
-				statusTypeId,
-				(queryInstance.getMessage() == null) ? "" : queryInstance
-						.getMessage(), Integer.parseInt(queryInstance.getQueryInstanceId()) });
+					+ getDbSchemaName()
+					+ "QT_QUERY_INSTANCE set USER_ID = ?, GROUP_ID = ?,BATCH_MODE = ?,END_DATE = ? ,STATUS_TYPE_ID = ?, "
+					+ messageUpdate + " where query_instance_id = ? ";
+
+			jdbcTemplate.update(sql, new Object[] {
+					queryInstance.getUserId(),
+					queryInstance.getGroupId(),
+					queryInstance.getBatchMode(),
+					queryInstance.getEndDate(),
+					statusTypeId,
+					(queryInstance.getMessage() == null) ? StringUtils.EMPTY : queryInstance
+							.getMessage(), Integer.parseInt(queryInstance.getQueryInstanceId())});
+		} else {
+			String sql = "UPDATE "
+					+ getDbSchemaName()
+					+ "QT_QUERY_INSTANCE set USER_ID = ?, GROUP_ID = ?,BATCH_MODE = ?,STATUS_TYPE_ID = ?, "
+					+ messageUpdate + " where query_instance_id = ? ";
+
+			jdbcTemplate.update(sql, new Object[]{
+					queryInstance.getUserId(),
+					queryInstance.getGroupId(),
+					queryInstance.getBatchMode(),
+					statusTypeId,
+					(queryInstance.getMessage() == null) ? StringUtils.EMPTY : queryInstance
+							.getMessage(), Integer.parseInt(queryInstance.getQueryInstanceId())});
 		}
 		return queryInstance;
 	}
-	
 
 	/**
 	 * Update query instance message
-	 * 
+	 *
 	 * @param queryInstanceId
 	 * @param message
 	 * @param appendMessageFlag
-	 * @return 
+	 * @return
 	 */
 	@Override
-	public void updateMessage(String  queryInstanceId, String message,
-			boolean appendMessageFlag)  throws  I2B2DAOException {
-
-		String messageUpdate = "";
-		if (appendMessageFlag) {
-			String concatOperator = "";
-			if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE)  ) {
-				concatOperator = "||";
-				messageUpdate = " MESSAGE = nvl(MESSAGE,'') " + concatOperator
-						+ " ? ";
-			} else 	if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
-							|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
-				concatOperator = "||";
-				messageUpdate = " MESSAGE = ? ";
-	
-			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.SQLSERVER)) {
-				// Cast(notes as nvarchar(4000))
-				//messageUpdate = " message.write (?, NULL, 0) ";
-				
-				Connection conn = null;
-				try {
-					conn = getDataSource().getConnection();
-					CallableStatement callStmt = conn.prepareCall("{call "
-							+ getDbSchemaName() + "UPDATE_QUERYINSTANCE_MESSAGE(?,?,?)}");
-					callStmt.setString(1, message);
-					callStmt.setString(2, queryInstanceId);
-					callStmt.registerOutParameter(3, java.sql.Types.VARCHAR);
-					// callStmt.setString(2, tempPatientMappingTableName);
-					callStmt.execute();
-					this.getSQLServerProcedureError(dataSourceLookup.getServerType(),
-							callStmt, 3);
-					callStmt.close();
-				} catch (SQLException sqlEx) {
-					sqlEx.printStackTrace();
-					throw new I2B2DAOException(
-							"SQLException occured" + sqlEx.getMessage(), sqlEx);
-				} catch (Exception ex) {
-					ex.printStackTrace();
-					throw new I2B2DAOException("Exception occured" + ex.getMessage(), ex);
-				} finally {
-					if (conn != null) {
-						try {
-							conn.close();
-						} catch (SQLException sqlEx) {
-							sqlEx.printStackTrace();
-							log.error("Error while closing connection", sqlEx);
-						}
-					}
-				}
-				return ;
-				//////
-
-			}
-
-		} else {
-			messageUpdate = " MESSAGE = ?";
-		}
-		String sql = "UPDATE "
-				+ getDbSchemaName()
+	public void updateMessage(String queryInstanceId, String message,
+							  boolean appendMessageFlag) throws I2B2DAOException {
+		String messageUpdate = appendMessageFlag ? " MESSAGE = ? " : " MESSAGE = ?";
+		String sql = "UPDATE " + getDbSchemaName()
 				+ "QT_QUERY_INSTANCE set "
 				+ messageUpdate + " where query_instance_id = ? ";
 		jdbcTemplate.update(sql, new Object[] {
-				
-				(message == null) ? "" : 
-						message, Integer.parseInt(queryInstanceId) });
-		
+				(message == null) ? StringUtils.EMPTY : message, Integer.parseInt(queryInstanceId) });
 	}
 	
 	private static class SaveQueryInstance extends SqlUpdate {
+		private String INSERT_INTERSYSTEMS_IRIS;
+		private String SEQUENCE_INTERSYSTEMS_IRIS;
 
-		private String INSERT_ORACLE = "";
-		private String INSERT_SQLSERVER = "";
-		private String SEQUENCE_ORACLE = "";
-		private String SEQUENCE_POSTGRESQL = "";
-		private String INSERT_POSTGRESQL = "";
-		private String INSERT_INTERSYSTEMS_IRIS = "";
-		private String SEQUENCE_INTERSYSTEMS_IRIS = "";
-
-		private DataSourceLookup dataSourceLookup = null;
+		private DataSourceLookup dataSourceLookup;
 
 		public SaveQueryInstance(DataSource dataSource, String dbSchemaName,
-				DataSourceLookup dataSourceLookup) {
+								 DataSourceLookup dataSourceLookup) {
 			super();
 			this.dataSourceLookup = dataSourceLookup;
 			// sqlServerSequenceDao = new
 			// SQLServerSequenceDAO(dataSource,dataSourceLookup) ;
 			setDataSource(dataSource);
-			if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE)) {
-				INSERT_ORACLE = "INSERT INTO "
-						+ dbSchemaName
-						+ "QT_QUERY_INSTANCE "
-						+ "(QUERY_INSTANCE_ID, QUERY_MASTER_ID, USER_ID, GROUP_ID,BATCH_MODE,START_DATE,END_DATE,STATUS_TYPE_ID,DELETE_FLAG) "
-						+ "VALUES (?,?,?,?,?,?,?,?,?)";
-				setSql(INSERT_ORACLE);
-				SEQUENCE_ORACLE = "select " + dbSchemaName
-						+ "QT_SQ_QI_QIID.nextval from dual";
-				declareParameter(new SqlParameter(Types.INTEGER));
-			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)) {
-				INSERT_SQLSERVER = "INSERT INTO "
-						+ dbSchemaName
-						+ "QT_QUERY_INSTANCE "
-						+ "( QUERY_MASTER_ID, USER_ID, GROUP_ID,BATCH_MODE,START_DATE,END_DATE,STATUS_TYPE_ID,DELETE_FLAG) "
-						+ "VALUES (?,?,?,?,?,?,?,?)";
-				setSql(INSERT_SQLSERVER);
-			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)) {
-				INSERT_POSTGRESQL = "INSERT INTO "
-						+ dbSchemaName
-						+ "QT_QUERY_INSTANCE "
-						+ "(QUERY_INSTANCE_ID, QUERY_MASTER_ID, USER_ID, GROUP_ID,BATCH_MODE,START_DATE,END_DATE,STATUS_TYPE_ID,DELETE_FLAG) "
-						+ "VALUES (?,?,?,?,?,?,?,?,?)";
-				setSql(INSERT_POSTGRESQL);
-				SEQUENCE_POSTGRESQL = "select " // + dbSchemaName
-						+ "nextval('qt_query_instance_query_instance_id_seq') ";
-				declareParameter(new SqlParameter(Types.INTEGER));
-			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
-				INSERT_INTERSYSTEMS_IRIS = "INSERT INTO "
-						+ dbSchemaName
-						+ "QT_QUERY_INSTANCE "
-						+ "(QUERY_INSTANCE_ID, QUERY_MASTER_ID, USER_ID, GROUP_ID,BATCH_MODE,START_DATE,END_DATE,STATUS_TYPE_ID,DELETE_FLAG) "
-						+ "VALUES (?,?,?,?,?,?,?,?,?)";
-				setSql(INSERT_INTERSYSTEMS_IRIS);
-				SEQUENCE_INTERSYSTEMS_IRIS = "select I2B2.Utils_nextval('qt_query_instance_query_instance_id_seq')";
-				declareParameter(new SqlParameter(Types.INTEGER));
-			}
-
+			INSERT_INTERSYSTEMS_IRIS = "INSERT INTO "
+					+ dbSchemaName
+					+ "QT_QUERY_INSTANCE "
+					+ "(QUERY_INSTANCE_ID, QUERY_MASTER_ID, USER_ID, GROUP_ID,BATCH_MODE,START_DATE,END_DATE,STATUS_TYPE_ID,DELETE_FLAG) "
+					+ "VALUES (?,?,?,?,?,?,?,?,?)";
+			setSql(INSERT_INTERSYSTEMS_IRIS);
+			SEQUENCE_INTERSYSTEMS_IRIS = "select I2B2.Utils_nextval('qt_query_instance_query_instance_id_seq')";
+			declareParameter(new SqlParameter(Types.INTEGER));
 			declareParameter(new SqlParameter(Types.INTEGER));
 			declareParameter(new SqlParameter(Types.VARCHAR));
 			declareParameter(new SqlParameter(Types.VARCHAR));
@@ -390,63 +271,22 @@ public class QueryInstanceSpringDao extends CRCDAO implements IQueryInstanceDao 
 			JdbcTemplate jdbc = getJdbcTemplate();
 			int queryInstanceId = 0;
 			Object[] object = null;
-			if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.SQLSERVER) ) {
-				object = new Object[] {
-				queryInstance.getQtQueryMaster().getQueryMasterId(),
-						queryInstance.getUserId(), queryInstance.getGroupId(),
-						queryInstance.getBatchMode(),
-						queryInstance.getStartDate(),
-						queryInstance.getEndDate(),
-						queryInstance.getQtQueryStatusType().getStatusTypeId(),
-						queryInstance.getDeleteFlag() };
-			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE)) {
-				queryInstanceId = jdbc.queryForObject(SEQUENCE_ORACLE, Integer.class);
-				queryInstance.setQueryInstanceId(String
-						.valueOf(queryInstanceId));
-				object = new Object[] { queryInstance.getQueryInstanceId(),
-						queryInstance.getQtQueryMaster().getQueryMasterId(),
-						queryInstance.getUserId(), queryInstance.getGroupId(),
-						queryInstance.getBatchMode(),
-						queryInstance.getStartDate(),
-						queryInstance.getEndDate(),
-						queryInstance.getQtQueryStatusType().getStatusTypeId(),
-						queryInstance.getDeleteFlag() };
-			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)) {
-				queryInstanceId = jdbc.queryForObject(SEQUENCE_POSTGRESQL, Integer.class);
-				queryInstance.setQueryInstanceId(String
-						.valueOf(queryInstanceId));
-				object = new Object[] { queryInstance.getQueryInstanceId(),
-						queryInstance.getQtQueryMaster().getQueryMasterId(),
-						queryInstance.getUserId(), queryInstance.getGroupId(),
-						queryInstance.getBatchMode(),
-						queryInstance.getStartDate(),
-						queryInstance.getEndDate(),
-						queryInstance.getQtQueryStatusType().getStatusTypeId(),
-						queryInstance.getDeleteFlag() };
-			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
-				queryInstanceId = jdbc.queryForObject(SEQUENCE_INTERSYSTEMS_IRIS, Integer.class);
-				queryInstance.setQueryInstanceId(String.valueOf(queryInstanceId));
-				object = new Object[] { queryInstance.getQueryInstanceId(),
-						queryInstance.getQtQueryMaster().getQueryMasterId(),
-						queryInstance.getUserId(), queryInstance.getGroupId(),
-						queryInstance.getBatchMode(),
-						queryInstance.getStartDate(),
-						queryInstance.getEndDate(),
-						queryInstance.getQtQueryStatusType().getStatusTypeId(),
-						queryInstance.getDeleteFlag() };
-			}
-
+			queryInstanceId = jdbc.queryForObject(SEQUENCE_INTERSYSTEMS_IRIS, Integer.class);
+			queryInstance.setQueryInstanceId(String.valueOf(queryInstanceId));
+			object = new Object[]{queryInstance.getQueryInstanceId(),
+					queryInstance.getQtQueryMaster().getQueryMasterId(),
+					queryInstance.getUserId(), queryInstance.getGroupId(),
+					queryInstance.getBatchMode(),
+					queryInstance.getStartDate(),
+					queryInstance.getEndDate(),
+					queryInstance.getQtQueryStatusType().getStatusTypeId(),
+					queryInstance.getDeleteFlag()};
 			update(object);
-			if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)) {
-				int queryInstanceIdentityId = jdbc.queryForObject("SELECT @@IDENTITY", Integer.class);
-				queryInstance.setQueryInstanceId(String.valueOf(queryInstanceIdentityId));
-			}
 		}
 	}
 
 	private class QtQueryInstanceRowMapper implements RowMapper {
-		QueryStatusTypeSpringDao statusTypeDao = new QueryStatusTypeSpringDao(
-				dataSource, dataSourceLookup);
+		QueryStatusTypeSpringDao statusTypeDao = new QueryStatusTypeSpringDao(dataSource, dataSourceLookup);
 
 		@Override
 		public Object mapRow(ResultSet rs, int rowNum) throws SQLException {
@@ -462,25 +302,9 @@ public class QueryInstanceSpringDao extends CRCDAO implements IQueryInstanceDao 
 			queryInstance.setEndDate(rs.getTimestamp("END_DATE"));
 			queryInstance.setMessage(rs.getString("MESSAGE"));
 			int statusTypeId = rs.getInt("STATUS_TYPE_ID");
-			queryInstance.setQtQueryStatusType(statusTypeDao
-					.getQueryStatusTypeById(statusTypeId));
+			queryInstance.setQtQueryStatusType(statusTypeDao.getQueryStatusTypeById(statusTypeId));
 			queryInstance.setDeleteFlag(rs.getString("DELETE_FLAG"));
 			return queryInstance;
 		}
 	}
-	
-	private void getSQLServerProcedureError(String serverType,
-			CallableStatement callStmt, int outParamIndex) throws SQLException,
-			I2B2Exception {
-
-		if (serverType.equalsIgnoreCase(DataSourceLookupDAOFactory.SQLSERVER)) {
-			String errorMsg = callStmt.getString(outParamIndex);
-			if (errorMsg != null) {
-				log.debug("error codde" + errorMsg);
-				throw new I2B2Exception("Error from stored procedure ["
-						+ errorMsg + "]");
-			}
-		}
-	}
-	
 }

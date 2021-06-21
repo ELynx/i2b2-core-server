@@ -28,6 +28,8 @@ import java.sql.SQLException;
 import java.util.Calendar;
 import java.util.List;
 import javax.sql.DataSource;
+
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.dao.DataAccessException;
@@ -42,7 +44,8 @@ public class DblookupDao extends JdbcDaoSupport {
     private static JdbcTemplate jt;
     private static String dbluTable;
     private static String key = " LOWER(c_domain_id)=LOWER(?) AND (LOWER(c_owner_id)=LOWER(?) OR c_owner_id='@') ";
-    private static String keyOrder = " LOWER(c_domain_id)=LOWER(?) AND (LOWER(c_owner_id)=LOWER(?) OR c_owner_id='@') ORDER BY c_project_path ";
+    private static String keyOrder = " LOWER(c_domain_id)=LOWER(?) AND (LOWER(c_owner_id)=LOWER(?) OR c_owner_id='@') " +
+			"ORDER BY c_project_path ";
     private String domainId = null;
     private String userId = null;
 
@@ -63,7 +66,7 @@ public class DblookupDao extends JdbcDaoSupport {
 			log.error(e2.getMessage());;
 		} 
 		jt = new JdbcTemplate(ds);
-		String metadataSchema = "";
+		String metadataSchema = StringUtils.EMPTY;
 		try {
 			metadataSchema = OntologyUtil.getInstance().getMetaDataSchemaName();
 		} catch (I2B2Exception e1) {
@@ -75,14 +78,11 @@ public class DblookupDao extends JdbcDaoSupport {
 	
 	public String slashEnd(String s) {
 		StringBuffer sb = new StringBuffer(s);
-		if (!s.endsWith("/")) {
+		if (!s.endsWith("/"))
 			sb.append('/');
-		}
 		log.info(sb.toString());
 		return sb.toString();
 	}
-	
-
 
 	public List<DblookupType> findDblookups() throws DataAccessException, I2B2DAOException{	
 		String sql = "SELECT * FROM " +  dbluTable + " WHERE" + keyOrder;		
@@ -101,7 +101,8 @@ public class DblookupDao extends JdbcDaoSupport {
 		String sql = "SELECT * FROM " +  dbluTable + " WHERE c_project_path=? AND " + keyOrder;		
 		List<DblookupType> queryResult = null;
 		try {
-			queryResult = jt.query(sql, new getMapper(), slashEnd(dblookupType.getProjectPath()), dblookupType.getDomainId(), dblookupType.getOwnerId());
+			queryResult = jt.query(sql, new getMapper(), slashEnd(dblookupType.getProjectPath()),
+					dblookupType.getDomainId(), dblookupType.getOwnerId());
 		} catch (DataAccessException e) {
 			log.error(e.getMessage());
 			e.printStackTrace();
@@ -123,10 +124,9 @@ public class DblookupDao extends JdbcDaoSupport {
 				queryResult = jt.query(sql, new getMapper(), domainId, value);
 			} else {
 				sql += "c_" + column + "=? AND " + keyOrder;
-				if (s.equalsIgnoreCase("project_path")) {
+				if (s.equalsIgnoreCase("project_path"))
 					v = slashEnd(value);
-				} else {
-				}
+
 				queryResult = jt.query(sql, new getMapper(), v, domainId, userId);
 			}
 			log.info(sql + "(c_" + column + "=" + v + ", domainId=" + domainId + ", userId=" + userId + ") -- # of entries found: " + queryResult.size());
@@ -140,18 +140,18 @@ public class DblookupDao extends JdbcDaoSupport {
 	
 	public int setDblookup(final SetDblookupType dblookupType) throws DataAccessException, I2B2Exception {
 		List<DblookupType> queryResult = getDblookup(dblookupType);
-		if (null == queryResult || (0 == queryResult.size())) {
+		if (null == queryResult || 0 == queryResult.size())
 			return insertDblookup(dblookupType);
-		} else {
+		else
 			return updateDblookup(dblookupType);
-		}
 	}
 	
 	public int insertDblookup(final SetDblookupType dblookupType) throws DataAccessException, I2B2Exception {
-		int numRowsAdded = 0;
 		String sql = "INSERT INTO " + dbluTable +
-				     "(c_domain_id, c_project_path, c_owner_id, c_db_fullschema, c_db_datasource, c_db_servertype, c_db_nicename, c_db_tooltip, c_comment, c_entry_date, c_change_date, c_status_cd) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)";		
-		numRowsAdded = jt.update(sql, 
+				"(c_domain_id, c_project_path, c_owner_id, c_db_fullschema, c_db_datasource, c_db_servertype, " +
+				"c_db_nicename, c_db_tooltip, c_comment, c_entry_date, c_change_date, c_status_cd) " +
+				"VALUES (?,?,?,?,?,?,?,?,?,?,?,?)";
+		int numRowsAdded = jt.update(sql,
 								 dblookupType.getDomainId(),  
 								 slashEnd(dblookupType.getProjectPath()),
 								 dblookupType.getOwnerId(),
@@ -163,8 +163,7 @@ public class DblookupDao extends JdbcDaoSupport {
 								 dblookupType.getComment(),
 								 Calendar.getInstance().getTime(),
 								 Calendar.getInstance().getTime(),
-								 dblookupType.getStatusCd()
-								);
+								 dblookupType.getStatusCd());
 		log.info("insertDblookup - Number of rows added: " + numRowsAdded);
 		return numRowsAdded;
 	}
@@ -172,8 +171,8 @@ public class DblookupDao extends JdbcDaoSupport {
 	public int updateDblookup(final SetDblookupType dblookupType) throws DataAccessException, I2B2Exception {
 		int numRowsSet = 0;
 		String sql = "UPDATE " + dbluTable +
-		 	 	 	 "SET c_db_fullschema=?, c_db_datasource=?, c_db_servertype=?, c_db_nicename=?, c_db_tooltip=?, c_comment=?, c_change_date=?, c_status_cd=? WHERE c_project_path=? AND " + 
-		 	 	 	 key;		
+				"SET c_db_fullschema=?, c_db_datasource=?, c_db_servertype=?, c_db_nicename=?, c_db_tooltip=?, " +
+				"c_comment=?, c_change_date=?, c_status_cd=? WHERE c_project_path=? AND " + key;
 		numRowsSet = jt.update(sql, 
 	   			   			   dblookupType.getDbFullschema(),
 	   						   dblookupType.getDbDatasource(),
@@ -185,27 +184,25 @@ public class DblookupDao extends JdbcDaoSupport {
 	   						   dblookupType.getStatusCd(),
 	   						   slashEnd(dblookupType.getProjectPath()),
 	   						   dblookupType.getDomainId(),  
-	   						   dblookupType.getOwnerId()
-							  );
+	   						   dblookupType.getOwnerId());
 		log.info("updateDblookup - Number of rows updated: " + numRowsSet);
 		return numRowsSet;
 	}
 
 	public int deleteDblookup(final DeleteDblookupType dblookupType) throws DataAccessException, I2B2Exception {
-		int numRowsDeleted = 0;
-		String sql = "DELETE FROM " + dbluTable + " WHERE c_project_path=? AND " + key;		
+		String sql = "DELETE FROM " + dbluTable + " WHERE c_project_path = ? AND " + key;
 		try {
-			numRowsDeleted = jt.update(sql, slashEnd(dblookupType.getProjectPath()), dblookupType.getDomainId(), dblookupType.getOwnerId());
+			return jt.update(sql, slashEnd(dblookupType.getProjectPath()),
+					dblookupType.getDomainId(),
+					dblookupType.getOwnerId());
 		} catch (DataAccessException e) {
 			log.error(e.getMessage());
 			e.printStackTrace();
 			throw new I2B2DAOException("Database error");
 		}
-		return numRowsDeleted;	
 	}
 
 }
-
 
 
 class getMapper implements RowMapper<DblookupType> {

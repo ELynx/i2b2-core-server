@@ -333,19 +333,9 @@ public class PdoQueryHandler {
 		if (obsFactSelected || providerSelected || conceptSelected
 				|| patientFromFact || visitFromFact || pidFromFact
 				|| eidFromFact || modifierSelected) {
-
 			DataSourceLookup dataSourceLookup = pdoDaoFactory.getDataSourceLookup();
-			if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE)
-					|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
-					|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
-				factRelatedQry = new FactRelatedQueryHandler(pdoDaoFactory
-						.getDataSourceLookup(), inputList, filterList,
-						outputOptionList);
-			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)) {
-				factRelatedQry = new SQLServerFactRelatedQueryHandler(
-						pdoDaoFactory.getDataSourceLookup(), inputList,
-						filterList, outputOptionList);
-			}
+			factRelatedQry = new FactRelatedQueryHandler(pdoDaoFactory.getDataSourceLookup(),
+					inputList, filterList, outputOptionList);
 			//set project param map
 			factRelatedQry.setProjectParamMap(this.projectParamMap);
 			factRelatedQry.setModifierMetadataXmlMap(modifierMetadataXmlMap);
@@ -353,36 +343,24 @@ public class PdoQueryHandler {
 			
 			// execute query
 			if (pdoType.equalsIgnoreCase(TABLE_PDO_TYPE)) {
-				List<ObservationSet> tableObservationSet = factRelatedQry
-						.getTablePdoObservationFact();
-				if (obsFactSelected) {
-					tablePdoType.getObservationSet()
-							.addAll(tableObservationSet);
-				}
+				List<ObservationSet> tableObservationSet = factRelatedQry.getTablePdoObservationFact();
+				if (obsFactSelected)
+					tablePdoType.getObservationSet().addAll(tableObservationSet);
 			} else {
-				List<ObservationSet> plainPdoObservationSet = factRelatedQry
-						.getPdoObservationFact();
-
-				if (obsFactSelected) {
-					plainPdoType.getObservationSet().addAll(
-							plainPdoObservationSet);
-				}
+				List<ObservationSet> plainPdoObservationSet = factRelatedQry.getPdoObservationFact();
+				if (obsFactSelected)
+					plainPdoType.getObservationSet().addAll(plainPdoObservationSet);
 			}
 		}
-
 		// check if observer section is specified in outputoption
 		if (providerSelected) {
-			ProviderSection providerSection = new ProviderSection(pdoType,
-					factRelatedQry);
+			ProviderSection providerSection = new ProviderSection(pdoType, factRelatedQry);
 			providerSection.generateSet();
 
-			if (pdoType.equalsIgnoreCase(TABLE_PDO_TYPE)) {
-				tablePdoType.setObserverSet(providerSection
-						.getTableProviderSet());
-			} else {
-				plainPdoType.setObserverSet(providerSection
-						.getPlainProviderSet());
-			}
+			if (pdoType.equalsIgnoreCase(TABLE_PDO_TYPE))
+				tablePdoType.setObserverSet(providerSection.getTableProviderSet());
+			else
+				plainPdoType.setObserverSet(providerSection.getPlainProviderSet());
 		}
 
 		// check if concept section is specified in outputoption
@@ -390,11 +368,10 @@ public class PdoQueryHandler {
 			ConceptSection cs = new ConceptSection(pdoType, factRelatedQry);
 			cs.generateSet();
 
-			if (pdoType.equalsIgnoreCase(TABLE_PDO_TYPE)) {
+			if (pdoType.equalsIgnoreCase(TABLE_PDO_TYPE))
 				tablePdoType.setConceptSet(cs.getTableConceptSet());
-			} else {
+			else
 				plainPdoType.setConceptSet(cs.getPlainConceptSet());
-			}
 		}
 		
 		// check if modifier section is specified in outputoption
@@ -500,25 +477,19 @@ public class PdoQueryHandler {
 				List<String> panelSqlList = factRelatedQry.getPanelSqlList();
 
 				String panelSql = null;
-
 				List<Integer> sqlParamCountList = new ArrayList<Integer>();
 				for (PanelType panel : filterList.getPanel()) {
 
 					int sqlParamCount = panel.getItem().size();
-					if (panel.getInvert() == 1) {
+					if (panel.getInvert() == 1)
 						sqlParamCount++;
-					}
 					sqlParamCountList.add(sqlParamCount);
-
 				}
 				IInputOptionListHandler inputOptionListHandler = PDOFactory
-						.buildInputListHandler(inputList, pdoDaoFactory
-								.getDataSourceLookup());
+						.buildInputListHandler(inputList, pdoDaoFactory.getDataSourceLookup());
 
 				eidSet = eidDao.getEidByFact(panelSqlList, sqlParamCountList,
-						inputOptionListHandler, detailFlag, blobFlag,
-						statusFlag);
-
+						inputOptionListHandler, detailFlag, blobFlag, statusFlag);
 			} else if (fromPatientSet) {
 				PatientListType patientListType = inputList.getPatientList();
 				eidSet = eidDao.getEidFromPatientSet(patientListType,
@@ -528,7 +499,6 @@ public class PdoQueryHandler {
 				eidSet = eidDao.getEidByEidList(eidListType, detailFlag,
 						blobFlag, statusFlag);
 			}
-
 		}
 
 		public EidSet getEidSet() {
@@ -568,27 +538,21 @@ public class PdoQueryHandler {
 			boolean blobFlag = pidFactRelated.isSelectBlob();
 			boolean statusFlag = pidFactRelated.isSelectStatus();
 			if (pidFromFact) {
-				List<String> patientNumFactList = factRelatedQry
-						.getPatientFactList();
-				System.out.println("Patient fact list size"
-						+ patientNumFactList.size());
+				List<String> patientNumFactList = factRelatedQry.getPatientFactList();
+				System.out.println("Patient fact list size" + patientNumFactList.size());
 				List<String> panelSqlList = factRelatedQry.getPanelSqlList();
 
 				String panelSql = null;
-
-				List<Integer> sqlParamCountList = new ArrayList<Integer>();
+				List<Integer> sqlParamCountList = new ArrayList<>();
 				for (PanelType panel : filterList.getPanel()) {
-
 					int sqlParamCount = panel.getItem().size();
-					if (panel.getInvert() == 1) {
+					if (panel.getInvert() == 1)
 						sqlParamCount++;
-					}
 					sqlParamCountList.add(sqlParamCount);
 
 				}
 				IInputOptionListHandler inputOptionListHandler = PDOFactory
-						.buildInputListHandler(inputList, pdoDaoFactory
-								.getDataSourceLookup());
+						.buildInputListHandler(inputList, pdoDaoFactory.getDataSourceLookup());
 
 				pidSet = pidDao.getPidByFact(panelSqlList, sqlParamCountList,
 						inputOptionListHandler, detailFlag, blobFlag,
@@ -602,13 +566,11 @@ public class PdoQueryHandler {
 				pidSet = pidDao.getPidByPidList(pidListType, detailFlag,
 						blobFlag, statusFlag);
 			}
-
 		}
 
 		public PidSet getPidSet() {
 			return pidSet;
 		}
-
 	}
 
 	/**
@@ -644,35 +606,27 @@ public class PdoQueryHandler {
 			List<String> panelSqlList = factRelatedQry.getPanelSqlList();
 
 			String panelSql = null;
-
 			List<Integer> sqlParamCountList = new ArrayList<Integer>();
 			for (PanelType panel : filterList.getPanel()) {
 
 				int sqlParamCount = panel.getItem().size();
-				if (panel.getInvert() == 1) {
+				if (panel.getInvert() == 1)
 					sqlParamCount++;
-				}
 				sqlParamCountList.add(sqlParamCount);
 
 			}
 			IInputOptionListHandler inputOptionListHandler = PDOFactory
-					.buildInputListHandler(origInputList, pdoDaoFactory
-							.getDataSourceLookup());
-
+					.buildInputListHandler(origInputList, pdoDaoFactory.getDataSourceLookup());
 			if (pType.equalsIgnoreCase(TABLE_PDO_TYPE)) {
-
 				observerSet = tableProviderDao.getProviderByFact(panelSqlList,
 						sqlParamCountList, inputOptionListHandler, detailFlag,
 						blobFlag, statusFlag);
-
 			} else {
 				providerDimensionSet = providerDao.getProviderByFact(
 						panelSqlList, sqlParamCountList,
 						inputOptionListHandler, detailFlag, blobFlag,
 						statusFlag);
-
 			}
-
 		}
 
 		public ObserverSet getTableProviderSet() {
@@ -710,27 +664,21 @@ public class PdoQueryHandler {
 			List<String> panelSqlList = factRelatedQry.getPanelSqlList();
 
 			String panelSql = null;
-
 			List<Integer> sqlParamCountList = new ArrayList<Integer>();
 			for (PanelType panel : filterList.getPanel()) {
 
 				int sqlParamCount = panel.getItem().size();
-				if (panel.getInvert() == 1) {
+				if (panel.getInvert() == 1)
 					sqlParamCount++;
-				}
 				sqlParamCountList.add(sqlParamCount);
-
 			}
 			IInputOptionListHandler inputOptionListHandler = PDOFactory
-					.buildInputListHandler(origInputList, pdoDaoFactory
-							.getDataSourceLookup());
+					.buildInputListHandler(origInputList, pdoDaoFactory.getDataSourceLookup());
 
 			if (pType.equalsIgnoreCase(TABLE_PDO_TYPE)) {
-
 				conceptSet = tableConceptDao.getConceptByFact(panelSqlList,
 						sqlParamCountList, inputOptionListHandler, detailFlag,
 						blobFlag, statusFlag);
-
 			} else {
 				conceptDimensionSet = conceptDao.getConceptByFact(panelSqlList,
 						sqlParamCountList, inputOptionListHandler, detailFlag,
@@ -773,27 +721,21 @@ public class PdoQueryHandler {
 			List<String> panelSqlList = factRelatedQry.getPanelSqlList();
 
 			String panelSql = null;
-
 			List<Integer> sqlParamCountList = new ArrayList<Integer>();
 			for (PanelType panel : filterList.getPanel()) {
 
 				int sqlParamCount = panel.getItem().size();
-				if (panel.getInvert() == 1) {
+				if (panel.getInvert() == 1)
 					sqlParamCount++;
-				}
 				sqlParamCountList.add(sqlParamCount);
-
 			}
 			IInputOptionListHandler inputOptionListHandler = PDOFactory
-					.buildInputListHandler(origInputList, pdoDaoFactory
-							.getDataSourceLookup());
+					.buildInputListHandler(origInputList, pdoDaoFactory.getDataSourceLookup());
 
 			if (pType.equalsIgnoreCase(TABLE_PDO_TYPE)) {
-
 				modifierSet = tableModifierDao.getModifierByFact(panelSqlList,
 						sqlParamCountList, inputOptionListHandler, detailFlag,
 						blobFlag, statusFlag);
-
 			} else {
 				modifierDimensionSet = modifierDao.getModifierByFact(panelSqlList,
 						sqlParamCountList, inputOptionListHandler, detailFlag,
@@ -852,43 +794,34 @@ public class PdoQueryHandler {
 			boolean statusFlag = patientFactRelated.isSelectStatus();
 
 			if (patientFromFact) {
-				List<String> patientFactList = factRelatedQry
-						.getPatientFactList();
-				log.debug("Patient fact list size"
-						+ patientFactList.size());
+				List<String> patientFactList = factRelatedQry.getPatientFactList();
+				log.debug("Patient fact list size" + patientFactList.size());
 
 				List<String> panelSqlList = factRelatedQry.getPanelSqlList();
 
 				String panelSql = null;
-
-				List<Integer> sqlParamCountList = new ArrayList<Integer>();
+				List<Integer> sqlParamCountList = new ArrayList<>();
 				for (PanelType panel : filterList.getPanel()) {
 
 					int sqlParamCount = panel.getItem().size();
-					if (panel.getInvert() == 1) {
+					if (panel.getInvert() == 1)
 						sqlParamCount++;
-					}
 					sqlParamCountList.add(sqlParamCount);
-
 				}
 				IInputOptionListHandler inputOptionListHandler = PDOFactory
-						.buildInputListHandler(inputList, pdoDaoFactory
-								.getDataSourceLookup());
+						.buildInputListHandler(inputList, pdoDaoFactory.getDataSourceLookup());
 
 				if (pType.equalsIgnoreCase(TABLE_PDO_TYPE)) {
-
 					patientSet = tablePdoQueryPatientDao.getPatientByFact(
 							panelSqlList, sqlParamCountList,
 							inputOptionListHandler, detailFlag, blobFlag,
 							statusFlag);
-
 				} else {
 					patientDimensionSet = pdoQueryPatientDao.getPatientByFact(
 							panelSqlList, sqlParamCountList,
 							inputOptionListHandler, detailFlag, blobFlag,
 							statusFlag);
 				}
-
 			} else {
 				// if visit list get patient list from the visit list and pass
 				// it to patient dimention
@@ -909,35 +842,24 @@ public class PdoQueryHandler {
 				} else if (fromPIDSet) {
 					PidListType  pidListType = inputList.getPidList();
 					List<String> patientList = new ArrayList<String>();
-					
 					for (Pid pids : pidListType.getPid())
-					{
 						patientList.add(pids.getValue());
-						
-						
-					}
-					
 					
 					if (pType.equalsIgnoreCase(TABLE_PDO_TYPE)) {
 						patientSet = tablePdoQueryPatientDao
-								.getPatientByPatientNum(patientList,
-										detailFlag, blobFlag, statusFlag);
+								.getPatientByPatientNum(patientList, detailFlag, blobFlag, statusFlag);
 					} else {
 						patientDimensionSet = pdoQueryPatientDao
-								.getPatientByPatientNum(patientList,
-										detailFlag, blobFlag, statusFlag);
+								.getPatientByPatientNum(patientList, detailFlag, blobFlag, statusFlag);
 					}
 				} else if (fromVisitSet) {
 					EventListType visitListType = inputList.getEventList();
-
 					if (pType.equalsIgnoreCase(TABLE_PDO_TYPE)) {
 						patientSet = tablePdoQueryPatientDao
-								.getPatientFromVisitSet(visitListType,
-										detailFlag, blobFlag, statusFlag);
+								.getPatientFromVisitSet(visitListType, detailFlag, blobFlag, statusFlag);
 					} else {
 						patientDimensionSet = pdoQueryPatientDao
-								.getPatientFromVisitSet(visitListType,
-										detailFlag, blobFlag, statusFlag);
+								.getPatientFromVisitSet(visitListType, detailFlag, blobFlag, statusFlag);
 					}
 				}
 			}
@@ -978,85 +900,60 @@ public class PdoQueryHandler {
 					.getPdoQueryVisitDAO();
 			pdoQueryVisitDao.setMetaDataParamList(visitMetaDataParamList);
 			
-			ITablePdoQueryVisitDao tablePdoQueryVisitDao = pdoDaoFactory
-					.getTablePdoQueryVisitDAO();
+			ITablePdoQueryVisitDao tablePdoQueryVisitDao = pdoDaoFactory.getTablePdoQueryVisitDAO();
 			tablePdoQueryVisitDao.setMetaDataParamList(this.visitMetaDataParamList);
 
 			// check if visit is in output option
 			boolean detailFlag = visitFactRelated.isSelectDetail();
-
 			// check if visit is in output option
 			boolean blobFlag = visitFactRelated.isSelectBlob();
-
 			// check if visit is in output option
 			boolean statusFlag = visitFactRelated.isSelectStatus();
-
 			if (visitFromFact) {
 				List<String> visitFactList = factRelatedQry.getVisitFactList();
-
 				List<String> panelSqlList = factRelatedQry.getPanelSqlList();
-
 				String panelSql = null;
-
 				List<Integer> sqlParamCountList = new ArrayList<Integer>();
 				for (PanelType panel : filterList.getPanel()) {
-
 					int sqlParamCount = panel.getItem().size();
-					if (panel.getInvert() == 1) {
+					if (panel.getInvert() == 1)
 						sqlParamCount++;
-					}
 					sqlParamCountList.add(sqlParamCount);
-
 				}
 				IInputOptionListHandler inputOptionListHandler = PDOFactory
-						.buildInputListHandler(inputList, pdoDaoFactory
-								.getDataSourceLookup());
+						.buildInputListHandler(inputList, pdoDaoFactory.getDataSourceLookup());
 
 				if (pType.equalsIgnoreCase(TABLE_PDO_TYPE)) {
-
 					eventSet = tablePdoQueryVisitDao.getVisitByFact(
 							panelSqlList, sqlParamCountList,
 							inputOptionListHandler, detailFlag, blobFlag,
 							statusFlag);
-
 				} else {
 					visitDimensionSet = pdoQueryVisitDao.getVisitByFact(
 							panelSqlList, sqlParamCountList,
 							inputOptionListHandler, detailFlag, blobFlag,
 							statusFlag);
 				}
-
 			} else {
 				// check if input is visit or patient list
 				if (fromVisitSet) {
 					EventListType visitListType = inputList.getEventList();
 
-					if (pType.equalsIgnoreCase(TABLE_PDO_TYPE)) {
-						eventSet = tablePdoQueryVisitDao
-								.getVisitDimensionSetFromVisitList(
-										visitListType, detailFlag, blobFlag,
-										statusFlag);
-					} else {
-						visitDimensionSet = pdoQueryVisitDao
-								.getVisitDimensionSetFromVisitList(
-										visitListType, detailFlag, blobFlag,
-										statusFlag);
-					}
+					if (pType.equalsIgnoreCase(TABLE_PDO_TYPE))
+						eventSet = tablePdoQueryVisitDao.getVisitDimensionSetFromVisitList(
+										visitListType, detailFlag, blobFlag, statusFlag);
+					else
+						visitDimensionSet = pdoQueryVisitDao.getVisitDimensionSetFromVisitList(
+										visitListType, detailFlag, blobFlag, statusFlag);
 				} else if (fromPatientSet) {
-					PatientListType patientListType = inputList
-							.getPatientList();
-
-					if (pType.equalsIgnoreCase(TABLE_PDO_TYPE)) {
-						eventSet = tablePdoQueryVisitDao
-								.getVisitDimensionSetFromPatientList(
+					PatientListType patientListType = inputList.getPatientList();
+					if (pType.equalsIgnoreCase(TABLE_PDO_TYPE))
+						eventSet = tablePdoQueryVisitDao.getVisitDimensionSetFromPatientList(
+										patientListType, detailFlag, blobFlag, statusFlag);
+					else
+						visitDimensionSet = pdoQueryVisitDao.getVisitDimensionSetFromPatientList(
 										patientListType, detailFlag, blobFlag,
 										statusFlag);
-					} else {
-						visitDimensionSet = pdoQueryVisitDao
-								.getVisitDimensionSetFromPatientList(
-										patientListType, detailFlag, blobFlag,
-										statusFlag);
-					}
 				}
 			}
 		}

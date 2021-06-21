@@ -340,7 +340,7 @@ public class ItemType {
      */
     public List<ItemType.ConstrainByValue> getConstrainByValue() {
         if (constrainByValue == null) {
-            constrainByValue = new ArrayList<ItemType.ConstrainByValue>();
+            constrainByValue = new ArrayList<>();
         }
         return this.constrainByValue;
     }
@@ -368,9 +368,8 @@ public class ItemType {
      * 
      */
     public List<ItemType.ConstrainByDate> getConstrainByDate() {
-        if (constrainByDate == null) {
-            constrainByDate = new ArrayList<ItemType.ConstrainByDate>();
-        }
+        if (constrainByDate == null)
+            constrainByDate = new ArrayList<>();
         return this.constrainByDate;
     }
 

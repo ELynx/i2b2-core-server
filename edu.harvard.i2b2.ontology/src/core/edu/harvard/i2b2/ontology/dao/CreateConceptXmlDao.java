@@ -125,15 +125,10 @@ public class CreateConceptXmlDao extends JdbcDaoSupport {
 		}
 		
 		String updateOnlyClause = " ";
-		if (!synchronizeAllFlag) {
-			//TODO: check if [ is enough for IRIS
-			if (dbInfo.getDb_serverType().equalsIgnoreCase("InterSystems IRIS"))
-				updateOnlyClause = " and c_visualattributes [ '%E' "+ hiddenConceptSql + " and c_synonym_cd = 'N' and m_exclusion_cd is null";
-			else
-				updateOnlyClause = " and c_visualattributes like '%E' "+ hiddenConceptSql + " and c_synonym_cd = 'N' and m_exclusion_cd is null";
-		} else {
+		if (!synchronizeAllFlag)
+			updateOnlyClause = " and c_visualattributes like '%E' " + hiddenConceptSql + " and c_synonym_cd = 'N' and m_exclusion_cd is null";
+		else
 			updateOnlyClause = "  and c_synonym_cd = 'N' " + hiddenConceptSql + " and m_exclusion_cd is null";
-		}
 		// call table access
 		List<String> tableNameList = tableAccessDao.getEditorTableName(
 				projectInfo, dbInfo, synchronizeAllFlag);
@@ -159,16 +154,11 @@ public class CreateConceptXmlDao extends JdbcDaoSupport {
 				log.info("Script: " + selectSql);
 				log.debug("Executing sql [" + selectSql + "]");
 				query = conn.prepareStatement(JDBCUtil.escapeSingleQuote(selectSql));
-
 				resultSet = query.executeQuery();
-
-				while (resultSet.next()) {
+				while (resultSet.next())
 					xmlWriterUtil.buildConcept(resultSet);
-				}
-
 			}
 			xmlWriterUtil.endSet();
-
 		} catch (SQLException sqlEx) {
 			throw new I2B2Exception("Error while writing concept xml", sqlEx);
 		} catch (Exception e) {
@@ -176,35 +166,27 @@ public class CreateConceptXmlDao extends JdbcDaoSupport {
 		} finally {
 			closeAll(resultSet, query, conn);
 		}
-
 	}
 
 	private void closeAll(ResultSet resultSet, PreparedStatement query,
 			Connection conn) {
 		try {
-			if (resultSet != null) {
+			if (resultSet != null)
 				resultSet.close();
-			}
-
-			if (query != null) {
+			if (query != null)
 				query.close();
-			}
-
-			if (conn != null) {
+			if (conn != null)
 				conn.close();
-			}
 		} catch (SQLException e) {
 			;
 		}
 	}
 
 	private File createTempFile(String fileName) throws I2B2Exception {
-		File tempFile = null;
+		File tempFile;
 		try {
-
 			// Create temp file.
 			tempFile = new File(fileName);
-
 		} catch (Exception e) {
 			throw new I2B2Exception("Unable to create temp file for ", e);
 		}

@@ -36,7 +36,7 @@ import edu.harvard.i2b2.ontology.ws.MessageFactory;
 
 public class GetTermInfoHandler extends RequestHandler{
 	private static Log log = LogFactory.getLog(GetTermInfoHandler.class);
-	private GetTermInfoDataMessage  getTermInfoMsg = null;
+	private GetTermInfoDataMessage getTermInfoMsg = null;
 	private GetTermInfoType getTermInfoType = null;
 	private ProjectType project = null;
 
@@ -48,7 +48,6 @@ public class GetTermInfoHandler extends RequestHandler{
 			// test case for bad user
 			//			getTermInfoMsg.getMessageHeaderType().getSecurity().setUsername("aaaaaaa");
 			project = getRoleInfo(getTermInfoMsg.getMessageHeaderType());
-
 		} catch (JAXBUtilException e) {
 			log.error("error setting up getTermInfoHandler");
 			throw new I2B2Exception("GetTermInfoHandler not configured");
@@ -61,9 +60,7 @@ public class GetTermInfoHandler extends RequestHandler{
 		ConceptDao conceptDao = new ConceptDao();
 		ConceptsType concepts = new ConceptsType();
 		ResponseMessageType responseMessageType = null;
-
 		// if project == null, user was not validated or PM service problem
-
 		if(project == null) {
 			String response = null;
 			responseMessageType = MessageFactory.doBuildErrorResponse(getTermInfoMsg.getMessageHeaderType(), "User was not validated");
@@ -83,7 +80,7 @@ public class GetTermInfoHandler extends RequestHandler{
 			responseMessageType = MessageFactory.doBuildErrorResponse(getTermInfoMsg.getMessageHeaderType(), "Could not locate record in table_access table");
 		}
 		//no errors found
-		if(responseMessageType == null) {
+		if (responseMessageType == null) {
 //			no db error but response is empty
 			if (response == null) {
 				log.debug("query results are null");
@@ -93,8 +90,7 @@ public class GetTermInfoHandler extends RequestHandler{
 			// max not specified so send results
 			else {
 				Iterator itr = response.iterator();
-				while (itr.hasNext())
-				{
+				while (itr.hasNext()) {
 					ConceptType node = (ConceptType)itr.next();
 					concepts.getConcept().add(node);
 				}
@@ -102,8 +98,6 @@ public class GetTermInfoHandler extends RequestHandler{
 				responseMessageType = MessageFactory.createBuildResponse(messageHeader,concepts);
 			}        
 		}
-		String responseVdo = null;
-		responseVdo = MessageFactory.convertToXMLString(responseMessageType);
-		return responseVdo;
+		return MessageFactory.convertToXMLString(responseMessageType);
 	}
 }

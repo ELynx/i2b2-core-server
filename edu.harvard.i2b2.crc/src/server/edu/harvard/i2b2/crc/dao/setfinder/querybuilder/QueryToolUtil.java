@@ -14,8 +14,6 @@
  */
 package edu.harvard.i2b2.crc.dao.setfinder.querybuilder;
 
-import java.io.IOException;
-import java.io.StringReader;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.text.SimpleDateFormat;
@@ -24,26 +22,10 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.List;
-
-import javax.xml.datatype.DatatypeFactory;
-import javax.xml.datatype.XMLGregorianCalendar;
-import javax.xml.transform.stream.StreamSource;
-
-
-import edu.harvard.i2b2.common.exception.I2B2DAOException;
-import edu.harvard.i2b2.common.exception.I2B2Exception;
-import edu.harvard.i2b2.common.util.xml.XMLOperatorLookup;
 import edu.harvard.i2b2.crc.dao.CRCDAO;
-import edu.harvard.i2b2.crc.dao.DAOFactoryHelper;
-import edu.harvard.i2b2.crc.dao.pdo.input.DateConstrainHandler;
 import edu.harvard.i2b2.crc.datavo.db.DataSourceLookup;
-import edu.harvard.i2b2.crc.datavo.ontology.ConceptType;
-import edu.harvard.i2b2.crc.datavo.setfinder.query.ConstrainOperatorType;
-import edu.harvard.i2b2.crc.datavo.setfinder.query.ConstrainValueType;
 import edu.harvard.i2b2.crc.delegate.ontology.CallOntologyUtil;
-import edu.harvard.i2b2.crc.util.SqlClauseUtil;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Main class to generate setfinder sql from query definition xml. $Id:
@@ -53,8 +35,7 @@ import edu.harvard.i2b2.crc.util.SqlClauseUtil;
  */
 public class QueryToolUtil extends CRCDAO {
 
-	private SimpleDateFormat dateFormat = new SimpleDateFormat(
-			"dd-MMM-yyyy HH:mm:ss");
+	private SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss");
 
 	DatabaseType dbType = DatabaseType.Oracle;
 	Connection conn = null;
@@ -116,28 +97,14 @@ public class QueryToolUtil extends CRCDAO {
 		this.setDbSchemaName(dataSourceLookup.getFullSchema());
 		SetQueryDatabaseConstants(dbType);
 		this.dataSourceLookup = dataSourceLookup;
-		if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE)
-				|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
-				|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
-			TEMP_TABLE = "QUERY_GLOBAL_TEMP";
-			TEMP_RETURN_TABLE = "DX";
-			dateFormat = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss");
-		} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)) {
-			TEMP_TABLE = "#global_temp_table";
-			TEMP_RETURN_TABLE = "#dx";
-			dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
-		}
+		TEMP_TABLE = "QUERY_GLOBAL_TEMP";
+		TEMP_RETURN_TABLE = "DX";
+		dateFormat = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss");		
 	}
 
 	public String getIgnoredItemMessage() {
-		if (this.ignoredItemMessageBuffer != null
-				&& this.ignoredItemMessageBuffer.length() > 0) {
-			return "Missing Concept in Ontology Cell : \n"
-					+ this.ignoredItemMessageBuffer.toString();
-		} else {
-			return "";
-		}
-
+		return this.ignoredItemMessageBuffer != null && this.ignoredItemMessageBuffer.length() > 0
+			? ("Missing Concept in Ontology Cell : \n" + this.ignoredItemMessageBuffer.toString()) : StringUtils.EMPTY;
 	}
 
 	private void SetQueryDatabaseConstants(DatabaseType dbType) {
@@ -187,7 +154,7 @@ public class QueryToolUtil extends CRCDAO {
 			TEMP_PANELCOUNT_DATATYPE = "tinyint";
 			TEMP_RETURN_TABLE = "#DX";
 
-			METADATA_DATABASE = "";
+			METADATA_DATABASE = StringUtils.EMPTY;
 			METADATA_COLUMNNAME = "c_column_name";
 			METADATA_TABLENAME = "c_table_name";
 			METADATA_DIMCODE = "c_dim_code";
@@ -249,11 +216,10 @@ public class QueryToolUtil extends CRCDAO {
 		}
 	}
 
-	protected long GetEstimatedSize(Connection conn, String theTableName,
-			String theColumnName, String theOperator, String theData,
-			long DBNumPatients) {
+	protected long GetEstimatedSize(Connection conn, String theTableName, String theColumnName, 
+									String theOperator, String theData, long DBNumPatients) {
 		long EstSize = 0;
-		String sql = "";
+		String sql ;
 
 		try {
 			if (theTableName.equals(CONCEPT_TABLE)) {
@@ -261,16 +227,15 @@ public class QueryToolUtil extends CRCDAO {
 						+ "from rpdrconceptlookup n " + "where table_name = '"
 						+ FACT_TABLE + "' " + "and column_name = '"
 						+ FACT_CONCEPT_ID + "'" + "and concept_t_value in "
-						+ "(select " + CONCEPT_DIM_ID + " from " + ""
+						+ "(select " + CONCEPT_DIM_ID + " from " + StringUtils.EMPTY
 						+ CONCEPT_TABLE + " c " + "where " + CONCEPT_DIM_PATH
 						+ " " + theOperator + " " + theData + ")";
 
 				java.sql.Statement st1 = conn.createStatement();
 				ResultSet rs = st1.executeQuery(sql);
 
-				if (rs.next()) {
+				if (rs.next()) 
 					EstSize = rs.getLong("n");
-				}
 
 				rs.close();
 				st1.close();
@@ -286,9 +251,8 @@ public class QueryToolUtil extends CRCDAO {
 				java.sql.Statement st1 = conn.createStatement();
 				ResultSet rs = st1.executeQuery(sql);
 
-				if (rs.next()) {
+				if (rs.next()) 
 					EstSize = rs.getLong("n");
-				}
 
 				rs.close();
 				st1.close();
@@ -302,9 +266,8 @@ public class QueryToolUtil extends CRCDAO {
 				java.sql.Statement st1 = conn.createStatement();
 				ResultSet rs = st1.executeQuery(sql);
 
-				if (rs.next()) {
+				if (rs.next())
 					EstSize = rs.getLong("n");
-				}
 
 				rs.close();
 				st1.close();
@@ -328,9 +291,8 @@ public class QueryToolUtil extends CRCDAO {
 				java.sql.Statement st1 = conn.createStatement();
 				ResultSet rs = st1.executeQuery(sql);
 
-				if (rs.next()) {
+				if (rs.next()) 
 					EstSize = rs.getLong("n");
-				}
 
 				rs.close();
 				st1.close();
@@ -344,83 +306,75 @@ public class QueryToolUtil extends CRCDAO {
 		return EstSize;
 	}
 
-	private String buildDateConstrain(String dateColumn, String fromDateValue,
-			String toDateValue) {
-
+	private String buildDateConstrain(String dateColumn, String fromDateValue, String toDateValue) {
 		String dateConstrain = " ";
 		String serverType = dataSourceLookup.getServerType();
-		String fromFormatDateValue = "";
-		String toFormatDateValue = "";
-		if (fromDateValue != null && fromDateValue.trim().length() > 0) {
-			if (serverType.equalsIgnoreCase(DAOFactoryHelper.ORACLE)) {
-				fromFormatDateValue = " to_date('"
-						+ fromDateValue.substring(0, fromDateValue.length())
-						+ "','DD-MON-YYYY HH24:MI:SS')";
-			} else if (serverType.equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)) {
-				fromFormatDateValue = "  '" + fromDateValue + "'";
-			}
-		}
-		if (toDateValue != null && toDateValue.trim().length() > 0) {
-			if (serverType.equalsIgnoreCase(DAOFactoryHelper.ORACLE)) {
-				toFormatDateValue = " to_date('"
-						+ toDateValue.substring(0, toDateValue.length())
-						+ "','DD-MON-YYYY HH24:MI:SS')";
-			} else if (serverType.equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)) {
-				toFormatDateValue = "  '" + toDateValue + "'";
-			}
-		}
-		if (fromDateValue != null
-				&& toDateValue != null
-				&& (fromDateValue.trim().length() > 0 && toDateValue.trim()
-						.length() > 0)) {
-			dateConstrain = " AND " + dateColumn + " between "
-					+ fromFormatDateValue + " AND " + toFormatDateValue;
-		}
+		String fromFormatDateValue = StringUtils.EMPTY;
+		String toFormatDateValue = StringUtils.EMPTY;
+//		if (fromDateValue != null && fromDateValue.trim().length() > 0) {
+//			if (serverType.equalsIgnoreCase(DAOFactoryHelper.ORACLE)) {
+//				fromFormatDateValue = " to_date('"
+//						+ fromDateValue.substring(0, fromDateValue.length())
+//						+ "','DD-MON-YYYY HH24:MI:SS')";
+//			} else if (serverType.equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)) {
+//				fromFormatDateValue = "  '" + fromDateValue + "'";
+//			}
+//		}
+//		if (toDateValue != null && toDateValue.trim().length() > 0) {
+//			if (serverType.equalsIgnoreCase(DAOFactoryHelper.ORACLE)) {
+//				toFormatDateValue = " to_date('"
+//						+ toDateValue.substring(0, toDateValue.length())
+//						+ "','DD-MON-YYYY HH24:MI:SS')";
+//			} else if (serverType.equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)) {
+//				toFormatDateValue = "  '" + toDateValue + "'";
+//			}
+//		}
+		if (fromDateValue != null && toDateValue != null
+				&& (fromDateValue.trim().length() > 0 && toDateValue.trim().length() > 0)) 
+			dateConstrain = " AND " + dateColumn + " between " + fromFormatDateValue + " AND " + toFormatDateValue;
 
-		if (fromDateValue != null && fromDateValue.trim().length() > 0) {
+		if (fromDateValue != null && fromDateValue.trim().length() > 0) 
 			dateConstrain = " AND " + dateColumn + " >= " + fromFormatDateValue;
-		}
-		if (toDateValue != null && toDateValue.trim().length() > 0) {
+		
+		if (toDateValue != null && toDateValue.trim().length() > 0) 
 			dateConstrain = " AND " + dateColumn + " <= " + toFormatDateValue;
-		}
 
 		return dateConstrain;
-
 	}
 
 	private String buildDateConstrainNew(String fromDateColumn,
-			String toDateColumn, String fromInclusive, String toInclusive,
-			String fromDateValue, String toDateValue) {
+										 String toDateColumn, String fromInclusive, String toInclusive,
+										 String fromDateValue, String toDateValue) {
 
 		String dateConstrain = " ";
 		String serverType = dataSourceLookup.getServerType();
-		String fromFormatDateValue = "";
-		String toFormatDateValue = "";
+		String fromFormatDateValue = StringUtils.EMPTY;
+		String toFormatDateValue = StringUtils.EMPTY;
 
-		if (fromInclusive == null) {
+		if (fromInclusive == null)
 			fromInclusive = "yes";
-		}
-		if (toInclusive == null) {
+
+		if (toInclusive == null)
 			toInclusive = "yes";
-		}
-		if (fromDateValue != null && fromDateValue.trim().length() > 0) {
-			if (serverType.equalsIgnoreCase(DAOFactoryHelper.ORACLE)) {
-				fromFormatDateValue = " to_date('"
-						+ fromDateValue.substring(0, fromDateValue.length())
-						+ "','DD-MON-YYYY HH24:MI:SS')";
-			} else if (serverType.equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)) {
-				fromFormatDateValue = "  '" + fromDateValue + "'";
-			}
-		}
-		if (toDateValue != null && toDateValue.trim().length() > 0) {
-			if (serverType.equalsIgnoreCase(DAOFactoryHelper.ORACLE)) {
-				toFormatDateValue = " to_date('"
-						+ toDateValue.substring(0, toDateValue.length())
-						+ "','DD-MON-YYYY HH24:MI:SS')";
-			} else if (serverType.equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)) {
-				toFormatDateValue = "  '" + toDateValue + "'";
-			}
-		}
+
+//		if (fromDateValue != null && fromDateValue.trim().length() > 0) {
+//			if (serverType.equalsIgnoreCase(DAOFactoryHelper.ORACLE)) {
+//				fromFormatDateValue = " to_date('"
+//						+ fromDateValue.substring(0, fromDateValue.length())
+//						+ "','DD-MON-YYYY HH24:MI:SS')";
+//			} else if (serverType.equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)) {
+//				fromFormatDateValue = "  '" + fromDateValue + "'";
+//			}
+//		}
+//		if (toDateValue != null && toDateValue.trim().length() > 0) {
+//			if (serverType.equalsIgnoreCase(DAOFactoryHelper.ORACLE)) {
+//				toFormatDateValue = " to_date('"
+//						+ toDateValue.substring(0, toDateValue.length())
+//						+ "','DD-MON-YYYY HH24:MI:SS')";
+//			} else if (serverType.equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)) {
+//				toFormatDateValue = "  '" + toDateValue + "'";
+//			}
+//		}
 		if (fromDateValue != null
 				&& toDateValue != null
 				&& (fromDateValue.trim().length() > 0 && toDateValue.trim()
@@ -537,8 +491,7 @@ public class QueryToolUtil extends CRCDAO {
 					for (int vi = 0; vi < vItems.size(); vi++) {
 						ItemEntry t = (ItemEntry) vItems.get(vi);
 
-						if ((t.TableName.equals(CONCEPT_TABLE))
-								|| (t.TableName.equals(ENCOUNTER_TABLE))) {
+						if (t.TableName.equals(CONCEPT_TABLE) || t.TableName.equals(ENCOUNTER_TABLE)) {
 							e++;
 							vi = vItems.size();
 						}

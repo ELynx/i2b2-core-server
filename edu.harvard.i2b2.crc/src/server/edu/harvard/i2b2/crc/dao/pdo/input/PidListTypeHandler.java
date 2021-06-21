@@ -87,11 +87,7 @@ public class PidListTypeHandler extends CRCDAO implements
 
 	@Override
 	public boolean isEnumerationSet() {
-		if ((pidListType.getPid() != null) && (pidListType.getPid().size() > 0)) {
-			return true;
-		} else {
-			return false;
-		}
+		return (pidListType.getPid() != null) && (pidListType.getPid().size() > 0);
 	}
 
 	@Override
@@ -104,9 +100,7 @@ public class PidListTypeHandler extends CRCDAO implements
 	 */
 	@Override
 	public String generateWhereClauseSql() {
-
 		String tempTableName = getTempTableName();
-
 		String sqlString = "SELECT "
 				+ " pm.patient_num "
 				+ " FROM "
@@ -125,14 +119,11 @@ public class PidListTypeHandler extends CRCDAO implements
 
 	@Override
 	public List<String> getEnumerationList() {
-		ArrayList<String> encounterNumArrayList = new ArrayList<String>();
 		return this.encounterNumList;
 	}
 
 	@Override
-	public void uploadEnumerationValueToTempTable(Connection conn)
-			throws SQLException {
-
+	public void uploadEnumerationValueToTempTable(Connection conn) throws SQLException {
 		String tempTableName = this.getTempTableName();
 		deleteTempTableFlag = true;
 		// create temp table
@@ -161,7 +152,6 @@ public class PidListTypeHandler extends CRCDAO implements
 			} else {
 				finalPidList = pidList.subList(minIndex, maxIndex);
 			}
-
 		} else {
 			maxIndex = pidList.size();
 			finalPidList = pidList.subList(minIndex, maxIndex);
@@ -178,7 +168,6 @@ public class PidListTypeHandler extends CRCDAO implements
 			i++;
 			if (i % 100 == 0) {
 				preparedStmt.executeBatch();
-
 			}
 			log.debug("loading " + pid.getValue() + " " + pid.getSource());
 		}
@@ -187,26 +176,14 @@ public class PidListTypeHandler extends CRCDAO implements
 
 	@Override
 	public void deleteTempTable(Connection conn) throws SQLException {
-		if (!deleteTempTableFlag) {
+		if (!deleteTempTableFlag)
 			return;
-		}
 		Statement deleteStmt = null;
 		try {
 			deleteStmt = conn.createStatement();
-
-			if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)
-					|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
-					|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
-				//conn.createStatement().executeUpdate(
-				//		"drop table " + getTempTableName());
-				deleteStmt.executeUpdate(
-						"drop table " + getTempTableName());
-			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE)) {
-				//conn.createStatement().executeUpdate(
-				//		"delete  " + getTempTableName());
-				deleteStmt.executeUpdate(
-						"delete  " + getTempTableName());
-			}
+			//conn.createStatement().executeUpdate(
+			//		"drop table " + getTempTableName());
+			deleteStmt.executeUpdate("drop table " + getTempTableName());
 		} catch (SQLException sqle) {
 			throw sqle;
 		} finally {
@@ -241,27 +218,16 @@ public class PidListTypeHandler extends CRCDAO implements
 	 */
 	@Override
 	public int getInputSize() throws I2B2DAOException {
-
 		return 0;
-
 	}
 
 	@Override
 	public void setMaxIndex(int maxIndex) {
 		pidListType.setMax(maxIndex);
-
 	}
 
 	private String getTempTableName() {
-		String tempTableName = "";
-		if (dataSourceLookup.getServerType().equalsIgnoreCase(
-				DAOFactoryHelper.ORACLE)) {
-			tempTableName = this.getDbSchemaName()
-					+ FactRelatedQueryHandler.TEMP_PARAM_TABLE;
-		} else {
-			tempTableName = this.getDbSchemaName()
+		return this.getDbSchemaName()
 					+ SQLServerFactRelatedQueryHandler.TEMP_PDO_INPUTLIST_TABLE;
-		}
-		return tempTableName;
 	}
 }

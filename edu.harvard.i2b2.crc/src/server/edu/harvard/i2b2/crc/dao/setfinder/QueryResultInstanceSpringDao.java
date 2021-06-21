@@ -24,6 +24,7 @@ import java.util.List;
 
 import javax.sql.DataSource;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.SqlParameter;
@@ -33,7 +34,6 @@ import edu.harvard.i2b2.common.exception.I2B2DAOException;
 import edu.harvard.i2b2.common.exception.StackTraceUtil;
 import edu.harvard.i2b2.common.util.db.JDBCUtil;
 import edu.harvard.i2b2.crc.dao.CRCDAO;
-import edu.harvard.i2b2.crc.dao.DAOFactoryHelper;
 import edu.harvard.i2b2.crc.datavo.db.DataSourceLookup;
 import edu.harvard.i2b2.crc.datavo.db.QtQueryInstance;
 import edu.harvard.i2b2.crc.datavo.db.QtQueryResultInstance;
@@ -47,8 +47,7 @@ import edu.harvard.i2b2.crc.datavo.db.StatusEnum;
  * 
  * @author rkuttan
  */
-public class QueryResultInstanceSpringDao extends CRCDAO implements
-IQueryResultInstanceDao {
+public class QueryResultInstanceSpringDao extends CRCDAO implements IQueryResultInstanceDao {
 
 	JdbcTemplate jdbcTemplate = null;
 	SavePatientSetResult savePatientSetResult = null;
@@ -56,22 +55,18 @@ IQueryResultInstanceDao {
 	DataSourceLookup dataSourceLookup = null;
 	List<String> roles = null;
 
-
 	public QueryResultInstanceSpringDao(DataSource dataSource,
 			DataSourceLookup dataSourceLookup) {
 		setDataSource(dataSource);
 		setDbSchemaName(dataSourceLookup.getFullSchema());
 		jdbcTemplate = new JdbcTemplate(dataSource);
 		this.dataSourceLookup = dataSourceLookup;
-
 		patientSetMapper = new PatientSetResultRowMapper();
 	}
-	
 
 	public void setRoles(List<String> roles) {
 		this.roles = roles;
 	}
-
 
 	/**
 	 * Function to create result instance for given query instance id. The
@@ -82,19 +77,15 @@ IQueryResultInstanceDao {
 	 * @return
 	 */
 	@Override
-	public String createPatientSet(String queryInstanceId, String resultName)
-			throws I2B2DAOException {
+	public String createPatientSet(String queryInstanceId, String resultName) throws I2B2DAOException {
 		QtQueryResultInstance resultInstance = new QtQueryResultInstance();
 		resultInstance.setDeleteFlag("N");
 
-		QueryResultTypeSpringDao resultTypeDao = new QueryResultTypeSpringDao(
-				dataSource, dataSourceLookup);
-		List<QtQueryResultType> resultType = resultTypeDao
-				.getQueryResultTypeByName(resultName, roles);
-		if (resultType.size() < 1) {
-			throw new I2B2DAOException(" Result type  [" + resultName
-					+ "] not found");
-		}
+		QueryResultTypeSpringDao resultTypeDao = new QueryResultTypeSpringDao(dataSource, dataSourceLookup);
+		List<QtQueryResultType> resultType = resultTypeDao.getQueryResultTypeByName(resultName, roles);
+		if (resultType.size() < 1)
+			throw new I2B2DAOException(" Result type  [" + resultName + "] not found");
+
 		resultInstance.setQtQueryResultType(resultType.get(0));
 		resultInstance.setDescription(resultType.get(0).getDescription());
 		QtQueryInstance queryInstance = new QtQueryInstance();
@@ -107,10 +98,8 @@ IQueryResultInstanceDao {
 
 		Date startDate = new Date(System.currentTimeMillis());
 		resultInstance.setStartDate(startDate);
-		savePatientSetResult = new SavePatientSetResult(getDataSource(),
-				getDbSchemaName(), dataSourceLookup);
+		savePatientSetResult = new SavePatientSetResult(getDataSource(), getDbSchemaName(), dataSourceLookup);
 		savePatientSetResult.save(resultInstance);
-
 		return resultInstance.getResultInstanceId();
 	}
 
@@ -122,9 +111,8 @@ IQueryResultInstanceDao {
 	 * @param setSize
 	 */
 	@Override
-	public void updatePatientSet(String resultInstanceId, int statusTypeId,
-			int setSize) {
-		updatePatientSet(resultInstanceId, statusTypeId, "", setSize, 0, "");
+	public void updatePatientSet(String resultInstanceId, int statusTypeId, int setSize) {
+		updatePatientSet(resultInstanceId, statusTypeId, StringUtils.EMPTY, setSize, 0, StringUtils.EMPTY);
 	}
 
 	/**
@@ -136,17 +124,15 @@ IQueryResultInstanceDao {
 	 */
 	@Override
 	public void updatePatientSet(String resultInstanceId, int statusTypeId,
-			String message, int setSize, int realSetSize, String obsMethod) {
-
+								 String message, int setSize, int realSetSize, String obsMethod) {
 		Date endDate = new Date(System.currentTimeMillis());
-		String sql = "update "
-				+ getDbSchemaName()
-				+ "qt_query_result_instance set set_size = ?, real_set_size = ? , obfusc_method = ?, status_type_id =?, end_date = ?, message = ?  where result_instance_id = ?";
+		String sql = "update " + getDbSchemaName()
+				+ "qt_query_result_instance set set_size = ?, real_set_size = ? , obfusc_method = ?, " +
+				"status_type_id =?, end_date = ?, message = ?  where result_instance_id = ?";
 		jdbcTemplate.update(sql, new Object[] { setSize, realSetSize,
 				obsMethod, statusTypeId, endDate, message, resultInstanceId },
 				new int[] { Types.INTEGER, Types.INTEGER, Types.VARCHAR,
-				Types.INTEGER, Types.TIMESTAMP, Types.VARCHAR,
-				Types.INTEGER });
+				Types.INTEGER, Types.TIMESTAMP, Types.VARCHAR, Types.INTEGER });
 	}
 
 	/**
@@ -156,14 +142,12 @@ IQueryResultInstanceDao {
 	 * @param description
 	 */
 	@Override
-	public void updateResultInstanceDescription(String resultInstanceId,
-			String description) {
-		String sql = "update "
-				+ getDbSchemaName()
+	public void updateResultInstanceDescription(String resultInstanceId, String description) {
+		String sql = "update " + getDbSchemaName()
 				+ "qt_query_result_instance set description = ?  where result_instance_id = ?";
 		jdbcTemplate.update(sql,
-				new Object[] { description, Integer.parseInt(resultInstanceId) }, new int[] {
-				Types.VARCHAR, Types.INTEGER });
+				new Object[] { description, Integer.parseInt(resultInstanceId) },
+				new int[] { Types.VARCHAR, Types.INTEGER });
 	}
 
 	/**
@@ -174,8 +158,7 @@ IQueryResultInstanceDao {
 	 */
 	@Override
 	@SuppressWarnings("unchecked")
-	public List<QtQueryResultInstance> getResultInstanceList(
-			String queryInstanceId) {
+	public List<QtQueryResultInstance> getResultInstanceList(String queryInstanceId) {
 		String sql = "select *  from " + getDbSchemaName()
 				+ "qt_query_result_instance where query_instance_id = ? ";
 		List<QtQueryResultInstance> queryResultInstanceList = jdbcTemplate
@@ -191,19 +174,15 @@ IQueryResultInstanceDao {
 	 */
 	@Override
 	@SuppressWarnings("unchecked")
-	public QtQueryResultInstance getResultInstanceById(String queryResultId)
-			throws I2B2DAOException {
+	public QtQueryResultInstance getResultInstanceById(String queryResultId) throws I2B2DAOException {
 		String sql = "select *  from " + getDbSchemaName()
 				+ "qt_query_result_instance where result_instance_id = ? ";
 		List<QtQueryResultInstance> queryResultInstanceList = jdbcTemplate
 				.query(sql, new Object[] { Integer.parseInt(queryResultId) }, patientSetMapper);
-		if (queryResultInstanceList.size() > 0) {
+		if (queryResultInstanceList.size() > 0)
 			return queryResultInstanceList.get(0);
-		} else {
-			throw new I2B2DAOException("Query result id " + queryResultId
-					+ " not found");
-		}
-
+		else
+			throw new I2B2DAOException("Query result id " + queryResultId + " not found");
 	}
 
 	/**
@@ -215,17 +194,14 @@ IQueryResultInstanceDao {
 	 */
 	@Override
 	@SuppressWarnings("unchecked")
-	public QtQueryResultInstance getResultInstanceByQueryInstanceIdAndName(
-			String queryInstanceId, String resultName) {
+	public QtQueryResultInstance getResultInstanceByQueryInstanceIdAndName(String queryInstanceId, String resultName) {
 		String sql = "select *  from "
 				+ getDbSchemaName()
 				+ "qt_query_result_instance ri, "
 				+ getDbSchemaName()
 				+ "qt_query_result_type rt where ri.query_instance_id = ? and ri.result_type_id = rt.result_type_id and rt.name=?";
 		QtQueryResultInstance queryResultInstanceList = (QtQueryResultInstance) jdbcTemplate
-				.queryForObject(sql,
-						new Object[] { Integer.parseInt(queryInstanceId), resultName },
-						patientSetMapper);
+				.queryForObject(sql, new Object[] { Integer.parseInt(queryInstanceId), resultName }, patientSetMapper);
 		return queryResultInstanceList;
 	}
 
@@ -237,18 +213,13 @@ IQueryResultInstanceDao {
 	 * @return
 	 */
 	@Override
-	public List<QtQueryResultInstance> getUnfinishedInstanceByQueue(
-			String queueName, int maxListSize) {
-		List<QtQueryResultInstance> resultInstanceList = null;
+	public List<QtQueryResultInstance> getUnfinishedInstanceByQueue(String queueName, int maxListSize) {
 		int waitStatus = 1;
-		String sql = "select * from "
-				+ getDbSchemaName()
-				+ "qt_query_result_instance ri, "
-				+ getDbSchemaName()
-				+ "qt_query_result_type rt where status_type_id = ? and queue_name = ? and ri.result_type_id = rt.result_type_id order by start_date";
-		resultInstanceList = jdbcTemplate.query(sql, new Object[] { waitStatus,
-				queueName }, patientSetMapper);
-		return resultInstanceList;
+		String sql = "select * from " + getDbSchemaName()
+				+ "qt_query_result_instance ri, " + getDbSchemaName()
+				+ "qt_query_result_type rt where status_type_id = ? and queue_name = ? " +
+				"and ri.result_type_id = rt.result_type_id order by start_date";
+		return jdbcTemplate.query(sql, new Object[] { waitStatus, queueName }, patientSetMapper);
 	}
 
 	/**
@@ -262,37 +233,12 @@ IQueryResultInstanceDao {
 	 * @throws I2B2DAOException
 	 */
 	@Override
-	public int getResultInstanceCountBySetSize(String userId, int compareDays,
-			int resultTypeId, int setSize, int totalCount)
-					throws I2B2DAOException {
+	public int getResultInstanceCountBySetSize(String userId, int compareDays, int resultTypeId,
+											   int setSize, int totalCount) throws I2B2DAOException {
 		// int betweenDayValue = compareDays / 2;
 		int startBetweenDayValue = compareDays * -1;
 		int returnSetSize = 0;
-		String queryCountSql = "";
-
-		if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE) ) {
-			queryCountSql = " select count(r1.result_instance_id) result_count,r1.real_set_size "
-					+ " from " + this.getDbSchemaName() + "qt_query_result_instance r1 inner join " + this.getDbSchemaName()+ "qt_query_result_instance r2 on "
-					+ " r1.real_set_size = r2.real_set_size, "
-					+ this.getDbSchemaName() +"qt_query_instance qi "
-					+ " where "
-					+ "  r1.start_date between sysdate- "
-					+ compareDays
-					+ " and sysdate   "
-					+ " and r2.start_date between sysdate- "
-					+ compareDays
-					+ "  and sysdate "
-					+ " and r1.result_type_id = ?"
-					+ " and r2.result_type_id = ? "
-					+ " and  qi.user_id = ? "
-					+ " and qi.query_instance_id = r1.query_instance_id "
-					+ " and qi.query_instance_id = r2.query_instance_id "
-					+ " and r1.real_set_size = ? "
-					+ " group by r1.real_set_size "
-					+ " having count(r1.result_instance_id) > ? ";
-		} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
-					|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
-			queryCountSql = " select count(r1.result_instance_id) result_count,r1.real_set_size "
+		String queryCountSql =  " select count(r1.result_instance_id) result_count,r1.real_set_size "
 					+ " from " + this.getDbSchemaName() + "qt_query_result_instance r1 inner join " + this.getDbSchemaName()+ "qt_query_result_instance r2 on "
 					+ " r1.real_set_size = r2.real_set_size, "
 					+ this.getDbSchemaName() +"qt_query_instance qi "
@@ -311,37 +257,11 @@ IQueryResultInstanceDao {
 					+ " and r1.real_set_size = ? "
 					+ " group by r1.real_set_size "
 					+ " having count(r1.result_instance_id) > ? ";
-		} 	else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)) {
-			queryCountSql = " select count(r1.result_instance_id) result_count,r1.real_set_size "
-					+ " from " + this.getDbSchemaName() + "qt_query_result_instance r1 inner join " + this.getDbSchemaName() + "qt_query_result_instance r2 on "
-					+ " r1.real_set_size = r2.real_set_size, "
-					+ this.getDbSchemaName() +"qt_query_instance qi "
-					+ " where "
-					+ " r1.start_date between DATEADD ( day , "
-					+ startBetweenDayValue
-					+ ", getDate())  and DATEADD ( day , "
-					+ "1"
-					+ ", getDate()) "
-					+ " and r2.start_date between DATEADD ( day , "
-					+ startBetweenDayValue
-					+ ", getDate()) and DATEADD ( day , "
-					+ "1"
-					+ ", getDate()) "
-					+ " and r1.result_type_id = ? "
-					+ " and r2.result_type_id = ? "
-					+ " and  qi.user_id = ? "
-					+ " and qi.query_instance_id = r1.query_instance_id "
-					+ " and qi.query_instance_id = r2.query_instance_id "
-					+ " and r1.real_set_size = ? "
-					+ " group by r1.real_set_size "
-					+ " having count(r1.result_instance_id) > ? ";
-		}
 
 		Connection conn = null;
 		PreparedStatement preparedStmt = null;
 		try {
 			conn = dataSource.getConnection();
-
 			log.debug("Executing sql [" + queryCountSql + "]");
 			preparedStmt = conn.prepareStatement(queryCountSql);
 			preparedStmt.setInt(1, resultTypeId);
@@ -349,84 +269,38 @@ IQueryResultInstanceDao {
 			preparedStmt.setString(3, userId);
 			preparedStmt.setInt(4, setSize);
 			preparedStmt.setInt(5, totalCount);
-
 			ResultSet resultSet = preparedStmt.executeQuery();
-			if (resultSet.next()) {
+			if (resultSet.next())
 				returnSetSize = resultSet.getInt("result_count");
-			}
 		} catch (SQLException e) {
 			e.printStackTrace();
-			throw new I2B2DAOException(
-					"Error while calculating query count by set size"
+			throw new I2B2DAOException("Error while calculating query count by set size"
 							+ StackTraceUtil.getStackTrace(e));
 		} finally {
 			try {
 				JDBCUtil.closeJdbcResource(null, preparedStmt, conn);
 			} catch (SQLException e) {
-
 				e.printStackTrace();
 			}
-
 		}
 		return returnSetSize;
-
 	}
 
 	private static class SavePatientSetResult extends SqlUpdate {
-
-
-		private String INSERT_ORACLE = "";
-		private String INSERT_SQLSERVER = "";
-		private String SEQUENCE_ORACLE = "";
-		private String SEQUENCE_POSTGRESQL = "";
-		private String INSERT_POSTGRESQL = "";
-		private String INSERT_INTERSYSTEMS_IRIS = "";
-		private String SEQUENCE_INTERSYSTEMS_IRIS = "";
-		DataSourceLookup dataSourceLookup = null;
+		private String SEQUENCE;
+		DataSourceLookup dataSourceLookup;
 
 		public SavePatientSetResult(DataSource dataSource, String dbSchemaName,
 				DataSourceLookup dataSourceLookup) {
 			super();
 			setDataSource(dataSource);
-			if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE)) {
-				INSERT_ORACLE = "INSERT INTO "
-						+ dbSchemaName
-						+ "QT_QUERY_RESULT_INSTANCE "
-						+ "(RESULT_INSTANCE_ID, QUERY_INSTANCE_ID, RESULT_TYPE_ID, SET_SIZE,START_DATE,END_DATE,STATUS_TYPE_ID,DELETE_FLAG) "
-						+ "VALUES (?,?,?,?,?,?,?,?)";
-				setSql(INSERT_ORACLE);
-				SEQUENCE_ORACLE = "select " + dbSchemaName
-						+ "QT_SQ_QRI_QRIID.nextval from dual";
-				declareParameter(new SqlParameter(Types.INTEGER));
-
-			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)) {
-				INSERT_SQLSERVER = "INSERT INTO "
-						+ dbSchemaName
-						+ "QT_QUERY_RESULT_INSTANCE "
-						+ "( QUERY_INSTANCE_ID, RESULT_TYPE_ID, SET_SIZE,START_DATE,END_DATE,STATUS_TYPE_ID,DELETE_FLAG) "
-						+ "VALUES (?,?,?,?,?,?,?)";
-				setSql(INSERT_SQLSERVER);
-			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)) {
-				INSERT_POSTGRESQL = "INSERT INTO "
-						+ dbSchemaName
-						+ "QT_QUERY_RESULT_INSTANCE "
-						+ "(RESULT_INSTANCE_ID, QUERY_INSTANCE_ID, RESULT_TYPE_ID, SET_SIZE,START_DATE,END_DATE,STATUS_TYPE_ID,DELETE_FLAG) "
-						+ "VALUES (?,?,?,?,?,?,?,?)";
-				setSql(INSERT_POSTGRESQL);
-				SEQUENCE_POSTGRESQL = "select " //+ dbSchemaName
-						+ "nextval('qt_query_result_instance_result_instance_id_seq') ";
-				declareParameter(new SqlParameter(Types.INTEGER));
-			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
-				INSERT_INTERSYSTEMS_IRIS = "INSERT INTO "
-						+ dbSchemaName
-						+ "QT_QUERY_RESULT_INSTANCE "
-						+ "(RESULT_INSTANCE_ID, QUERY_INSTANCE_ID, RESULT_TYPE_ID, SET_SIZE,START_DATE,END_DATE,STATUS_TYPE_ID,DELETE_FLAG) "
-						+ "VALUES (?,?,?,?,?,?,?,?)";
-				setSql(INSERT_INTERSYSTEMS_IRIS);
-				SEQUENCE_INTERSYSTEMS_IRIS = "select I2B2.Utils_nextval('qt_query_result_instance_result_instance_id_seq')";
-				declareParameter(new SqlParameter(Types.INTEGER));
-			}
-
+			setSql("INSERT INTO "
+					+ dbSchemaName
+					+ "QT_QUERY_RESULT_INSTANCE "
+					+ "(RESULT_INSTANCE_ID, QUERY_INSTANCE_ID, RESULT_TYPE_ID, SET_SIZE,START_DATE,END_DATE,STATUS_TYPE_ID,DELETE_FLAG) "
+					+ "VALUES (?,?,?,?,?,?,?,?)");
+			SEQUENCE = "select I2B2.Utils_nextval('qt_query_result_instance_result_instance_id_seq')";
+			declareParameter(new SqlParameter(Types.INTEGER));
 			declareParameter(new SqlParameter(Types.INTEGER));
 			declareParameter(new SqlParameter(Types.INTEGER));
 			declareParameter(new SqlParameter(Types.INTEGER));
@@ -435,7 +309,6 @@ IQueryResultInstanceDao {
 			declareParameter(new SqlParameter(Types.INTEGER));
 			declareParameter(new SqlParameter(Types.VARCHAR));
 			this.dataSourceLookup = dataSourceLookup;
-
 			compile();
 		}
 
@@ -443,97 +316,32 @@ IQueryResultInstanceDao {
 			JdbcTemplate jdbc = getJdbcTemplate();
 			int resultInstanceId = 0;
 			Object[] object = null;
-			if (dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.SQLSERVER)) {
-
-				object = new Object[] {
-						resultInstance.getQtQueryInstance()
-						.getQueryInstanceId(),
-
-						resultInstance.getQtQueryResultType().getResultTypeId(),
-						resultInstance.getSetSize(),
-						resultInstance.getStartDate(),
-						resultInstance.getEndDate(),
-						resultInstance.getQtQueryStatusType().getStatusTypeId(),
-						resultInstance.getDeleteFlag()
-
-				};
-			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.ORACLE)) {
-				resultInstanceId = jdbc.queryForObject(SEQUENCE_ORACLE, Integer.class);
-				resultInstance.setResultInstanceId(String
-						.valueOf(resultInstanceId));
-				object = new Object[] {
-						resultInstance.getResultInstanceId(),
-						resultInstance.getQtQueryInstance()
-						.getQueryInstanceId(),
-						resultInstance.getQtQueryResultType().getResultTypeId(),
-						resultInstance.getSetSize(),
-						resultInstance.getStartDate(),
-						resultInstance.getEndDate(),
-						resultInstance.getQtQueryStatusType().getStatusTypeId(),
-						resultInstance.getDeleteFlag()
-
-				};
-			} else  if (dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.POSTGRESQL)) {
-				resultInstanceId = jdbc.queryForObject(SEQUENCE_POSTGRESQL, Integer.class);
-				resultInstance.setResultInstanceId(String
-						.valueOf(resultInstanceId));
-				object = new Object[] {
-						resultInstance.getResultInstanceId(),
-						resultInstance.getQtQueryInstance()
-						.getQueryInstanceId(),
-						resultInstance.getQtQueryResultType().getResultTypeId(),
-						resultInstance.getSetSize(),
-						resultInstance.getStartDate(),
-						resultInstance.getEndDate(),
-						resultInstance.getQtQueryStatusType().getStatusTypeId(),
-						resultInstance.getDeleteFlag()
-
-				};
-			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
-				resultInstanceId = jdbc.queryForObject(SEQUENCE_INTERSYSTEMS_IRIS, Integer.class);
-				resultInstance.setResultInstanceId(String.valueOf(resultInstanceId));
-				object = new Object[] {
-						resultInstance.getResultInstanceId(),
-						resultInstance.getQtQueryInstance()
-								.getQueryInstanceId(),
-						resultInstance.getQtQueryResultType().getResultTypeId(),
-						resultInstance.getSetSize(),
-						resultInstance.getStartDate(),
-						resultInstance.getEndDate(),
-						resultInstance.getQtQueryStatusType().getStatusTypeId(),
-						resultInstance.getDeleteFlag()
-
-				};
-			}
-
+			resultInstanceId = jdbc.queryForObject(SEQUENCE, Integer.class);
+			resultInstance.setResultInstanceId(String.valueOf(resultInstanceId));
+			object = new Object[]{
+					resultInstance.getResultInstanceId(),
+					resultInstance.getQtQueryInstance()
+							.getQueryInstanceId(),
+					resultInstance.getQtQueryResultType().getResultTypeId(),
+					resultInstance.getSetSize(),
+					resultInstance.getStartDate(),
+					resultInstance.getEndDate(),
+					resultInstance.getQtQueryStatusType().getStatusTypeId(),
+					resultInstance.getDeleteFlag()
+			};
 			update(object);
-			if (dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.SQLSERVER)) {
-				int resultInstanceIdentityId = jdbc
-						.queryForObject("SELECT @@IDENTITY", Integer.class);
-
-				resultInstance.setResultInstanceId(String
-						.valueOf(resultInstanceIdentityId));
-
-			}
-
 		}
 	}
 
 	private class PatientSetResultRowMapper implements RowMapper {
-		QueryStatusTypeSpringDao statusTypeDao = new QueryStatusTypeSpringDao(
-				dataSource, dataSourceLookup);
-		QueryResultTypeSpringDao resultTypeDao = new QueryResultTypeSpringDao(
-				dataSource, dataSourceLookup);
+
+		QueryStatusTypeSpringDao statusTypeDao = new QueryStatusTypeSpringDao(dataSource, dataSourceLookup);
+		QueryResultTypeSpringDao resultTypeDao = new QueryResultTypeSpringDao(dataSource, dataSourceLookup);
 
 		@Override
 		public Object mapRow(ResultSet rs, int rowNum) throws SQLException {
 			QtQueryResultInstance resultInstance = new QtQueryResultInstance();
-			resultInstance.setResultInstanceId(rs
-					.getString("RESULT_INSTANCE_ID"));
+			resultInstance.setResultInstanceId(rs.getString("RESULT_INSTANCE_ID"));
 
 			QtQueryInstance queryInstance = new QtQueryInstance();
 			queryInstance.setQueryInstanceId(rs.getString("QUERY_INSTANCE_ID"));
@@ -541,8 +349,7 @@ IQueryResultInstanceDao {
 			resultInstance.setDescription(rs.getString("DESCRIPTION"));
 
 			int resultTypeId = rs.getInt("RESULT_TYPE_ID");
-			resultInstance.setQtQueryResultType(resultTypeDao
-					.getQueryResultTypeById(resultTypeId));
+			resultInstance.setQtQueryResultType(resultTypeDao.getQueryResultTypeById(resultTypeId));
 			resultInstance.setSetSize(rs.getInt("SET_SIZE"));
 			resultInstance.setRealSetSize(rs.getInt("REAL_SET_SIZE"));
 			resultInstance.setObfuscateMethod(rs.getString("OBFUSC_METHOD"));
@@ -551,8 +358,7 @@ IQueryResultInstanceDao {
 			resultInstance.setMessage(rs.getString("MESSAGE"));
 			// QtQueryStatusType queryStatusType = new QtQueryStatusType();
 			int statusTypeId = rs.getInt("STATUS_TYPE_ID");
-			resultInstance.setQtQueryStatusType(statusTypeDao
-					.getQueryStatusTypeById(statusTypeId));
+			resultInstance.setQtQueryStatusType(statusTypeDao.getQueryStatusTypeById(statusTypeId));
 			// resultInstance.setQtQueryStatusType(queryStatusType);
 			resultInstance.setDeleteFlag(rs.getString("DELETE_FLAG"));
 			return resultInstance;

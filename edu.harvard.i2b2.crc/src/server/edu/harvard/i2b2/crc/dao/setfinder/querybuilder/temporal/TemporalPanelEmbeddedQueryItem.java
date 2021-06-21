@@ -27,6 +27,7 @@ import edu.harvard.i2b2.crc.datavo.db.QtQueryMaster;
 import edu.harvard.i2b2.crc.datavo.ontology.ConceptType;
 import edu.harvard.i2b2.crc.datavo.setfinder.query.ItemType;
 import edu.harvard.i2b2.crc.datavo.setfinder.query.QueryDefinitionType;
+import org.apache.commons.lang3.StringUtils;
 
 public class TemporalPanelEmbeddedQueryItem extends TemporalPanelItem {
 
@@ -48,7 +49,9 @@ public class TemporalPanelEmbeddedQueryItem extends TemporalPanelItem {
 		QueryDefinitionType queryDef = parent.searchForQueryInRequestDefinition(baseItem.getItemKey());
 		if (queryDef!=null){
 			try {
-				masterQuery = new TemporalQuery(parent.getDataSourceLookup(), parent.getProjectParameterMap(), queryDef, parent.allowLargeTextValueConstrainFlag(), parent.getUserRoles(), parent.getProcessingLevel() + 1,
+				masterQuery = new TemporalQuery(parent.getDataSourceLookup(), parent.getProjectParameterMap(), queryDef,
+						parent.allowLargeTextValueConstrainFlag(), parent.getUserRoles(),
+						parent.getProcessingLevel() + 1,
 						parent.getProjectId(),  parent.getRequestorSecurityType(), parent.getSecurityType());
 			} catch (JAXBUtilException e) {
 				e.printStackTrace();
@@ -58,42 +61,35 @@ public class TemporalPanelEmbeddedQueryItem extends TemporalPanelItem {
 		else {
 			String requestXml = getQueryDefinitionRequestXml(baseItem.getItemKey());
 			try {
-				masterQuery = new TemporalQuery(parent.getDataSourceLookup(), parent.getProjectParameterMap(), requestXml, parent.allowLargeTextValueConstrainFlag(), parent.getUserRoles(), parent.getProcessingLevel() + 1);
+				masterQuery = new TemporalQuery(parent.getDataSourceLookup(), parent.getProjectParameterMap(), requestXml,
+						parent.allowLargeTextValueConstrainFlag(), parent.getUserRoles(),
+						parent.getProcessingLevel() + 1);
 			} catch (JAXBUtilException e) {
 				e.printStackTrace();
 				throw new I2B2Exception("Error processing embedded query: " + e.getMessage());
 			}
 		}
-
 		parent.addPreProcessingSql(masterQuery.buildSql());
 		masterQueryTiming = masterQuery.getQueryTiming();
-
-		parent.addPreProcessingSql(copyDxTempToMaster(baseItem.getItemKey(), masterQueryTiming, String.valueOf(masterQuery.getMaxPanelIndex()), 
+		parent.addPreProcessingSql(copyDxTempToMaster(baseItem.getItemKey(), masterQueryTiming,
+				String.valueOf(masterQuery.getMaxPanelIndex()),
 				masterQuery.getDxTempTableName(), masterQuery.getMasterTempTableName()));
-
 		parent.addPreProcessingSql(deleteDxTempTable(masterQuery.getDxTempTableName()));
 		parent.addPreProcessingSql(deleteTempTable(masterQuery.getTempTableName()));
-		
-		parent.addPostProcessingSql(deleteMasterTempTable(baseItem.getItemKey(), parent.getProcessingLevel(), masterQuery.getMasterTempTableName()));
+		parent.addPostProcessingSql(deleteMasterTempTable(baseItem.getItemKey(), parent.getProcessingLevel(),
+				masterQuery.getMasterTempTableName()));
 	}
 
-	
-	public String getQueryDefinitionRequestXml(String itemKey)
-			throws I2B2DAOException {
-
+	public String getQueryDefinitionRequestXml(String itemKey) throws I2B2DAOException {
 		DAOFactoryHelper helper = new DAOFactoryHelper(
 				parent.getDataSourceLookup().getDomainId(),
 				parent.getDataSourceLookup().getProjectPath(),
 				parent.getDataSourceLookup().getProjectPath());
-
-		SetFinderDAOFactory sfDaoFactory = helper.getDAOFactory()
-				.getSetFinderDAOFactory();
-
+		SetFinderDAOFactory sfDaoFactory = helper.getDAOFactory().getSetFinderDAOFactory();
 		String masterId = itemKey.substring(9);
 		QtQueryMaster queryMaster = sfDaoFactory.getQueryMasterDAO().getQueryDefinition(masterId);
 		return queryMaster.getI2b2RequestXml();
 	}
-
 
 	@Override
 	protected String buildSql() throws I2B2DAOException {
@@ -105,33 +101,24 @@ public class TemporalPanelEmbeddedQueryItem extends TemporalPanelItem {
 				this.hasPanelOccurrenceConstraint()||
 				this.hasValueConstraint()
 				//||parent.isTimingQuery()
-				){
+				)
 			return super.buildSql();
-		}
-		else{
+		else
 			return "select "
 					+ this.factTableColumn + " from " + noLockSqlServer
-					+ (parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
-						|| parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS) ? "" : parent.getDatabaseSchema() )
 					+ this.tableName
 					+ "  " + " where " + this.columnName + " "
 					+ this.operator + " " + this.dimCode
-					+ "";
-		}
+					+ StringUtils.EMPTY;
 	}
-
 
 	@Override
 	protected ConceptType getConceptType() throws ConceptNotFoundException,
 			OntologyException {
-		if (conceptType==null){
-			
-			TempTableNameMap tempTableNameMap = new TempTableNameMap(
-					parent.getServerType());
+		if (conceptType ==null) {
+			TempTableNameMap tempTableNameMap = new TempTableNameMap(parent.getServerType());
 			String masterTableName = tempTableNameMap.getTempMasterTable();
-			
 			String itemKey = baseItem.getItemKey();
-	
 			if (itemKey != null) {
 				conceptType = new ConceptType();
 				conceptType.setColumnname(" master_id ");
@@ -142,54 +129,45 @@ public class TemporalPanelEmbeddedQueryItem extends TemporalPanelItem {
 				conceptType.setDimcode("'" + itemKey + "'");
 			}
 		}
-
 		return conceptType;
 	}
 
-
 	@Override
 	protected String getJoinTable() {
-		if (this.returnInstanceNum()||
-				hasItemDateConstraint()||
-				hasPanelDateConstraint()||
-				hasValueConstraint()||
-				hasPanelOccurrenceConstraint()) {
+		if (this.returnInstanceNum() || hasItemDateConstraint() ||
+				hasPanelDateConstraint() || hasValueConstraint() ||
+				hasPanelOccurrenceConstraint())
 			return "observation_fact";
-		} else if (this.returnEncounterNum()
+		else if (this.returnEncounterNum())
 				//||parent.isTimingQuery()
-				) {
+		// )
 			return "visit_dimension";
-		} else {
-
+		else {
 			TempTableNameMap tempTableNameMap = new TempTableNameMap(
 					parent.getServerType());
-			String masterTableName = tempTableNameMap.getTempMasterTable();
-			return masterTableName;
+			return tempTableNameMap.getTempMasterTable();
 		}
 	}
 
 	@Override
 	protected String buildDimensionJoinSql(String tableAlias) {
-		String dimensionSql = "";
-
-		if (tableAlias!=null&&tableAlias.trim().length()>0)
-			tableAlias += ".";
+		String dimensionSql;
+		if (tableAlias != null && tableAlias.trim().length() > 0) {
+			if(!tableAlias.trim().endsWith("."))
+				tableAlias += ".";
+		} else
+			tableAlias = StringUtils.EMPTY;
 		
-		if (masterQueryTiming==null||masterQueryTiming.trim().length()==0)
+		if (masterQueryTiming==null||masterQueryTiming.trim().length() == 0)
 			masterQueryTiming="ANY";
 		
 		String dbSchema = parent.getDatabaseSchema();
-		if (parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)){
-			dbSchema = "";
-		}
 		
 		if (masterQueryTiming.equals(QueryTimingHandler.SAMEINSTANCENUM)){
 			//we have all columns in the master table to join to 
-			if (parent.getPanelTiming().equals(QueryTimingHandler.SAMEINSTANCENUM)||parent.hasPanelOccurrenceConstraint()){
+			if (parent.getPanelTiming().equals(QueryTimingHandler.SAMEINSTANCENUM) || parent.hasPanelOccurrenceConstraint())
 				dimensionSql = "exists (select 1 "
 					+ "from " + noLockSqlServer
-					+ (parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
-							|| parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)  ? "" : dbSchema )
 					+ this.tableName + " mqt "
 					+ "where mqt.patient_num = " + tableAlias + "patient_num "
 					+ "and mqt.encounter_num = " + tableAlias + "encounter_num "
@@ -199,130 +177,101 @@ public class TemporalPanelEmbeddedQueryItem extends TemporalPanelItem {
 					+ "and mqt.instance_num = " + tableAlias + "instance_num "
 					+ "and mqt.master_id = " + this.dimCode
 					+ ")";
-			}
-			else if (parent.getPanelTiming().equals(QueryTimingHandler.SAME)||parent.getPanelTiming().equals(QueryTimingHandler.SAMEVISIT)||parent.hasPanelDateConstraint()||this.hasItemDateConstraint()){
+			else if (parent.getPanelTiming().equals(QueryTimingHandler.SAME) ||
+					parent.getPanelTiming().equals(QueryTimingHandler.SAMEVISIT) ||
+					parent.hasPanelDateConstraint() || this.hasItemDateConstraint())
 				dimensionSql = "exists (select 1 "
 						+ "from " + noLockSqlServer
-						+ (parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
-							|| parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS) ? "" : dbSchema )
 						+ this.tableName + " mqt "
 						+ "where mqt.patient_num = " + tableAlias + "patient_num "
 						+ "and mqt.encounter_num = " + tableAlias + "encounter_num "
 						+ "and mqt.master_id = " + this.dimCode
 						+ ")";
-			}
-			else {
+			else
 				dimensionSql = "exists (select 1 "
 						+ "from " + noLockSqlServer
-						+ (parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
-							|| parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS) ? "" : dbSchema )
 						+ this.tableName + " mqt "
 						+ "where mqt.patient_num = " + tableAlias + "patient_num "
 						+ "and mqt.master_id = " + this.dimCode
 						+ ")";
-			}
-		}
-		else if (masterQueryTiming.equals(QueryTimingHandler.SAME)||masterQueryTiming.equals(QueryTimingHandler.SAMEVISIT)){
-			if (parent.getPanelTiming().equals(QueryTimingHandler.SAMEINSTANCENUM)||parent.hasPanelOccurrenceConstraint()||
-					parent.getPanelTiming().equals(QueryTimingHandler.SAME)||parent.getPanelTiming().equals(QueryTimingHandler.SAMEVISIT)||
-					parent.hasPanelDateConstraint()||this.hasItemDateConstraint()){
+		} else if (masterQueryTiming.equals(QueryTimingHandler.SAME) || masterQueryTiming.equals(QueryTimingHandler.SAMEVISIT)){
+			if (parent.getPanelTiming().equals(QueryTimingHandler.SAMEINSTANCENUM) ||
+					parent.hasPanelOccurrenceConstraint()||
+					parent.getPanelTiming().equals(QueryTimingHandler.SAME) ||
+					parent.getPanelTiming().equals(QueryTimingHandler.SAMEVISIT)||
+					parent.hasPanelDateConstraint()||this.hasItemDateConstraint())
 				dimensionSql = "exists (select 1 "
 						+ "from " + noLockSqlServer
-						+ (parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
-							|| parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS) ? "" : dbSchema )
 						+ this.tableName + " mqt "
 						+ "where mqt.patient_num = " + tableAlias + "patient_num "
 						+ "and mqt.encounter_num = " + tableAlias + "encounter_num "
 						+ "and mqt.master_id = " + this.dimCode
 						+ ")";
-			}
-			else {
+			else
 				dimensionSql = "exists (select 1 "
 						+ "from " + noLockSqlServer
-						+ (parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
-							|| parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS) ? "" : dbSchema )
 						+ this.tableName + " mqt "
 						+ "where mqt.patient_num = " + tableAlias + "patient_num "
 						+ "and mqt.master_id = " + this.dimCode
 						+ ")";
-			}
-		}
-		else {
+		} else
 			dimensionSql = "exists (select 1 "
 					+ "from " + noLockSqlServer
-					+ (parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
-						|| parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS) ? "" : dbSchema )
 					+ this.tableName + " mqt "
 					+ "where mqt.patient_num = " + tableAlias + "patient_num "
 					+ "and mqt.master_id = " + this.dimCode
-					+ ")";			
-		}
-						
+					+ ")";
 		return dimensionSql;
 	}
 
 	
-	public String copyDxTempToMaster(String masterId, String masterQueryTiming, String maxPanelNum, String dxTempTableName, String masterTempTableName) {
+	public String copyDxTempToMaster(String masterId, String masterQueryTiming, String maxPanelNum,
+									 String dxTempTableName, String masterTempTableName) {
 		String selectFields = " ";
 		String joinTableName = dxTempTableName;
 		String joinColumnName = "patient_num";
-		if (this.returnInstanceNum()) {
+		if (this.returnInstanceNum())
 			selectFields = " encounter_num, instance_num, patient_num, concept_cd, start_date, provider_id, ";
-		} else if (this.returnEncounterNum()) {
+		else if (this.returnEncounterNum())
 			selectFields = "encounter_num, patient_num, ";
-		} else {
+		else
 			selectFields = " patient_num, ";
-		}
 
 		if (masterQueryTiming != null) {
 			QueryTimingHandler queryTimingHandler = new QueryTimingHandler();
-
-			if (queryTimingHandler.isSameInstanceNum(masterQueryTiming)) {
+			if (queryTimingHandler.isSameInstanceNum(masterQueryTiming))
 				selectFields = " encounter_num, instance_num, patient_num, concept_cd, start_date, provider_id, ";
-			} else if (queryTimingHandler.isSameVisit(masterQueryTiming)) {
+			else if (queryTimingHandler.isSameVisit(masterQueryTiming))
 				selectFields = "encounter_num, patient_num, ";
-			} else {
+			else
 				selectFields = " patient_num, ";
-			}
 		}
 
-		if (joinTableName.equals(dxTempTableName)){
+		if (joinTableName.equals(dxTempTableName))
 			return " insert into " + masterTempTableName + "(master_id, "
 					+ selectFields + " level_no) " + "select '" + masterId + "', "
 					+ selectFields + parent.getProcessingLevel() + "  from " 
-					+ dxTempTableName;			
-		}
-		else {
+					+ dxTempTableName;
+		else
 			return " insert into " + masterTempTableName + "(master_id, "
 					+ selectFields + " level_no) " + "select '" + masterId + "', "
 					+ selectFields + parent.getProcessingLevel() + "  from " 
 					+ joinTableName + " where " + joinColumnName + " IN ( "
 					+ "select " + joinColumnName + " from "
 					+ dxTempTableName + " ) ";
-		}
 	}
 	
 	public String deleteDxTempTable(String dxTempTableName){
-		return " delete  " + 
-			(parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
-					|| parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS) ? " from " : "") +
-				dxTempTableName;		
+		return " delete from " + dxTempTableName;
 	}
 
 	public String deleteTempTable(String tempTableName) {
-		return " delete  " +
-				(parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
-						|| parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS) ? " from " : "") +
-				tempTableName;		
+		return " delete from " + tempTableName;
 	}
 
 	public String deleteMasterTempTable(String masterId, int level, String masterTempTableName) {
-		return "delete " + 
-				(parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
-						|| parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS) ? " from " : "") +
-				masterTempTableName
+		return "delete from " + masterTempTableName
 				+ " where master_id = '" + masterId + "' and level_no >= "
 				+ level;
 	}
-
 }

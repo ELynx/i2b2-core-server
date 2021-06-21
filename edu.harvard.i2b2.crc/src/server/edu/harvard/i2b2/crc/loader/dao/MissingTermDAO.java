@@ -15,6 +15,7 @@ import java.sql.Statement;
 
 import javax.sql.DataSource;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -36,29 +37,25 @@ public class MissingTermDAO extends CRCLoaderDAO implements IMissingTermDAO {
 
 	private static Log log = LogFactory.getLog(MissingTermDAO.class);
 
-	public MissingTermDAO(DataSourceLookup dataSourceLookup,
-			DataSource dataSource) {
+	public MissingTermDAO(DataSourceLookup dataSourceLookup, DataSource dataSource) {
 		setDataSource(dataSource);
 		setDbSchemaName(dataSourceLookup.getFullSchema());
 		this.dataSourceLookup = dataSourceLookup;
-
 	}
 
 	@Override
-	public MissingTermSetReportType getMissingTermReport(int uploadId,
-			String setName) throws I2B2DAOException {
-
-		String uploadConstrainSql = "", uploadConstrainMappedSql = "" ;
+	public MissingTermSetReportType getMissingTermReport(int uploadId, String setName) throws I2B2DAOException {
+		log.info("MissingTermDAO.class: getMissingTermReport(int uploadId, String setName)");
+		String uploadConstrainSql = StringUtils.EMPTY, uploadConstrainMappedSql = StringUtils.EMPTY ;
 		Connection conn = null;
 		MissingTermSetReportType missingTermReport = new MissingTermSetReportType();
 		try {
-
 			if (uploadId != 0) {
 				uploadConstrainSql = " and obs.upload_id =  " + uploadId;
 				uploadConstrainMappedSql = " where obs.upload_id =  " + uploadId;
 			}
 			conn = getDataSource().getConnection();
-			String unmappedSql = "", mappedSql = "";
+			String unmappedSql = StringUtils.EMPTY, mappedSql = StringUtils.EMPTY;
 
 			if (setName.equals("observer_set")) {
 				unmappedSql = " select count(distinct provider_id) from "
@@ -85,14 +82,15 @@ public class MissingTermDAO extends CRCLoaderDAO implements IMissingTermDAO {
 						+ this.getDbSchemaName() + "modifier_dimension) " + uploadConstrainSql;
 				mappedSql = " select count(distinct modifier_cd) from "
 						+ this.getDbSchemaName() + "observation_fact obs" + uploadConstrainMappedSql;
-
 			}
 
 			Statement stmt = conn.createStatement();
+			log.info("Script [unmappedSql]: " + unmappedSql);
 			log.debug("Executing sql [" + unmappedSql + "]");
 			ResultSet resultSet = stmt.executeQuery(unmappedSql);
 			resultSet.next();
 			int unmappedCount = resultSet.getInt(1);
+			log.info("Script [mappedSql]: " + mappedSql);
 			log.debug("Executing sql [" + mappedSql + "]");
 			stmt = conn.createStatement();
 			resultSet = stmt.executeQuery(mappedSql);
@@ -100,18 +98,14 @@ public class MissingTermDAO extends CRCLoaderDAO implements IMissingTermDAO {
 			int mappedCount = resultSet.getInt(1);
 			resultSet.close();
 			stmt.close();
-
 			missingTermReport.setUnmapped(unmappedCount);
 			missingTermReport.setMapped(mappedCount - unmappedCount);
-
 		} catch (SQLException sqlEx) {
 			sqlEx.printStackTrace();
-			throw new I2B2DAOException("SQLException occured"
-					+ sqlEx.getMessage(), sqlEx);
+			throw new I2B2DAOException("SQLException occured" + sqlEx.getMessage(), sqlEx);
 		} catch (Exception ex) {
 			ex.printStackTrace();
-			throw new I2B2DAOException("Exception occured" + ex.getMessage(),
-					ex);
+			throw new I2B2DAOException("Exception occured" + ex.getMessage(), ex);
 		} finally {
 			if (conn != null) {
 				try {
@@ -126,44 +120,42 @@ public class MissingTermDAO extends CRCLoaderDAO implements IMissingTermDAO {
 	}
 
 	@Override
-	public MissingCodesConceptSetType getMissingConceptSet(int uploadId,
-			int startPos, int endPos, boolean detailFlag)
-			throws I2B2DAOException {
+	public MissingCodesConceptSetType getMissingConceptSet(int uploadId, int startPos,
+														   int endPos, boolean detailFlag) throws I2B2DAOException {
+		log.info("MissingTermDAO.class: getMissingConceptSet(int uploadId, int startPos, int endPos, boolean detailFlag)");
 		Connection conn = null;
-		String sql = "", uploadConstrainSql = "";
+		String sql = StringUtils.EMPTY, uploadConstrainSql = StringUtils.EMPTY;
 		MissingCodesConceptSetType missConceptSetType = new MissingCodesConceptSetType();
 		try {
-
-			if (uploadId != 0) {
+			if (uploadId != 0)
 				uploadConstrainSql = " and obs.upload_id = " + uploadId;
-			}
 			conn = getDataSource().getConnection();
-			if (dataSourceLookup.getServerType().equalsIgnoreCase(
-					DataSourceLookupDAOFactory.SQLSERVER)) {
-				sql = " select tot,concept_cd, rnum  from ( "
-						+ " select count(*) tot, obs1.concept_cd, row_number() over (order by obs1.concept_cd asc)  rnum from "
-						+ this.getDbSchemaName() + "observation_fact obs1 where concept_cd not in ( "
-						+ " select concept_cd from " + this.getDbSchemaName()
-						+ "concept_dimension)  "
-						+ uploadConstrainSql + " group by obs1.concept_cd) f where rnum between " + startPos + " and "  + endPos ;
-			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(
-					DataSourceLookupDAOFactory.ORACLE)) {
-				sql = " select tot, concept_cd, rnum from (select count(*) tot, obs1.concept_cd, rownum  rnum from "
-						+ this.getDbSchemaName()
-						+ "observation_fact obs1 where  "
-						+ " concept_cd not in ( "
-						+ " select concept_cd from "
-						+ this.getDbSchemaName()
-						+ "concept_dimension) "
-		   			    + uploadConstrainSql
-						+ " group by obs1.concept_cd) f	where rnum between "
-						+ startPos + " and " + endPos;
-
-			}
+//			if (dataSourceLookup.getServerType().equalsIgnoreCase(
+//					DataSourceLookupDAOFactory.SQLSERVER)) {
+//				sql = " select tot,concept_cd, rnum  from ( "
+//						+ " select count(*) tot, obs1.concept_cd, row_number() over (order by obs1.concept_cd asc)  rnum from "
+//						+ this.getDbSchemaName() + "observation_fact obs1 where concept_cd not in ( "
+//						+ " select concept_cd from " + this.getDbSchemaName()
+//						+ "concept_dimension)  "
+//						+ uploadConstrainSql + " group by obs1.concept_cd) f where rnum between " + startPos + " and "  + endPos ;
+//			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(
+//					DataSourceLookupDAOFactory.ORACLE)) {
+//				sql = " select tot, concept_cd, rnum from (select count(*) tot, obs1.concept_cd, rownum  rnum from "
+//						+ this.getDbSchemaName()
+//						+ "observation_fact obs1 where  "
+//						+ " concept_cd not in ( "
+//						+ " select concept_cd from "
+//						+ this.getDbSchemaName()
+//						+ "concept_dimension) "
+//		   			    + uploadConstrainSql
+//						+ " group by obs1.concept_cd) f	where rnum between "
+//						+ startPos + " and " + endPos;
+//
+//			}
 			Statement stmt = conn.createStatement();
+			log.info("Executing sql ["+ sql + "]");
 			log.debug("Executing sql ["+ sql + "]");
 			ResultSet resultSet = stmt.executeQuery(sql);
-
 			MissingCodesConceptSetType.Concept concept = new MissingCodesConceptSetType.Concept();
 
 			while (resultSet.next()) {
@@ -173,7 +165,6 @@ public class MissingTermDAO extends CRCLoaderDAO implements IMissingTermDAO {
 				missConceptSetType.getConcept().add(concept);
 			}
 			resultSet.close();
-
 		} catch (SQLException sqlEx) {
 			sqlEx.printStackTrace();
 			throw new I2B2DAOException("SQLException occured"
@@ -192,49 +183,46 @@ public class MissingTermDAO extends CRCLoaderDAO implements IMissingTermDAO {
 				}
 			}
 		}
-
 		return missConceptSetType;
 	}
 
 	@Override
-	public MissingCodesModifierSetType getMissingModifierSet(int uploadId,
-			int startPos, int endPos, boolean detailFlag)
-			throws I2B2DAOException {
+	public MissingCodesModifierSetType getMissingModifierSet(int uploadId, int startPos,
+															 int endPos, boolean detailFlag) throws I2B2DAOException {
+		log.info("MissingTermDAO.class: getMissingModifierSet(int uploadId, int startPos, int endPos, boolean detailFlag)");
 		Connection conn = null;
-		String sql = "", uploadConstrainSql = "";
+		String sql = StringUtils.EMPTY, uploadConstrainSql = StringUtils.EMPTY;
 		MissingCodesModifierSetType missModifierSetType = new MissingCodesModifierSetType();
 		try {
-
-			if (uploadId != 0) {
+			if (uploadId != 0)
 				uploadConstrainSql = " and obs.upload_id = " + uploadId;
-			}
 			conn = getDataSource().getConnection();
-			if (dataSourceLookup.getServerType().equalsIgnoreCase(DataSourceLookupDAOFactory.SQLSERVER)) {
-				sql = " select tot,modifier_cd, rnum  from ( "
-					+ " select count(*) tot, obs1.modifier_cd, row_number() over (order by obs1.modifier_cd asc)  rnum from "
-					+ this.getDbSchemaName() + "observation_fact obs1 where modifier_cd not in ( "
-					+ " select modifier_cd from " + this.getDbSchemaName()
-					+ "modifier_dimension)  "
-					+ uploadConstrainSql + " group by obs1.modifier_cd) f where rnum between " + startPos + " and "  + endPos ;
-			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DataSourceLookupDAOFactory.ORACLE)) {
-				sql = " select tot, modifier_cd, rnum from (select count(*) tot, obs1.modifier_cd, rownum  rnum from "
-					+ this.getDbSchemaName()
-					+ "observation_fact obs1 where  "
-					+ " modifier_cd not in ( "
-					+ " select modifier_cd from "
-					+ this.getDbSchemaName()
-					+ "modifier_dimension) "
-	   			    + uploadConstrainSql
-					+ " group by obs1.modifier_cd) f	where rnum between "
-					+ startPos + " and " + endPos;
-
-			}
+//			if (dataSourceLookup.getServerType().equalsIgnoreCase(DataSourceLookupDAOFactory.SQLSERVER)) {
+//				sql = " select tot,modifier_cd, rnum  from ( "
+//					+ " select count(*) tot, obs1.modifier_cd, row_number() over (order by obs1.modifier_cd asc)  rnum from "
+//					+ this.getDbSchemaName() + "observation_fact obs1 where modifier_cd not in ( "
+//					+ " select modifier_cd from " + this.getDbSchemaName()
+//					+ "modifier_dimension)  "
+//					+ uploadConstrainSql + " group by obs1.modifier_cd) f where rnum between " + startPos + " and "  + endPos ;
+//			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DataSourceLookupDAOFactory.ORACLE)) {
+//				sql = " select tot, modifier_cd, rnum from (select count(*) tot, obs1.modifier_cd, rownum  rnum from "
+//					+ this.getDbSchemaName()
+//					+ "observation_fact obs1 where  "
+//					+ " modifier_cd not in ( "
+//					+ " select modifier_cd from "
+//					+ this.getDbSchemaName()
+//					+ "modifier_dimension) "
+//	   			    + uploadConstrainSql
+//					+ " group by obs1.modifier_cd) f	where rnum between "
+//					+ startPos + " and " + endPos;
+//
+//			}
 			Statement stmt = conn.createStatement();
+			log.info("Executing sql ["+ sql + "]");
 			log.debug("Executing sql ["+ sql + "]");
 			ResultSet resultSet = stmt.executeQuery(sql);
 
 			MissingCodesModifierSetType.Modifier modifier = new MissingCodesModifierSetType.Modifier();
-
 			while (resultSet.next()) {
 				modifier = new MissingCodesModifierSetType.Modifier();
 				modifier.setModifierCd(resultSet.getString("modifier_cd"));
@@ -242,15 +230,12 @@ public class MissingTermDAO extends CRCLoaderDAO implements IMissingTermDAO {
 				missModifierSetType.getModifier().add(modifier);
 			}
 			resultSet.close();
-
 		} catch (SQLException sqlEx) {
 			sqlEx.printStackTrace();
-			throw new I2B2DAOException("SQLException occured"
-					+ sqlEx.getMessage(), sqlEx);
+			throw new I2B2DAOException("SQLException occured" + sqlEx.getMessage(), sqlEx);
 		} catch (Exception ex) {
 			ex.printStackTrace();
-			throw new I2B2DAOException("Exception occured" + ex.getMessage(),
-					ex);
+			throw new I2B2DAOException("Exception occured" + ex.getMessage(), ex);
 		} finally {
 			if (conn != null) {
 				try {
@@ -261,49 +246,47 @@ public class MissingTermDAO extends CRCLoaderDAO implements IMissingTermDAO {
 				}
 			}
 		}
-
 		return missModifierSetType;
 	}
 
 	@Override
-	public MissingCodesObserverSetType getMissingObserverSet(int uploadId,
-			int startPos, int endPos, boolean detailFlag)
-			throws I2B2DAOException {
+	public MissingCodesObserverSetType getMissingObserverSet(int uploadId, int startPos,
+															 int endPos, boolean detailFlag) throws I2B2DAOException {
+		log.info("MissingTermDAO.class: getMissingObserverSet(int uploadId, int startPos, int endPos, boolean detailFlag)");
 		Connection conn = null;
-		String sql = "", uploadConstrainSql = "";
+		String sql = StringUtils.EMPTY, uploadConstrainSql = StringUtils.EMPTY;
 		MissingCodesObserverSetType missObserverSetType = new MissingCodesObserverSetType();
 		try {
-
-			if (uploadId != 0) {
+			if (uploadId != 0)
 				uploadConstrainSql = " and obs.upload_id = " + uploadId;
-			}
-			conn = getDataSource().getConnection();
-			if (dataSourceLookup.getServerType().equalsIgnoreCase(DataSourceLookupDAOFactory.SQLSERVER)) {
-				sql = " select tot,provider_id, rnum  from ( "
-					+ " select count(*) tot, obs1.provider_id, row_number() over (order by obs1.provider_id asc)  rnum from "
-					+ this.getDbSchemaName() + "observation_fact obs1 where provider_id not in ( "
-					+ " select provider_id from " + this.getDbSchemaName()
-					+ "provider_dimension)  "
-					+ uploadConstrainSql + " group by obs1.provider_id) f where rnum between " + startPos + " and "  + endPos ;
-			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DataSourceLookupDAOFactory.ORACLE)) {
-				sql = " select tot,provider_id, rnum from (select count(*) tot, obs1.provider_id, rownum  rnum from "
-					+ this.getDbSchemaName()
-					+ "observation_fact obs1 where  "
-					+ " provider_id not in ( "
-					+ " select provider_id from "
-					+ this.getDbSchemaName()
-					+ "provider_dimension) "
-	   			    + uploadConstrainSql
-					+ " group by obs1.provider_id) f	where rnum between "
-					+ startPos + " and " + endPos;
 
-			}
+			conn = getDataSource().getConnection();
+//			if (dataSourceLookup.getServerType().equalsIgnoreCase(DataSourceLookupDAOFactory.SQLSERVER)) {
+//				sql = " select tot,provider_id, rnum  from ( "
+//					+ " select count(*) tot, obs1.provider_id, row_number() over (order by obs1.provider_id asc)  rnum from "
+//					+ this.getDbSchemaName() + "observation_fact obs1 where provider_id not in ( "
+//					+ " select provider_id from " + this.getDbSchemaName()
+//					+ "provider_dimension)  "
+//					+ uploadConstrainSql + " group by obs1.provider_id) f where rnum between " + startPos + " and "  + endPos ;
+//			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DataSourceLookupDAOFactory.ORACLE)) {
+//				sql = " select tot,provider_id, rnum from (select count(*) tot, obs1.provider_id, rownum  rnum from "
+//					+ this.getDbSchemaName()
+//					+ "observation_fact obs1 where  "
+//					+ " provider_id not in ( "
+//					+ " select provider_id from "
+//					+ this.getDbSchemaName()
+//					+ "provider_dimension) "
+//	   			    + uploadConstrainSql
+//					+ " group by obs1.provider_id) f	where rnum between "
+//					+ startPos + " and " + endPos;
+//
+//			}
 			Statement stmt = conn.createStatement();
+			log.debug("Script: " + sql);
 			log.debug("Executing sql ["+ sql + "]");
 			ResultSet resultSet = stmt.executeQuery(sql);
 
 			MissingCodesObserverSetType.Observer observer = new MissingCodesObserverSetType.Observer();
-
 			while (resultSet.next()) {
 				observer = new MissingCodesObserverSetType.Observer();
 				observer.setObserverCd(resultSet.getString("provider_id"));
@@ -311,15 +294,12 @@ public class MissingTermDAO extends CRCLoaderDAO implements IMissingTermDAO {
 				missObserverSetType.getObserver().add(observer);
 			}
 			resultSet.close();
-
 		} catch (SQLException sqlEx) {
 			sqlEx.printStackTrace();
-			throw new I2B2DAOException("SQLException occured"
-					+ sqlEx.getMessage(), sqlEx);
+			throw new I2B2DAOException("SQLException occured" + sqlEx.getMessage(), sqlEx);
 		} catch (Exception ex) {
 			ex.printStackTrace();
-			throw new I2B2DAOException("Exception occured" + ex.getMessage(),
-					ex);
+			throw new I2B2DAOException("Exception occured" + ex.getMessage(), ex);
 		} finally {
 			if (conn != null) {
 				try {
@@ -330,8 +310,6 @@ public class MissingTermDAO extends CRCLoaderDAO implements IMissingTermDAO {
 				}
 			}
 		}
-
 		return missObserverSetType;
 	}
-
 }

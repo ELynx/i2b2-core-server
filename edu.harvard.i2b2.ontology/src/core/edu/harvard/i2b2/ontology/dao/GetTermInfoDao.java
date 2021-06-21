@@ -23,6 +23,8 @@ import java.util.List;
 
 import javax.sql.DataSource;
 
+import edu.harvard.i2b2.common.util.db.QueryUtil;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.dao.DataAccessException;
@@ -33,7 +35,6 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import edu.harvard.i2b2.common.exception.I2B2Exception;
-import edu.harvard.i2b2.common.util.db.JDBCUtil;
 import edu.harvard.i2b2.common.util.jaxb.DTOFactory;
 import edu.harvard.i2b2.common.util.xml.XMLUtil;
 import edu.harvard.i2b2.ontology.datavo.pm.ProjectType;
@@ -66,12 +67,11 @@ public class GetTermInfoDao extends JdbcDaoSupport {
 
 		// find return parameters
 		String parameters = DEFAULT;		
-		if (termInfoType.getType().equals("core")){
+		if (termInfoType.getType().equals("core"))
 			parameters = CORE;
-		}
-		else if (termInfoType.getType().equals("all")){
+		else if (termInfoType.getType().equals("all"))
 			parameters = ALL;
-		}
+
 		if(termInfoType.isBlob())
 			parameters = parameters + BLOB;
 
@@ -80,7 +80,7 @@ public class GetTermInfoDao extends JdbcDaoSupport {
 
 		// table code to table name conversion
 		// Get metadata schema name from properties file.
-		String metadataSchema = "";
+		String metadataSchema = StringUtils.EMPTY;
 		try {
 			metadataSchema = OntologyUtil.getInstance().getMetaDataSchemaName();
 		} catch (I2B2Exception e1) {
@@ -99,18 +99,16 @@ public class GetTermInfoDao extends JdbcDaoSupport {
 
 		String searchPath = path;
 
-		String hidden = "";
-		if(!termInfoType.isHiddens())
-			hidden = dbType.equalsIgnoreCase("INTERSYSTEMS IRIS")
-					? " and (not c_visualattributes %STARTSWITH '_H')"
-					: " and c_visualattributes not like '_H%'";
+		String hidden = StringUtils.EMPTY;
+		if (!termInfoType.isHiddens())
+			hidden = " and (not c_visualattributes %STARTSWITH '_H')";
 
-		String synonym = "";
-		if(!termInfoType.isSynonyms())
+		String synonym = StringUtils.EMPTY;
+		if (!termInfoType.isSynonyms())
 			synonym = " and c_synonym_cd = 'N'";
-		//TODO: check if [ is enough for IRIS
-		String sql = "select " + parameters +" from " + metadataSchema+tableName  +
-				" where c_fullname " + (dbType.equalsIgnoreCase("INTERSYSTEMS IRIS") ? "[ ? " : "like ? ");
+
+		String sql = "select " + parameters +" from " + metadataSchema + tableName  +
+				" where c_fullname " + QueryUtil.getOperatorByValue(searchPath) +  " ? ";
 		sql = sql + hidden + synonym + " order by c_name ";
 
 		//	log.info(sql + path + level);
@@ -119,9 +117,10 @@ public class GetTermInfoDao extends JdbcDaoSupport {
 		log.info("Script: " + sql);
 		//	log.info(sql + " " + path + " " + level);
 
-		List queryResult = null;
+		List queryResult;
 		try {
-			queryResult = jt.query(sql, getTermInfoConcept(obfuscatedUserFlag, termInfoType, dbType), searchPath );
+			queryResult = jt.query(sql, getTermInfoConcept(obfuscatedUserFlag, termInfoType, dbType),
+					QueryUtil.getCleanValue(searchPath));
 		} catch (DataAccessException e) {
 			log.error(e.getMessage());
 			throw e;
@@ -129,9 +128,9 @@ public class GetTermInfoDao extends JdbcDaoSupport {
 		log.debug("result size = " + queryResult.size());
 
 		//Fix the key so it equals "\\tableCd\fullname"
-		if(queryResult != null) {
+		if (queryResult != null) {
 			Iterator itr = queryResult.iterator();
-			while (itr.hasNext()){
+			while (itr.hasNext()) {
 				ConceptType self = (ConceptType) itr.next();
 				self.setKey("\\\\" + tableCd + self.getKey());
 			}
@@ -150,8 +149,10 @@ public class GetTermInfoDao extends JdbcDaoSupport {
 
 
 class GetTermInfoConcept implements RowMapper<ConceptType> {
+
 	boolean obfuscatedUserFlag;
-	 GetTermInfoType termInfoType;
+	GetTermInfoType termInfoType;
+
 	public void setObfuscatedUserFlag(boolean obfuscatedUserFlag) {
 		this.obfuscatedUserFlag = obfuscatedUserFlag;
 	}
@@ -177,9 +178,8 @@ class GetTermInfoConcept implements RowMapper<ConceptType> {
 		self.setVisualattributes(rs.getString("c_visualattributes"));
 
 		Integer totalNum = rs.getInt("c_totalnum");
-		if (!obfuscatedUserFlag) {
+		if (!obfuscatedUserFlag)
 			self.setTotalnum(totalNum);
-		}
 		self.setFacttablecolumn(rs.getString("c_facttablecolumn" ));
 		self.setTablename(rs.getString("c_tablename")); 
 		self.setColumnname(rs.getString("c_columnname")); 
@@ -187,56 +187,38 @@ class GetTermInfoConcept implements RowMapper<ConceptType> {
 		self.setOperator(rs.getString("c_operator")); 
 		self.setDimcode(rs.getString("c_dimcode")); 
 		self.setTooltip(rs.getString("c_tooltip"));
-		if(termInfoType.isBlob()) {
-			if(rs.getClob("c_comment") == null)
+		if (termInfoType.isBlob()) {
+			if (rs.getClob("c_comment") == null)
 				self.setComment(null);
-			else {
-				try {
-					if (dbType.equals("POSTGRESQL")
-							|| dbType.equalsIgnoreCase("InterSystems IRIS"))
-						self.setComment(rs.getString("c_comment"));
-					else
-						self.setComment(JDBCUtil.getClobString(rs.getClob("c_comment")));
-				} catch (IOException e1) {
-					self.setComment(null);
-				}
-			}
-			if(rs.getClob("c_metadataxml") == null){
+			else
+				self.setComment(rs.getString("c_comment"));
+
+			if (rs.getClob("c_metadataxml") == null)
 				self.setMetadataxml(null);
-			}else {
-				String c_xml = null;
-				try {
-					if (dbType.equals("POSTGRESQL")
-							|| dbType.equalsIgnoreCase("InterSystems IRIS"))
-						c_xml = rs.getString("c_metadataxml");
-					else
-						c_xml = JDBCUtil.getClobString(rs.getClob("c_metadataxml"));
-				} catch (IOException e1) {
-					self.setMetadataxml(null);
-				}
-				if ((c_xml!=null)&&(c_xml.trim().length()>0)&&(!c_xml.equals("(null)")))
-				{
+			else {
+				String c_xml = rs.getString("c_metadataxml");
+
+				if (c_xml != null && c_xml.trim().length() > 0 && !c_xml.equals("(null)")) {
 					Element rootElement = null;
 					try {
 						Document doc = XMLUtil.loadXMLFrom(new java.io.ByteArrayInputStream(c_xml.getBytes()));
-        				rootElement = doc.getDocumentElement();
+						rootElement = doc.getDocumentElement();
 					} catch (IOException e) {
 						self.setMetadataxml(null);
 					} catch (Exception e1) {
 						self.setMetadataxml(null);
 					}
 					if (rootElement != null) {
-						XmlValueType xml = new XmlValueType();									
-						xml.getAny().add(rootElement);								
+						XmlValueType xml = new XmlValueType();
+						xml.getAny().add(rootElement);
 						self.setMetadataxml(xml);
 					}
-
-				}else {
+				} else
 					self.setMetadataxml(null);
-				}
 			}	
-		}	
-		if((termInfoType.getType().equals("all"))){
+		}
+
+		if (termInfoType.getType().equals("all")) {
 			DTOFactory factory = new DTOFactory();
 			// make sure date isnt null before converting to XMLGregorianCalendar
 			Date date = rs.getDate("update_date");

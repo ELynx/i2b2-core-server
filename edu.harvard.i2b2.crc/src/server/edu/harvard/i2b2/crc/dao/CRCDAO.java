@@ -18,9 +18,8 @@ import edu.harvard.i2b2.common.exception.I2B2DAOException;
 import edu.harvard.i2b2.common.exception.I2B2Exception;
 import edu.harvard.i2b2.common.util.ServiceLocator;
 import edu.harvard.i2b2.crc.datavo.pdo.query.OutputOptionType;
-//import edu.harvard.i2b2.crc.util.HibernateUtil;
-import edu.harvard.i2b2.crc.util.QueryProcessorUtil;
 
+import edu.harvard.i2b2.crc.util.SqlClauseUtil;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -54,21 +53,15 @@ public abstract class CRCDAO {
 	 * @throws I2B2DAOException
 	 * @throws SQLException
 	 */
-
 	protected DataSource getApplicationDataSource(String dataSourceName)
 			throws I2B2DAOException {
 		try {
-			// dataSource = (DataSource)
-			// crcUtil.getSpringDataSource(dataSourceName);
-			DataSource dataSource = ServiceLocator.getInstance()
-					.getAppServerDataSource(dataSourceName);
+			DataSource dataSource = ServiceLocator.getInstance().getAppServerDataSource(dataSourceName);
 			return dataSource;
 		} catch (I2B2Exception i2b2Ex) {
 			log.error(i2b2Ex);
-			throw new I2B2DAOException(
-					"Error getting appliation/spring datasource "
-							+ dataSourceName + " : " + i2b2Ex.getMessage(),
-					i2b2Ex);
+			throw new I2B2DAOException( "Error getting appliation/spring datasource "
+							+ dataSourceName + " : " + i2b2Ex.getMessage(), i2b2Ex);
 		}
 	}
 
@@ -82,12 +75,12 @@ public abstract class CRCDAO {
 	 * @return OutputOptionType
 	 */
 	protected OutputOptionType buildOutputOptionType(boolean detailFlag,
-			boolean blobFlag, boolean statusFlag) {
+													 boolean blobFlag,
+													 boolean statusFlag) {
 		OutputOptionType outputOptionType = new OutputOptionType();
-		outputOptionType.setOnlykeys((detailFlag) ? false : true);
+		outputOptionType.setOnlykeys(!detailFlag);
 		outputOptionType.setBlob(blobFlag);
 		outputOptionType.setTechdata(statusFlag);
-
 		return outputOptionType;
 	}
 
@@ -113,13 +106,66 @@ public abstract class CRCDAO {
 	}
 
 	public void setDbSchemaName(String dbSchemaName) {
-		if (dbSchemaName != null && dbSchemaName.endsWith(".")) { 
+		if (dbSchemaName != null && dbSchemaName.endsWith("."))
 			this.dbSchemaName = dbSchemaName.trim();
-		}
-		else if (dbSchemaName != null) { 
+		else if (dbSchemaName != null)
 			this.dbSchemaName = dbSchemaName.trim() + ".";
-		}
-		
 	}
 
+	public String handleMetaDataNumericValue(String operator, String value) {
+		String formattedValue = "";
+		boolean needBracesFlag = false;
+		//if operator is IN, then add open and close braces if it is missing
+		if (operator.toUpperCase().equals("IN")) {
+			if (!SqlClauseUtil.isEnclosedinBraces(value))
+				needBracesFlag = true;
+		}
+		if (needBracesFlag)
+			formattedValue = "(" + value + ")";
+		else
+			formattedValue = value;
+		return formattedValue;
+	}
+
+	public String handleMetaDataDateValue(String operator, String value) {
+		String formattedValue = "";
+		boolean needBracesFlag = false;
+		//if operator is IN, then add open and close braces if it is missing
+		if (operator.toUpperCase().equals("IN")) {
+			if (!SqlClauseUtil.isEnclosedinBraces(value))
+				needBracesFlag = true;
+		}
+		if (needBracesFlag)
+			formattedValue = "(" + value + ")";
+		else
+			formattedValue = value;
+		return formattedValue;
+	}
+
+	public String getOperatorByValue(String compareValue) {
+		if (compareValue.startsWith("'") && compareValue.endsWith("'"))
+			compareValue = compareValue.substring(1, compareValue.length() - 1);
+		if (compareValue.startsWith("%") && compareValue.endsWith("%"))
+			return "[";
+		else if(!compareValue.startsWith("%") && compareValue.endsWith("%"))
+			return "%STARTSWITH";
+		return "like";
+	}
+
+	public String getCleanValue(String compareValue) {
+		if (compareValue.startsWith("'") && compareValue.endsWith("'")) {
+			compareValue = compareValue.substring(1, compareValue.length() - 1);
+			if (compareValue.startsWith("%") && compareValue.endsWith("%"))
+				compareValue = compareValue.substring(1, compareValue.length() - 1);
+			else if (!compareValue.startsWith("%") && compareValue.endsWith("%"))
+				compareValue = compareValue.substring(0, compareValue.length() - 1);
+			return "'" + compareValue + "'";
+		} else {
+			if (compareValue.startsWith("%") && compareValue.endsWith("%"))
+				return compareValue.substring(1, compareValue.length() - 1);
+			else if (!compareValue.startsWith("%") && compareValue.endsWith("%"))
+				return compareValue.substring(0, compareValue.length() - 1);
+			return compareValue;
+		}
+	}
 }

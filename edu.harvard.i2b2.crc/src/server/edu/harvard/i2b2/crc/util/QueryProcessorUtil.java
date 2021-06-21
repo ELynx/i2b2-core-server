@@ -14,12 +14,9 @@
  */
 package edu.harvard.i2b2.crc.util;
 
-import java.io.IOException;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
 
@@ -27,27 +24,19 @@ import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
 
-import org.apache.axis2.context.ConfigurationContext;
-import org.apache.axis2.description.AxisService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.quartz.Scheduler;
-import org.springframework.context.support.FileSystemXmlApplicationContext;
-import org.springframework.core.io.FileSystemResource;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.jdbc.core.RowMapper;
 
 import edu.harvard.i2b2.common.exception.I2B2DAOException;
 import edu.harvard.i2b2.common.exception.I2B2Exception;
 import edu.harvard.i2b2.common.util.ServiceLocator;
 import edu.harvard.i2b2.common.util.axis2.ServiceClient;
-import edu.harvard.i2b2.common.util.jaxb.DTOFactory;
-import edu.harvard.i2b2.crc.dao.mapper.HiveCellParam;
 import edu.harvard.i2b2.crc.datavo.i2b2message.ApplicationType;
 import edu.harvard.i2b2.crc.datavo.i2b2message.MessageHeaderType;
 import edu.harvard.i2b2.crc.datavo.pm.ParamType;
-import edu.harvard.i2b2.crc.datavo.pm.ParamsType;
 import edu.harvard.i2b2.crc.ejb.ProcessQueue;
 import edu.harvard.i2b2.crc.ejb.QueryManagerBeanUtil;
 import edu.harvard.i2b2.crc.ejb.analysis.AnalysisPluginInfoLocal;
@@ -56,7 +45,6 @@ import edu.harvard.i2b2.crc.ejb.analysis.StartAnalysisLocal;
 import edu.harvard.i2b2.crc.ejb.role.PriviledgeBean;
 import edu.harvard.i2b2.crc.ejb.role.PriviledgeLocal;
 import edu.harvard.i2b2.crc.quartz.QuartzFactory;
-
 
 /**
  * This is the CRC application's main utility class This utility class provides
@@ -128,8 +116,6 @@ public class QueryProcessorUtil {
 	 * Private constructor to make the class singleton
 	 */
 	private QueryProcessorUtil() {
-
-
 	}
 
 	/**
@@ -138,20 +124,17 @@ public class QueryProcessorUtil {
 	 * @return QueryProcessorUtil
 	 */
 	public static QueryProcessorUtil getInstance() {
-
 		QueryProcessorUtil i = thisInstance;
 		if (i == null) {
-			synchronized (lock){
+			synchronized (lock) {
 				i = thisInstance;
-				if (i==null){
+				if (i==null) {
 					i = new QueryProcessorUtil();
 					thisInstance = i;
 					serviceLocator = ServiceLocator.getInstance();
-
 					
 					pqMedium = new ProcessQueue(QueryManagerBeanUtil.MEDIUM_QUEUE);
 					pqLarge = new ProcessQueue( QueryManagerBeanUtil.LARGE_QUEUE);
-
 
 					Thread m1 = new Thread(pqMedium);
 					m1.start();
@@ -160,12 +143,9 @@ public class QueryProcessorUtil {
 					Thread m2 = new Thread(pqLarge);
 					m2.start();
 					log.info("started LARGE");
-					
 				}
 			}
-
 		}
-
 		return i;
 	}
 
@@ -184,8 +164,7 @@ public class QueryProcessorUtil {
         return QuartzFactory.getInstance().getScheduler();
 }
 
-	public AnalysisPluginInfoLocal getAnalysisPluginInfoLocal()
-			throws I2B2Exception {
+	public AnalysisPluginInfoLocal getAnalysisPluginInfoLocal() throws I2B2Exception {
 		InitialContext ctx;
 		try {
 			ctx = new InitialContext();
@@ -306,9 +285,7 @@ public class QueryProcessorUtil {
 	public int getPagingIterationCount() throws I2B2Exception {
 		String pagingIteration = getPropertyValue(PAGING_ITERATION);
 		return Integer.parseInt(pagingIteration);
-
 	}
-
 
 	public String getOntologyUrl() throws I2B2Exception {
 		return getPropertyValue(ONTOLOGYCELL_WS_URL_PROPERTIES);
@@ -318,21 +295,17 @@ public class QueryProcessorUtil {
 		String setting = "false";
 		try {
 			setting = (getPropertyValue(MULTI_FACT_TABLE));
-
 		} catch (I2B2Exception e) {
 			log.info(e.getMessage());
 			return false;
 		}
-		if (setting == null){
+		if (setting == null)
 			return false;
-		}
 		else{
-			if(setting.equals("true"))
-				return true;
-			else if(setting.equals("TRUE"))
+			if (setting.equals("true"))
 				return true;
 			else
-				return false;
+				return setting.equals("TRUE");
 		}
 	}
 
@@ -344,18 +317,12 @@ public class QueryProcessorUtil {
 	 * @throws I2B2Exception
 	 * @throws SQLException
 	 */
-	public DataSource getDataSource(String dataSourceName)
-			throws I2B2Exception {
-
-		dataSource = serviceLocator
-				.getAppServerDataSource(dataSourceName);
-
-
+	public DataSource getDataSource(String dataSourceName) throws I2B2Exception {
+		dataSource = serviceLocator.getAppServerDataSource(dataSourceName);
 		return dataSource;
-
 	}
-	public DataSource getSpringDataSource(String dataSourceName)
-			throws I2B2Exception {
+
+	public DataSource getSpringDataSource(String dataSourceName) throws I2B2Exception {
 		return getDataSource( dataSourceName);
 	}
 
@@ -381,25 +348,16 @@ public class QueryProcessorUtil {
 		return messageHeader;
 	}
 
-
-
-
 	/**
 	 * Load application property file into memory
 	 */
 	private String getPropertyValue(String propertyName) throws I2B2Exception {
 		if (appProperties == null) {
-
-
-
 			//		log.info(sql + domainId + projectId + ownerId);
 			//	List<ParamType> queryResult = null;
 			try {
 				DataSource   ds = this.getDataSource("java:/CRCBootStrapDS");
-
-
 				Connection conn = ds.getConnection();
-				
 				String metadataSchema = "\"" + conn.getSchema() + "\"";
 				conn.close();
 				JdbcTemplate jt =  new JdbcTemplate(ds);
@@ -408,25 +366,20 @@ public class QueryProcessorUtil {
 				log.debug("Start query");
 				appProperties = jt.query(sql, new getHiveCellParam());
 				log.debug("End query");
-
 			} catch (Exception e) {
 				log.error(e.getMessage());
 				e.printStackTrace();
 				throw new I2B2DAOException("Database error reading hive_cell_params");
 			}
-
 		}
 
 		String propertyValue = null;//appProperties.getProperty(propertyName);
-		for (int i=0; i < appProperties.size(); i++)
-		{
-			if (appProperties.get(i).getName() != null)
-			{
+		for (int i=0; i < appProperties.size(); i++) {
+			if (appProperties.get(i).getName() != null) {
 				if (appProperties.get(i).getName().equalsIgnoreCase(propertyName))
 					if (appProperties.get(i).getDatatype().equalsIgnoreCase("U"))
 						try {
 							propertyValue = ServiceClient.getContextRoot() + appProperties.get(i).getValue();
-
 						} catch (Exception e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
@@ -435,29 +388,24 @@ public class QueryProcessorUtil {
 						propertyValue = appProperties.get(i).getValue();
 			}
 		}
-
-		if ((propertyValue == null) || (propertyValue.trim().length() == 0)) {
+		if ((propertyValue == null) || (propertyValue.trim().length() == 0))
 			throw new I2B2Exception("Application property file("
 					//	+ APPLICATION_PROPERTIES_FILENAME + ") missing "
 					+ propertyName + " entry");
-		}
-
 		return propertyValue;
 	}
-
 }
 
 
 class getHiveCellParam implements RowMapper<ParamType> {
 	@Override
 	public ParamType mapRow(ResultSet rs, int rowNum) throws SQLException {
-
-			ParamType param = new ParamType();
-			param.setId(rs.getInt("id"));
-			param.setName(rs.getString("param_name_cd"));
-			param.setValue(rs.getString("value"));
-			param.setDatatype(rs.getString("datatype_cd"));
-			return param;
-		} 
+		ParamType param = new ParamType();
+		param.setId(rs.getInt("id"));
+		param.setName(rs.getString("param_name_cd"));
+		param.setValue(rs.getString("value"));
+		param.setDatatype(rs.getString("datatype_cd"));
+		return param;
+	}
 }
 

@@ -103,17 +103,10 @@ public class PagingHandler extends CRCDAO {
 		IFactRelatedQueryHandler factRelatedHandler = null;
 		String countSqlFrom = " ";
 		String countClause = " COUNT(*) ";
-		if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE)
-				|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
-				|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
-			factRelatedHandler = new FactRelatedQueryHandler(dataSourceLookup,
-					inputList, filterList, outputOptionList);
-		} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)) {
-			countSqlFrom = "as";
-			countClause = " COUNT_BIG(*) ";
-			factRelatedHandler = new SQLServerFactRelatedQueryHandler(
-					dataSourceLookup, inputList, filterList, outputOptionList);
-		}
+
+		factRelatedHandler = new FactRelatedQueryHandler(dataSourceLookup,
+				inputList, filterList, outputOptionList);
+
 		factRelatedHandler.setProjectParamMap(this.projectParamMap);
 		factRelatedHandler.setModifierMetadataXmlMap(this.modifierMetadataXmlMap);
 		
@@ -144,90 +137,60 @@ public class PagingHandler extends CRCDAO {
 			if (totalSql.trim().length() == 0) { 
 				continue;
 			}
-			if((singlePanel != null)&&(singlePanel.getItem().get(0).getFacttablecolumn()!=null)){
+			if (singlePanel != null && singlePanel.getItem().get(0).getFacttablecolumn() != null){
 				boolean derivedFactTable = QueryProcessorUtil.getInstance().getDerivedFactTable();
 				
 				String defaultTableName = dataSourceLookup.getFullSchema() + ".observation_FACT" ;
-				if(derivedFactTable == true){
-					if(singlePanel.getItem().get(0).getFacttablecolumn().contains(".")){
-
+				if (derivedFactTable){
+					if (singlePanel.getItem().get(0).getFacttablecolumn().contains(".")) {
 						String baseItemFactColumn = singlePanel.getItem().get(0).getFacttablecolumn();
 						int lastIndex = baseItemFactColumn.lastIndexOf(".");
 						String factTable = dataSourceLookup.getFullSchema() + "."+(baseItemFactColumn.substring(0, lastIndex));
 
 						DerivedFactColumnsType columns = getFactColumnsFromOntologyCell(singlePanel.getItem().get(0).getItemKey());
-						if(columns != null){
+						if (columns != null) {
 							if(columns.getDerivedFactTableColumn().size() > 1) {
 								// parse through solumns and build up replace string.
-
 								Iterator<String> it = columns.getDerivedFactTableColumn().iterator();
 								String column = it.next();
 								
 								lastIndex = column.lastIndexOf(".");
 								String table = dataSourceLookup.getFullSchema() + "."+ (column.substring(0, lastIndex));
-
-								
 								factTable = "( select * from " + table;
-								while(it.hasNext()){
+								while (it.hasNext()){
 									column = it.next();
-									
 									lastIndex = column.lastIndexOf(".");
 									table = dataSourceLookup.getFullSchema() + "."+ (column.substring(0, lastIndex));
-
-									factTable += "\n UNION ALL \n"
-											+ " select * from " +  table;
+									factTable += "\n UNION ALL \n" + " select * from " +  table;
 								}
 								factTable += " )";
-
 							}
 						}
 						log.debug("Parse columns " + factTable);
-						totalSql=totalSql.replaceAll(defaultTableName, factTable)	;
-						
-						
-						
+						totalSql=totalSql.replaceAll(defaultTableName, factTable);
 					}
 				}
-				
-		
-				
-				
-				
 			}
-			
 			panelSqlList.add("SELECT "
 					+ countClause
 					+ " from ( "
 					+ totalSql + " ) " + countSqlFrom + " totalsql");
 		}
-
-		totalObservations = pageTotalDao.getTotalForAllPanel(panelSqlList,
-				sqlCountList, inputOptionListHandler);
+		totalObservations = pageTotalDao.getTotalForAllPanel(panelSqlList, sqlCountList, inputOptionListHandler);
 		return totalObservations;
 	}
 
-	public HashMap getMinPatientIndexAndTheTotal(int maxInputList)
-			throws SQLException, I2B2Exception {
-
-		IInputOptionListHandler inputOptionListHandler = PDOFactory
-				.buildInputListHandler(inputList, dataSourceLookup);
-
+	public HashMap getMinPatientIndexAndTheTotal(int maxInputList) throws SQLException, I2B2Exception {
+		IInputOptionListHandler inputOptionListHandler = PDOFactory.buildInputListHandler(inputList, dataSourceLookup);
 		// inputList.getPatientList().setMax(maxInputList);
 		inputOptionListHandler.setMaxIndex(maxInputList);
 
 		// iterate the panel and call total
 		IFactRelatedQueryHandler factRelatedHandler = null;
 		String countSqlFrom = " ";
-		if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE)
-				|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
-				|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
-			factRelatedHandler = new FactRelatedQueryHandler(dataSourceLookup,
+		factRelatedHandler = new FactRelatedQueryHandler(dataSourceLookup,
 					inputList, filterList, outputOptionList);
-		} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)) {
-			countSqlFrom = "as";
-			factRelatedHandler = new SQLServerFactRelatedQueryHandler(
-					dataSourceLookup, inputList, filterList, outputOptionList);
-		}
+
 		//set project param
 		factRelatedHandler.setProjectParamMap(this.projectParamMap);
 		factRelatedHandler.setModifierMetadataXmlMap(this.modifierMetadataXmlMap);
@@ -254,30 +217,25 @@ public class PagingHandler extends CRCDAO {
 		String panelSql = "";
 		for (PanelType singlePanel : filterList.getPanel()) {
 			int sqlParamCount = singlePanel.getItem().size();
-			if (singlePanel.getInvert() == 1) {
+			if (singlePanel.getInvert() == 1)
 				sqlParamCount++;
-			}
-			if (inputOptionListHandler.isCollectionId()) {
+
+			if (inputOptionListHandler.isCollectionId())
 				sqlParamCount++;
-			}
 
 			sqlCountList.add(sqlParamCount);
 
-			panelSql = pageTotalDao.buildTotalSql(factRelatedHandler,
-					singlePanel);
-			if (panelSql.length() ==0) { 
+			panelSql = pageTotalDao.buildTotalSql(factRelatedHandler, singlePanel);
+			if (panelSql.length() == 0)
 				continue;
-			}
+
 			String minSql = inputOptionListHandler
 					.generateMinIndexSql(panelSql);
 			System.out.println("min sql for panel " + minSql);
 			panelMinSqlList.add(minSql);
-
 		}
-
 		return pageTotalDao.getMinIndexAndCountAllPanel(panelMinSqlList,
 				sqlCountList, inputOptionListHandler);
-
 	}
 
 	public int getMinPercent() throws I2B2Exception {
@@ -303,8 +261,7 @@ public class PagingHandler extends CRCDAO {
 	 * @throws SQLException
 	 * @throws I2B2Exception
 	 */
-	public HashMap calculateMaxPageInputList() throws SQLException,
-			I2B2Exception {
+	public HashMap calculateMaxPageInputList() throws SQLException, I2B2Exception {
 		int maxIteration = getPagingMaxIteration();
 		int i = 0;
 		long pageSize = getPageSize();
@@ -327,25 +284,21 @@ public class PagingHandler extends CRCDAO {
 			log.debug("Total observations for [" + inputListCount + " ] is ["
 					+ totalObservations + " ]");
 			// 
-			if (i == 0) {
+			if (i == 0)
 				returnResultMap.put("TOTAL_OBSERVATION", totalObservations);
-			}
 
 			// if total < page size then set max patient break
 			if (checkIfFitThePage(pageSize, totalObservations)) {
 				log.debug("Input list size of [" + inputListCount
 						+ "] fits the page size [" + pageSize + "]");
 				fitPagingFlag = true;
-				if (i == 0) {
+				if (i == 0)
 					returnResultMap.put("PAGING_REQUIRED_FLAG", false);
-				}
 				break;
 			}
 
 			// call paging method with page size, total observation,..
-			inputListCount = pageMethod.calculateListSize(inputListCount,
-					totalObservations, pageSize);
-
+			inputListCount = pageMethod.calculateListSize(inputListCount, totalObservations, pageSize);
 			if (inputListCount < 1) {
 				// need not continue the iteration if the list size is reduced
 				// to < 1
@@ -353,7 +306,6 @@ public class PagingHandler extends CRCDAO {
 			}
 			i++;
 		}
-
 		if (fitPagingFlag) {
 			returnResultMap.put("MAX_INPUT_LIST", inputListCount);
 			return returnResultMap;
@@ -419,36 +371,27 @@ public class PagingHandler extends CRCDAO {
 
 	public int getMinPercentInput(int listLength) throws I2B2Exception {
 		int minPercent = getMinPercent();
-
 		int minPercentOfList = listLength * (minPercent / 100);
 		return minPercentOfList;
 	}
 
 	private boolean checkIfFitThePage(long pageSize, long totalObservations) {
 		return (pageSize >= totalObservations);
-
 	}
 
-	
 	protected DerivedFactColumnsType getFactColumnsFromOntologyCell(String itemKey)
 			throws ConceptNotFoundException, OntologyException {
 		DerivedFactColumnsType factColumns = new DerivedFactColumnsType();
 		try {
-			
 			QueryProcessorUtil qpUtil = QueryProcessorUtil.getInstance();
 			String ontologyUrl = qpUtil
 					.getCRCPropertyValue(QueryProcessorUtil.ONTOLOGYCELL_ROOT_WS_URL_PROPERTIES);
-
-
 			SecurityType securityType = PMServiceAccountUtil
 					.getServiceSecurityType(dataSourceLookup.getDomainId());
-			
-			
 			factColumns = CallOntologyUtil.callGetFactColumns(itemKey,
 					securityType, dataSourceLookup.getProjectPath(),
 					ontologyUrl +"/getDerivedFactColumns");
 		} catch (JAXBUtilException e) {
-
 			log.error("Error while fetching metadata [" + itemKey
 					+ "] from ontology ", e);
 			throw new OntologyException("Error while fetching metadata ["
@@ -470,15 +413,10 @@ public class PagingHandler extends CRCDAO {
 					+ itemKey + "] from ontology "
 					+ StackTraceUtil.getStackTrace(e));
 		}
-
 //		if (factColumns.isEmpty()) {
 //			throw new ConceptNotFoundException("[" + itemKey + "] ");
 
-//		} 
-
+//		}
 		return factColumns;
 	}
-
-
-	
 }

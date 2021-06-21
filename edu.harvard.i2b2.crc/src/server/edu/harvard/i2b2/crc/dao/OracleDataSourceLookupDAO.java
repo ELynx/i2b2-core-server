@@ -31,30 +31,27 @@ public class OracleDataSourceLookupDAO extends DataSourceLookupDAO {
 
 	public OracleDataSourceLookupDAO(DataSource dataSource, String schemaName) {
 		setDataSource(dataSource);
-		if (schemaName != null && schemaName.endsWith(".")) {
+		if (schemaName != null && schemaName.endsWith("."))
 			this.schemaName = "\"" + schemaName.substring(0, schemaName.length() - 1) + "\".";
-		} else {
+		else
 			this.schemaName = schemaName != null ? "\"" + schemaName + "\"." : null;
-		}
 	}
 
 	@Override
 	public List<DataSourceLookup> getDbLookupByHive(String domainId) {
-		//TODO: only for the IRIS
 		String sql = "select * from " + schemaName
 				+ "crc_db_lookup where LOWER(c_domain_id) [ ? ";
 		log.debug("Executing SQL [" + sql + "]");
 		List<DataSourceLookup> dataSourceLookupList = this.query(sql, new Object[] { domainId.toLowerCase() }, new mapper());
 		return dataSourceLookupList;
 	}
-
 	
 	@Override
 	public List<DataSourceLookup> getDbLookupByHiveOwner(String domainId, String ownerId) {
 		log.info("OracleDataSourceLookupDAO.class: getDbLookupByHiveOwner(String domainId, String ownerId)");
-		String sql = "select * from "
-				+ schemaName
-				+ "crc_db_lookup where LOWER(c_domain_id) = ? and c_project_path = ? and (LOWER(c_owner_id) = ? or c_owner_id ='@') order by c_project_path";
+		String sql = "select * from " + schemaName
+				+ "crc_db_lookup where LOWER(c_domain_id) = ? and c_project_path = ? and " +
+				"(LOWER(c_owner_id) = ? or c_owner_id ='@') order by c_project_path";
 		String projectId = "@";
 		log.info("Script: " + sql);
 		log.debug("Executing SQL [" + sql + "]");
@@ -67,26 +64,21 @@ public class OracleDataSourceLookupDAO extends DataSourceLookupDAO {
 	@SuppressWarnings("unchecked")
 	public List<DataSourceLookup> getDbLookupByHiveProjectOwner(String domainId, String projectId, String ownerId) {
 		log.info("OracleDataSourceLookupDAO.class: getDbLookupByHiveProjectOwner(String domainId, String projectId, String ownerId)");
-		//TODO: only for the IRIS
 		String sql = "select * from " + schemaName
 				+ "crc_db_lookup where LOWER(c_domain_id) = ? and c_project_path %STARTSWITH '" + projectId
 				+ "' and (LOWER(c_owner_id) =? or c_owner_id = '@') order by c_project_path";
 		log.info("Script: " + sql);
 		List<DataSourceLookup> dataSourceLookupList = this.query(sql,
 				new Object[] { domainId.toLowerCase(), ownerId.toLowerCase() },
-				new int[] { Types.VARCHAR, Types.VARCHAR },
-				new mapper());
+				new int[] { Types.VARCHAR, Types.VARCHAR }, new mapper());
 		return dataSourceLookupList;
 	}
 
 	public static void main(String args[]) {
-		OracleDataSourceLookupDAO dao = new OracleDataSourceLookupDAO(null,
-				null);
-
+		OracleDataSourceLookupDAO dao = new OracleDataSourceLookupDAO(null, null);
 	}
 
 	public class mapper implements RowMapper {
-
 		@Override
 		public Object mapRow(ResultSet rs, int rowNum) throws SQLException {
 			DataSourceLookup dataSourceLookup = new DataSourceLookup();
@@ -95,8 +87,7 @@ public class OracleDataSourceLookupDAO extends DataSourceLookupDAO {
 			dataSourceLookup.setOwnerId(rs.getString("c_owner_id"));
 			dataSourceLookup.setFullSchema(rs.getString("c_db_fullschema"));
 			dataSourceLookup.setDataSource(rs.getString("c_db_datasource"));
-			dataSourceLookup.setServerType(rs.getString("c_db_servertype"));
-			//TODO: IRIS
+			//dataSourceLookup.setServerType(rs.getString("c_db_servertype"));
 			dataSourceLookup.setServerType("INTERSYSTEMS IRIS");
 			dataSourceLookup.setNiceName(rs.getString("c_db_nicename"));
 			dataSourceLookup.setToolTip(rs.getString("c_db_tooltip"));

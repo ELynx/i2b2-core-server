@@ -16,11 +16,11 @@ package edu.harvard.i2b2.crc.dao.pdo.filter;
 
 import edu.harvard.i2b2.common.exception.I2B2Exception;
 import edu.harvard.i2b2.common.util.db.JDBCUtil;
-import edu.harvard.i2b2.crc.dao.DAOFactoryHelper;
 import edu.harvard.i2b2.crc.datavo.db.DataSourceLookup;
 import edu.harvard.i2b2.crc.datavo.pdo.query.ItemType;
 import edu.harvard.i2b2.crc.util.QueryProcessorUtil;
 import edu.harvard.i2b2.crc.util.SqlClauseUtil;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Class builds "from" and "where" clause of pdo query based on given provider
@@ -53,7 +53,7 @@ public class DimensionFilter {
 	 * @return sql string
 	 */
 	public String getFromSqlString() throws I2B2Exception {
-		String conceptFromString = "";
+		String conceptFromString = StringUtils.EMPTY;
 
 		if (item != null) {
 			conceptFromString = " ( ";
@@ -67,10 +67,8 @@ public class DimensionFilter {
 			String dimColumnDataType = item.getDimColumndatatype();
 			String dimOperator = item.getDimOperator();
 			
-			if (dimOperator.equalsIgnoreCase("LIKE")
-					&& dimCode.trim().length() > 0) {
-				if (!SqlClauseUtil.isEnclosedinSingleQuote(dimCode)) { 
-					
+			if (dimOperator.equalsIgnoreCase("LIKE") && dimCode.trim().length() > 0) {
+				if (!SqlClauseUtil.isEnclosedinSingleQuote(dimCode)) {
 					// check if the dim code ends with "\" other wise add it,
 					// so that it matches concept_dimension's concept_path or
 					// provider_dimension's provider_path
@@ -79,8 +77,6 @@ public class DimensionFilter {
 					} else {
 						dimCode = dimCode + "\\%";
 					}
-					if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL))
-						dimCode = dimCode.replaceAll("\\\\", "\\\\\\\\");
 				}
 			}
 			
@@ -101,11 +97,9 @@ public class DimensionFilter {
 			}
 
 			String facttablecolumn = item.getFacttablecolumn();
-			if(derivedFactTable == true){
-				if(item.getFacttablecolumn().contains(".")){
-
+			if (derivedFactTable){
+				if (item.getFacttablecolumn().contains(".")) {
 					int lastIndex = facttablecolumn.lastIndexOf(".");
-
 					facttablecolumn = (facttablecolumn.substring(lastIndex+1));
 				}
 			}
@@ -127,7 +121,6 @@ public class DimensionFilter {
 			conceptFromString += " group by " + facttablecolumn;
 			conceptFromString += "    ) dimension \n";
 		}
-
 		return conceptFromString;
 	}
 }

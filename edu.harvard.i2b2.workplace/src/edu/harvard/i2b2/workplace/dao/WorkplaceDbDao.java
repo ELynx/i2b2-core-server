@@ -29,7 +29,6 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.support.JdbcDaoSupport;
 import edu.harvard.i2b2.common.exception.I2B2DAOException;
 import edu.harvard.i2b2.common.exception.I2B2Exception;
-import edu.harvard.i2b2.workplace.datavo.wdo.DblookupType;
 import edu.harvard.i2b2.workplace.ejb.DBInfoType;
 import edu.harvard.i2b2.workplace.util.WorkplaceUtil;
 
@@ -45,9 +44,7 @@ public class WorkplaceDbDao extends JdbcDaoSupport {
 		DataSource ds = null;
 		try {
 			ds = WorkplaceUtil.getInstance().getDataSource("java:/WorkplaceBootStrapDS");
-			//		log.info(ds.toString());
 			Connection conn = ds.getConnection();
-
 			metadataSchema = "\"" + conn.getSchema() + "\".";
 			conn.close();
 		} catch (I2B2Exception e2) {
@@ -61,19 +58,18 @@ public class WorkplaceDbDao extends JdbcDaoSupport {
 	}
 
 	private String getMetadataSchema() throws I2B2Exception{
-
 		return metadataSchema; //WorkplaceUtil.getInstance().getMetaDataSchemaName();
 	}
-
 
 	public List<DBInfoType> getDbLookupByHiveOwner(String domainId,String ownerId) throws I2B2Exception, I2B2DAOException {
 		log.info("WorkplaceDbDao.class: getDbLookupByHiveOwner(String domainId,String ownerId)");
 		String metadataSchema = getMetadataSchema();
 		String sql =  "select * from " + metadataSchema +
-				"work_db_lookup where LOWER(c_domain_id) = ? and c_project_path = ? and (LOWER(c_owner_id) = ? or c_owner_id ='@') order by c_project_path";
+				"work_db_lookup where LOWER(c_domain_id) = ? and c_project_path = ? " +
+				"and (LOWER(c_owner_id) = ? or c_owner_id ='@') order by c_project_path";
 		String projectId = "@";
 		//		log.info(sql + domainId + projectId + ownerId);
-		List queryResult = null;
+		List queryResult;
 		try {
 			queryResult = jt.query(sql, new getDBInfoMapper(), domainId.toLowerCase(),projectId,ownerId.toLowerCase());
 		} catch (DataAccessException e) {
@@ -82,10 +78,6 @@ public class WorkplaceDbDao extends JdbcDaoSupport {
 		}
 		log.info("SCRIPT: " + sql);
 		return queryResult;
-
-		//		List<DBInfoType> dataSourceLookupList = 
-		//			this.query(sql, new Object[]{domainId,projectId,ownerId}, new mapper());
-		//		return dataSourceLookupList;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -93,17 +85,13 @@ public class WorkplaceDbDao extends JdbcDaoSupport {
 			String ownerId) throws I2B2Exception, I2B2DAOException{
 		log.info("WorkplaceDbDao.class: getDbLookupByHiveProjectOwner(String domainId, String projectId, String ownerId)");
 		String metadataSchema = getMetadataSchema();
-		//TODO: only for the IRIS
 		String sql = "select * from " + metadataSchema +
 				"work_db_lookup where LOWER(c_domain_id) = ? and LOWER(c_project_path) %STARTSWITH '" + projectId.replace("%", "").toLowerCase() +
 				"' and (LOWER(c_owner_id) =? or c_owner_id = '@') order by c_project_path"; // desc  c_owner_id desc";
-		//		List<DBInfoType> dataSourceLookupList = this.query(sql, new Object[]{domainId,projectId+"%",ownerId},new int[]{Types.VARCHAR,Types.VARCHAR,Types.VARCHAR},new mapper()  );
-		//		return dataSourceLookupList;
-		//		log.info(sql + domainId + projectId + ownerId);
 		log.info("Script [" + domainId.toLowerCase() + ", " +
 				projectId.toLowerCase() + ", " +
 				ownerId.toLowerCase() + "]: " + sql);
-		List queryResult = null;
+		List queryResult;
 		try {
 			queryResult = jt.query(sql, new getDBInfoMapper(), domainId.toLowerCase(), ownerId.toLowerCase());
 		} catch (DataAccessException e) {
@@ -112,31 +100,22 @@ public class WorkplaceDbDao extends JdbcDaoSupport {
 		}
 		log.info("SCRIPT: " + sql);
 		return queryResult;
-
 	}
-
-
 }
 
 
 class getDBInfoMapper implements RowMapper<DBInfoType> {
 	@Override
 	public DBInfoType mapRow(ResultSet rs, int rowNum) throws SQLException {
-
-
-
 		DBInfoType dataSourceLookup = new DBInfoType();
 		dataSourceLookup.setHive(rs.getString("c_domain_id"));
 		dataSourceLookup.setProjectId(rs.getString("c_project_path"));
 		dataSourceLookup.setOwnerId(rs.getString("c_owner_id"));
-		//			dataSourceLookup.setDatabaseName(rs.getString("c_db_datasource"));
+	//  dataSourceLookup.setDatabaseName(rs.getString("c_db_datasource"));
+		dataSourceLookup.setDb_serverType("INTERSYSTEMS IRIS");
 	//	dataSourceLookup.setDb_fullSchema(rs.getString("c_db_fullschema"));
 		dataSourceLookup.setDb_dataSource(rs.getString("c_db_datasource"));
 		dataSourceLookup.setDb_serverType(rs.getString("c_db_servertype"));
-		//TODO: IRIS
-		dataSourceLookup.setDb_serverType("INTERSYSTEMS IRIS");
-
 		return dataSourceLookup;
-	} 
-
+	}
 }

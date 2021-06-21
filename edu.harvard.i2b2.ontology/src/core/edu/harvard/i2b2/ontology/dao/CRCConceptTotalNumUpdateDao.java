@@ -19,6 +19,7 @@ import java.util.List;
 
 import javax.sql.DataSource;
 
+import edu.harvard.i2b2.common.util.db.QueryUtil;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.jdbc.core.support.JdbcDaoSupport;
@@ -104,39 +105,31 @@ public class CRCConceptTotalNumUpdateDao extends JdbcDaoSupport {
 			List<TableAccessType> tableAccessTypeList = tableAccessDao.getAllTableAccess(projectInfo, dbInfo); 
 			log.debug("Table access List size [ " + tableAccessTypeList.size() + " ]");
 			List<String> tableNameList = new ArrayList<String>();
-			
-			
+
 			for (Iterator<TableAccessType> tableAccess = tableAccessTypeList.iterator(); tableAccess.hasNext();) {
 				tableAccessType = tableAccess.next();
-				
 				String updateStmtStr;
-				//TODO: check if [ is enough for IRIS
-				if (dbInfo.getDb_serverType().equalsIgnoreCase("INTERSYSTEMS IRIS"))
-					updateStmtStr = " update " + metadataSchema + tableAccessType.getTableName().trim() +
-						" set c_totalnum = null where c_fullname [ ?  ";
-				else
-					updateStmtStr = " update " + metadataSchema + tableAccessType.getTableName().trim() +
-							" set c_totalnum = null where c_fullname like ?  ";
+				updateStmtStr = " update " + metadataSchema + tableAccessType.getTableName().trim() +
+						" set c_totalnum = null where c_fullname " +
+						QueryUtil.getOperatorByValue(tableAccessType.getFullName() + "%") + " ?  ";
+
 				log.debug("Executing sql [" + updateStmtStr + "] c_fullname [" + tableAccessType.getFullName() + " ]");
 				if (synchronizeAllFlag) {
 					pStmt = conn.prepareStatement(updateStmtStr);
-					pStmt.setString(1, tableAccessType.getFullName() + "%");
+					pStmt.setString(1, QueryUtil.getCleanValue(tableAccessType.getFullName() + "%"));
 					pStmt.executeUpdate();
 					pStmt.close();
 				}
 
 				String selectStmt;
-				//TODO: check if [ is enough for IRIS
-				if (dbInfo.getDb_serverType().equalsIgnoreCase("INTERSYSTEMS IRIS"))
-					selectStmt = "select count(1) from " + metadataSchema + tableAccessType.getTableName().trim() + " where c_fullname [ ? ";
-				else
-					selectStmt = "select count(1) from " + metadataSchema + tableAccessType.getTableName().trim() + " where c_fullname like ? ";
-				if (!synchronizeAllFlag) {
+				selectStmt = "select count(1) from " + metadataSchema + tableAccessType.getTableName().trim() +
+						" where c_fullname " + QueryUtil.getOperatorByValue(tableAccessType.getFullName() + "%") + " ? ";
+				if (!synchronizeAllFlag)
 					selectStmt += " and c_totalnum is null ";
-				}
+
 				log.info("Script [" + tableAccessType.getFullName() + "%" + "]:" + selectStmt);
 				pStmt = conn.prepareStatement(selectStmt);
-				pStmt.setString(1, tableAccessType.getFullName() + "%");
+				pStmt.setString(1, QueryUtil.getCleanValue(tableAccessType.getFullName() + "%"));
 				 resultSet = pStmt.executeQuery();
 				 resultSet.next();
 				 totalRecordToUpdate += resultSet.getInt(1);
@@ -147,22 +140,17 @@ public class CRCConceptTotalNumUpdateDao extends JdbcDaoSupport {
 
 			//update the step field (PROCESSED updatedrecord/totalrecordtoupdate format)
 			ontProcessStatusDao.updateStatus(processId, new Date(System
-					.currentTimeMillis()), "PROCESSED 0/"+totalRecordToUpdate, "PROCESSING");
+					.currentTimeMillis()), "PROCESSED 0/" + totalRecordToUpdate, "PROCESSING");
 
 			for (TableAccessType accessType : tableAccessTypeList) {
 				tableAccessType = accessType;
 				String selectStmt;
-				//TODO: check if %STARTSWITH is enough for IRIS
-				if (dbInfo.getDb_serverType().equalsIgnoreCase("INTERSYSTEMS IRIS"))
-					selectStmt = "select * from " + metadataSchema + tableAccessType.getTableName().trim() +
-							" where c_fullname [ ? and (not c_visualattributes %STARTSWITH 'C') " +
-							" and (not c_visualattributes %STARTSWITH 'O') " +
-							" and (not c_visualattributes %STARTSWITH 'D') and (not c_visualattributes %STARTSWITH 'R') ";
-				else
-					selectStmt = "select * from " + metadataSchema + tableAccessType.getTableName().trim() +
-							" where c_fullname like ? and c_visualattributes not like 'C%' " +
-							"and c_visualattributes not like 'O%' " +
-							" and c_visualattributes not like 'D%' and c_visualattributes not like 'R%' ";
+				selectStmt = "select * from " + metadataSchema + tableAccessType.getTableName().trim() +
+						" where c_fullname " +
+						QueryUtil.getOperatorByValue(tableAccessType.getFullName() + "%") +
+						" ? and (not c_visualattributes %STARTSWITH 'C') " +
+						" and (not c_visualattributes %STARTSWITH 'O') " +
+						" and (not c_visualattributes %STARTSWITH 'D') and (not c_visualattributes %STARTSWITH 'R') ";
 
 				if (!synchronizeAllFlag) {
 					selectStmt += " and c_totalnum is null ";
@@ -171,7 +159,7 @@ public class CRCConceptTotalNumUpdateDao extends JdbcDaoSupport {
 				log.info("Script [" + tableAccessType.getFullName() + "%" + "]:" + selectStmt);
 
 				pStmt = conn.prepareStatement(selectStmt);
-				pStmt.setString(1, tableAccessType.getFullName() + "%");
+				pStmt.setString(1, QueryUtil.getCleanValue(tableAccessType.getFullName() + "%"));
 				resultSet = pStmt.executeQuery();
 
 				String updateSql = "update " + metadataSchema + tableAccessType.getTableName().trim() +
@@ -196,7 +184,8 @@ public class CRCConceptTotalNumUpdateDao extends JdbcDaoSupport {
 					log.debug("Begin Setfinder query to CRC [" + cFullName + "]");
 					conceptSkipFlag = false;
 					try {
-						masterInstanceResultResponse = CallCRCUtil.callSetfinderQuery("\\\\" + tableAccessType.getTableCd().trim() + cFullName, securityType, projectId);
+						masterInstanceResultResponse = CallCRCUtil.callSetfinderQuery(
+								"\\\\" + tableAccessType.getTableCd().trim() + cFullName, securityType, projectId);
 					} catch (Throwable i2b2Ex) {
 						log.info("Patient count caught the exception " + i2b2Ex.getMessage());
 						i2b2Ex.printStackTrace();
@@ -220,7 +209,6 @@ public class CRCConceptTotalNumUpdateDao extends JdbcDaoSupport {
 						updatePStmt.setInt(1, totalNum);
 						updatePStmt.setString(2, cFullName);
 						updatePStmt.executeUpdate();
-
 					}
 
 					//delete the setfinder query
@@ -230,26 +218,22 @@ public class CRCConceptTotalNumUpdateDao extends JdbcDaoSupport {
 
 					//update processed record count
 					totalProcessedRecord++;
-					if (totalProcessedRecord % 10 == 0) {
+					if (totalProcessedRecord % 10 == 0)
 						ontProcessStatusDao.updateStatus(processId, new Date(System
 								.currentTimeMillis()), "PROCESSED " + totalProcessedRecord + "/" + totalRecordToUpdate, "PROCESSING");
-					}
-
 				}
-				if (killedFlag) {
+				if (killedFlag)
 					break;
-				}
 				resultSet.close();
 				pStmt.close();
 			}
 			
-			if (!killedFlag) {
+			if (!killedFlag)
 				ontProcessStatusDao.updateStatus(processId, new Date(System
 					.currentTimeMillis()), "PROCESSED "+ totalProcessedRecord +"/"+totalRecordToUpdate, "COMPLETED");
-			} else { 
+			else
 				ontProcessStatusDao.updateStatus(processId, new Date(System
 						.currentTimeMillis()), "PROCESSED "+ totalProcessedRecord +"/"+totalRecordToUpdate, "KILLED");
-			}
 			return ontProcessStatusType;
 		} catch (Throwable t) {
 			t.printStackTrace();
@@ -258,20 +242,15 @@ public class CRCConceptTotalNumUpdateDao extends JdbcDaoSupport {
 				ontProcessStatusDao.updateStatus(processId, new Date(System
 						.currentTimeMillis()), "PROCESSED "+ totalProcessedRecord +"/"+totalRecordToUpdate, "ERROR");
 				ontProcessStatusDao.updateStatusMessage(processId,
-						stackTrace.substring(0, (stackTrace.length()>1900)?1900:stackTrace.length()));
+						stackTrace.substring(0, stackTrace.length() > 1900 ? 1900 : stackTrace.length()));
 			}
 			throw new I2B2Exception(stackTrace);
 		} finally {
 			try {
-				if (resultSet != null) { 
-				
-						resultSet.close();
-					
-				}
-				if (conn != null) { 
-					
-						JDBCUtil.closeJdbcResource(null, pStmt, conn);
-					
+				if (resultSet != null)
+					resultSet.close();
+				if (conn != null) {
+					JDBCUtil.closeJdbcResource(null, pStmt, conn);
 					JDBCUtil.closeJdbcResource(null, updatePStmt, null);
 				}
 			} catch (SQLException e) {
@@ -284,15 +263,13 @@ public class CRCConceptTotalNumUpdateDao extends JdbcDaoSupport {
 		SecurityType securityType = new SecurityType();
 		String serviceAccountUser = ontUtil.getServiceAccountUser(); 
 		String serviceAccountPassword = ontUtil.getServiceAccountPassword();
-		if (serviceAccountUser == null || serviceAccountPassword == null) { 
+		if (serviceAccountUser == null || serviceAccountPassword == null)
 			throw new I2B2Exception("Service account user/password not set in ontology.properties file");
-		}
 		securityType.setUsername(serviceAccountUser);
 		PasswordType password = new PasswordType(); 
 		password.setValue(ontUtil.getServiceAccountPassword());
 		securityType.setPassword(password);
 		securityType.setDomain(messageHeaderType.getSecurity().getDomain());
-		
 		return securityType;
 	}
 

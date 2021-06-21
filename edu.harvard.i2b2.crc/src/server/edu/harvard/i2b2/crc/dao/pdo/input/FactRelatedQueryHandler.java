@@ -30,6 +30,7 @@ import javax.xml.datatype.XMLGregorianCalendar;
 import javax.xml.stream.XMLStreamException;
 
 import org.apache.axis2.AxisFault;
+import org.apache.commons.lang3.StringUtils;
 import org.w3c.dom.Element;
 
 import edu.harvard.i2b2.common.exception.I2B2DAOException;
@@ -90,8 +91,7 @@ import edu.harvard.i2b2.crc.util.QueryProcessorUtil;
  * @see PatientFactRelated
  * @see ObservationFactRelated
  */
-public class FactRelatedQueryHandler extends CRCDAO implements
-IFactRelatedQueryHandler {
+public class FactRelatedQueryHandler extends CRCDAO implements IFactRelatedQueryHandler {
 	/** Input option list from pdo request* */
 	private InputOptionListType inputList = null;
 
@@ -159,7 +159,7 @@ IFactRelatedQueryHandler {
 
 	private Map projectParamMap = null;
 	private Map<String,XmlValueType> modifierMetadataXmlMap = null;
-	private String requestVersion = "";
+	private String requestVersion = StringUtils.EMPTY;
 	
 	private String factTable = "observation_FACT";
 	private boolean derivedFactTable = QueryProcessorUtil.getInstance().getDerivedFactTable();
@@ -198,8 +198,7 @@ IFactRelatedQueryHandler {
 		eidFactRelated = new EidFactRelated(outputOptionList.getEidSet());
 
 		// check if concept filter present
-		if ((filterList != null) && (filterList.getPanel() != null)
-				&& (filterList.getPanel().size() > 0)) {
+		if (filterList != null && filterList.getPanel() != null && filterList.getPanel().size() > 0) {
 			checkFilter = true;
 		}
 	}
@@ -219,12 +218,10 @@ IFactRelatedQueryHandler {
 		this.requestVersion = requestVersion;
 	}
 
-
 	@Override
 	public List<String> getPanelSqlList() {
 		return this.panelSqlList;
 	}
-
 
 	public void setSecurity(SecurityType security){
 		this.security = security;
@@ -256,27 +253,19 @@ IFactRelatedQueryHandler {
 		List<ObservationSet> observationFactSetList = new ArrayList<ObservationSet>();
 
 		try {
-			conn = this.getApplicationDataSource(
-					dataSourceLookup.getDataSource()).getConnection();
+			conn = this.getApplicationDataSource(dataSourceLookup.getDataSource()).getConnection();
 
 			int sqlParamCount = 1;
 			boolean createTempTable = true;
-			if(checkFilter == false) {
+			if (!checkFilter) {
 //WAS			if (filterList.getPanel().size() == 0) {
-	
-				if(derivedFactTable == true){
-
-					String sql=   "select * from pg_tables where lower(tablename) = 'observation_fact'";
+				if (derivedFactTable){
+					String sql =  "select * from pg_tables where lower(tablename) = 'observation_fact'";
 					sql += " and schemaname = '" + dataSourceLookup.getFullSchema() + "'";
-					if(dataSourceLookup.getServerType().equals("ORACLE")){
-						sql=   "SELECT * FROM ALL_OBJECTS WHERE OBJECT_TYPE = 'TABLE' AND lower(OBJECT_NAME) = 'observation_fact'";
-						sql += " and OWNER = '" + dataSourceLookup.getFullSchema() + "'";
-					}
 					//log.info("no Filter sql: " + dataSourceLookup.getServerType() + " " + sql);
 					
 					PreparedStatement stmt1 = conn.prepareStatement(sql);
 					ResultSet resultSet1 = stmt1.executeQuery();
-
 					if(!(resultSet1.next())){
 						resultSet1.close();
 						createTempTable = false;
@@ -285,27 +274,20 @@ IFactRelatedQueryHandler {
 						} catch (SQLException e) {
 							log.error("Error trying to close connection:"+ e.getMessage());
 						}
-		
 						return observationFactSetList;
 					}
-					
-
 				}
 				// generate sql
-				String querySql = buildQuery(null,
-						PdoQueryHandler.PLAIN_PDO_TYPE);
+				String querySql = buildQuery(null, PdoQueryHandler.PLAIN_PDO_TYPE);
 				log.debug("Executing sql PLAIN PDO[" + querySql + "]");
 				panelSqlList.add(querySql);
-				if (createTempTable) {
-					if (inputOptionListHandler.isEnumerationSet()) {
-						inputOptionListHandler
-						.uploadEnumerationValueToTempTable(conn);
-					}
-				}
+				if (createTempTable)
+					if (inputOptionListHandler.isEnumerationSet())
+						inputOptionListHandler.uploadEnumerationValueToTempTable(conn);
 				// execute fullsql
 				resultSet = executeQuery(conn, querySql, sqlParamCount);
 				// build facts
-				observationFactSetList.add(buildPDOFact(resultSet, ""));
+				observationFactSetList.add(buildPDOFact(resultSet, StringUtils.EMPTY));
 			} else {
 				for (PanelType panel : filterList.getPanel()) {
 					// generate sql
@@ -316,38 +298,31 @@ IFactRelatedQueryHandler {
 					}
 					String defaultTableName = this.getDbSchemaName() + "observation_FACT" ;
 					// OMOP addition for multi domains
-					if(panel != null){
-						if(derivedFactTable == true){
-							if(panel.getItem().get(0).getFacttablecolumn().contains(".")){
-
+					if (panel != null){
+						if (derivedFactTable){
+							if (panel.getItem().get(0).getFacttablecolumn().contains(".")) {
 								String baseItemFactColumn = panel.getItem().get(0).getFacttablecolumn();
 								int lastIndex = baseItemFactColumn.lastIndexOf(".");
 								String factTable = this.getDbSchemaName() + (baseItemFactColumn.substring(0, lastIndex));
 
 								DerivedFactColumnsType columns = getFactColumnsFromOntologyCell(panel.getItem().get(0).getItemKey());
-								if(columns != null){
-									if(columns.getDerivedFactTableColumn().size() > 1) {
+								if (columns != null){
+									if (columns.getDerivedFactTableColumn().size() > 1) {
 										// parse through solumns and build up replace string.
 
 										Iterator<String> it = columns.getDerivedFactTableColumn().iterator();
 										String column = it.next();
-										
 										lastIndex = column.lastIndexOf(".");
 										String table = this.getDbSchemaName() + (column.substring(0, lastIndex));
-
 										
 										factTable = "( select * from " + table;
-										while(it.hasNext()){
+										while (it.hasNext()){
 											column = it.next();
-											
 											lastIndex = column.lastIndexOf(".");
 											table = this.getDbSchemaName() + (column.substring(0, lastIndex));
-
-											factTable += "\n UNION ALL \n"
-													+ " select * from " +  table;
+											factTable += "\n UNION ALL \n" + " select * from " +  table;
 										}
 										factTable += " )";
-
 									}
 								}
 								log.debug("Parse columns " + factTable);
@@ -359,27 +334,23 @@ IFactRelatedQueryHandler {
 					panelSqlList.add(querySql);
 					// execute fullsql
 					sqlParamCount = panel.getItem().size();
-					if (panel.getInvert() == 1) {
+					if (panel.getInvert() == 1)
 						sqlParamCount++;
-					}
 					if (createTempTable) {
-						if (inputOptionListHandler.isEnumerationSet()) {
-							inputOptionListHandler
-							.uploadEnumerationValueToTempTable(conn);
-						}
+						if (inputOptionListHandler.isEnumerationSet())
+							inputOptionListHandler.uploadEnumerationValueToTempTable(conn);
 					}
 					resultSet = executeQuery(conn, querySql, sqlParamCount);
 
 					// build facts
-					observationFactSetList.add(buildPDOFact(resultSet, panel
-							.getName()));
+					observationFactSetList.add(buildPDOFact(resultSet, panel.getName()));
 					createTempTable = false;
 				}
 			}
 		} catch (SQLException sqlEx) {
-			throw new I2B2DAOException("", sqlEx);
+			throw new I2B2DAOException(StringUtils.EMPTY, sqlEx);
 		} catch (IOException ioEx) {
-			throw new I2B2DAOException("", ioEx);
+			throw new I2B2DAOException(StringUtils.EMPTY, ioEx);
 		} finally {
 			// IInputOptionListHandler inputOptionListHandler = PDOFactory
 			// .buildInputListHandler(inputList, dataSourceLookup);
@@ -397,7 +368,6 @@ IFactRelatedQueryHandler {
 				log.error("Error trying to close connection", e);
 			}
 		}
-
 		return observationFactSetList;
 	}
 
@@ -416,22 +386,14 @@ IFactRelatedQueryHandler {
 		ResultSet resultSet = null;
 
 		try {
-			conn = this.getApplicationDataSource(
-					dataSourceLookup.getDataSource()).getConnection();
-
+			conn = this.getApplicationDataSource(dataSourceLookup.getDataSource()).getConnection();
 			int sqlParamCount = 1;
 			boolean createTempTable = true;
-			if(checkFilter == false) {
+			if(!checkFilter) {
 //WAS			if (filterList.getPanel().size() == 0) {
-	
-				if(derivedFactTable == true){
-					
+				if(derivedFactTable){
 					String sql=   "select * from pg_tables where lower(tablename) = 'observation_fact'";
 							sql += " and schemaname = '" + dataSourceLookup.getFullSchema() + "'";
-					if(dataSourceLookup.getServerType().equals("ORACLE")){
-						sql=   "SELECT * FROM ALL_OBJECTS WHERE OBJECT_TYPE = 'TABLE' AND lower(OBJECT_NAME) = 'observation_fact'";
-						sql += " and OWNER = '" + dataSourceLookup.getFullSchema() + "'";
-					}
 					//log.info("no Filter sql: " + dataSourceLookup.getServerType() + " " + sql);
 					PreparedStatement stmt1 = conn.prepareStatement(sql);
 					ResultSet resultSet1 = stmt1.executeQuery();
@@ -444,15 +406,11 @@ IFactRelatedQueryHandler {
 						} catch (SQLException e) {
 							log.error("Error trying to close connection:"+ e.getMessage());
 						}
-
 						return observationSetList;
 					}
-					
 				}
-				
 				// generate sql
-				String querySql = buildQuery(null,
-						PdoQueryHandler.PLAIN_PDO_TYPE);
+				String querySql = buildQuery(null, PdoQueryHandler.PLAIN_PDO_TYPE);
 
 				log.debug("Executing sql PLAIN PDO [" + querySql + "]");
 				panelSqlList.add(querySql);
@@ -465,63 +423,48 @@ IFactRelatedQueryHandler {
 				// execute fullsql
 				resultSet = executeQuery(conn, querySql, sqlParamCount);
 				// build facts
-				observationSetList.add(buildPDOFact(resultSet, ""));
+				observationSetList.add(buildPDOFact(resultSet, StringUtils.EMPTY));
 			} else {
 				for (PanelType panel : filterList.getPanel()) {
-
 					// generate sql
-					String querySql = buildQuery(panel,
-							PdoQueryHandler.TABLE_PDO_TYPE);
-					if (querySql.trim().length() == 0 ) { 
+					String querySql = buildQuery(panel, PdoQueryHandler.TABLE_PDO_TYPE);
+					if (querySql.trim().length() == 0 )
 						continue;
-					}
 					log.debug("Executing sql[" + querySql + "]");
 			//		panelSqlList.add(querySql);
 					sqlParamCount = panel.getItem().size();
-					if (panel.getInvert() == 1) {
+					if (panel.getInvert() == 1)
 						sqlParamCount++;
-					}
 					if (createTempTable) {
-						if (inputOptionListHandler.isEnumerationSet()) {
-							inputOptionListHandler
-							.uploadEnumerationValueToTempTable(conn);
-						}
+						if (inputOptionListHandler.isEnumerationSet())
+							inputOptionListHandler.uploadEnumerationValueToTempTable(conn);
 					}
 
 					String defaultTableName = this.getDbSchemaName() + "observation_FACT" ;
 					// OMOP addition for multi domains
-					if(panel != null){
-						if(derivedFactTable == true){
-							if(panel.getItem().get(0).getFacttablecolumn().contains(".")){
-
+					if (panel != null) {
+						if (derivedFactTable) {
+							if (panel.getItem().get(0).getFacttablecolumn().contains(".")) {
 								String baseItemFactColumn = panel.getItem().get(0).getFacttablecolumn();
 								int lastIndex = baseItemFactColumn.lastIndexOf(".");
 								String factTable = this.getDbSchemaName() + (baseItemFactColumn.substring(0, lastIndex));
-
 								DerivedFactColumnsType columns = getFactColumnsFromOntologyCell(panel.getItem().get(0).getItemKey());
-								if(columns != null){
-									if(columns.getDerivedFactTableColumn().size() > 1) {
+								if (columns != null) {
+									if (columns.getDerivedFactTableColumn().size() > 1) {
 										// parse through solumns and build up replace string.
-
 										Iterator<String> it = columns.getDerivedFactTableColumn().iterator();
 										String column = it.next();
-										
 										lastIndex = column.lastIndexOf(".");
 										String table = this.getDbSchemaName() + (column.substring(0, lastIndex));
 
-										
 										factTable = "( select * from " + table;
-										while(it.hasNext()){
+										while (it.hasNext()) {
 											column = it.next();
-											
 											lastIndex = column.lastIndexOf(".");
 											table = this.getDbSchemaName() + (column.substring(0, lastIndex));
-
-											factTable += "\n UNION ALL \n"
-													+ " select * from " +  table;
+											factTable += "\n UNION ALL \n" + " select * from " +  table;
 										}
 										factTable += " )";
-
 									}
 								}
 								log.debug("Parse columns " + factTable);
@@ -535,17 +478,16 @@ IFactRelatedQueryHandler {
 					// execute fullsql
 					resultSet = executeQuery(conn, querySql, sqlParamCount);
 					// build facts
-					observationSetList.add(buildTablePDOFact(resultSet, panel
-							.getName()));
+					observationSetList.add(buildTablePDOFact(resultSet, panel.getName()));
 					// reset loading the temp table after first iteration
 					createTempTable = false;
 				}
 			}
 		} catch (SQLException sqlEx) {
 			log.error(sqlEx.getMessage());
-			throw new I2B2DAOException("", sqlEx);
+			throw new I2B2DAOException(StringUtils.EMPTY, sqlEx);
 		} catch (IOException ioEx) {
-			throw new I2B2DAOException("", ioEx);
+			throw new I2B2DAOException(StringUtils.EMPTY, ioEx);
 		} finally {
 			// IInputOptionListHandler inputOptionListHandler = PDOFactory
 			// .buildInputListHandler(inputList, dataSourceLookup);
@@ -563,7 +505,6 @@ IFactRelatedQueryHandler {
 				log.error("Error trying to close connection", e);
 			}
 		}
-
 		return observationSetList;
 	}
 
@@ -654,57 +595,49 @@ IFactRelatedQueryHandler {
 		}
 		*/
 		if (obsFactFactRelated != null) {
-			obsFactSelectClause = obsFactFactRelated
-					.getSelectClauseWithoutBlob();
-
-			if (obsFactSelectClause.length() <= 0) {
-				obsFactSelectClause = obsFactFactRelated
-						.getDefaultSelectClause();
-			}
+			obsFactSelectClause = obsFactFactRelated.getSelectClauseWithoutBlob();
+			if (obsFactSelectClause.length() <= 0)
+				obsFactSelectClause = obsFactFactRelated.getDefaultSelectClause();
 		}
 
 		String tableLookupJoinClause = " ";
 
 		if (pdoType.equals(PdoQueryHandler.TABLE_PDO_TYPE)) {
-			tableLookupJoinClause = getLookupJoinClause(obsFactFactRelated
-					.isSelectDetail(), obsFactFactRelated.isSelectBlob(),
+			tableLookupJoinClause = getLookupJoinClause(
+					obsFactFactRelated.isSelectDetail(),
+					obsFactFactRelated.isSelectBlob(),
 					obsFactFactRelated.isSelectStatus());
-			obsFactSelectClause += " , concept_lookup.name_char concept_name, provider_lookup.name_char provider_name, modifier_lookup.name_char modifier_name";
-			if (obsFactFactRelated.isSelectDetail()) {
+			obsFactSelectClause += " , concept_lookup.name_char concept_name, provider_lookup.name_char provider_name," +
+					" modifier_lookup.name_char modifier_name";
+			if (obsFactFactRelated.isSelectDetail())
 				obsFactSelectClause += " ,location_lookup.name_char location_name ";
-			}
 		}
 
-		String fullWhereClause = "";
+		String fullWhereClause = StringUtils.EMPTY;
 
-		if (inputOptionListHandler == null) {
-			inputOptionListHandler = PDOFactory.buildInputListHandler(
-					inputList, dataSourceLookup);
-		}
+		if (inputOptionListHandler == null)
+			inputOptionListHandler = PDOFactory.buildInputListHandler(inputList, dataSourceLookup);
 		// fullWhereClause = patientSetWhereBuilder.getWhereClause();
-		if (inputList.getPatientList() != null) {
+		if (inputList.getPatientList() != null)
 			fullWhereClause = " obs.patient_num IN  ";
-		} else if (inputList.getEventList() != null) {
+		else if (inputList.getEventList() != null)
 			fullWhereClause = " obs.encounter_num IN  \n";
-		} else if (inputList.getPidList() != null) {
+		else if (inputList.getPidList() != null)
 			fullWhereClause = " obs.patient_num IN  ";
-		} else if (inputList.getEidList() != null) {
+		else if (inputList.getEidList() != null)
 			fullWhereClause = " obs.encounter_num IN  ";
-		} else {
+		else
 			throw new I2B2DAOException(
 					"Input option list does not contain visit or patient list");
-		}
 
-		fullWhereClause += (" ( "
-				+ inputOptionListHandler.generateWhereClauseSql() + " ) \n");
+		fullWhereClause += (" ( " + inputOptionListHandler.generateWhereClauseSql() + " ) \n");
 
-		String factByConceptSql = "";
-		String factWithoutFilterSql = "";
+		String factByConceptSql = StringUtils.EMPTY;
+		String factWithoutFilterSql = StringUtils.EMPTY;
 
 		String mainSelectBlobClause = " ";
-		if (obsFactFactRelated.isSelectBlob()) {
+		if (obsFactFactRelated.isSelectBlob())
 			mainSelectBlobClause = " , observation_blob obs_observation_blob";
-		}
 		//OMOP WAS...
 		//		String mainQuerySql = "SELECT a.* " + mainSelectBlobClause + " FROM "
 		//				+ this.getDbSchemaName() + "observation_FACT obs ,( \n";
@@ -717,23 +650,13 @@ IFactRelatedQueryHandler {
 				factByConceptSql = factQueryWithDimensionFilter(
 						obsFactSelectClause, tableLookupJoinClause,
 						fullWhereClause, panel);
-				if (factByConceptSql.trim().length()==0) { 
-					return "";
-				}
+				if (factByConceptSql.trim().length() == 0)
+					return StringUtils.EMPTY;
 				mainQuerySql += factByConceptSql;
 			} else {
-				if(dataSourceLookup.getServerType().equals("ORACLE")){
-					factWithoutFilterSql = factQueryWithoutFilter(
-						obsFactSelectClause, tableLookupJoinClause,
-						fullWhereClause);
-					mainQuerySql += factWithoutFilterSql ;
-				}
-				else {
-					factWithoutFilterSql = postgresFactQueryWithoutFilter(
-							obsFactSelectClause, tableLookupJoinClause,
-							fullWhereClause);
-					mainQuerySql += factWithoutFilterSql +  ") b \n";
-				}
+				factWithoutFilterSql = irisFactQueryWithoutFilter(
+						obsFactSelectClause, tableLookupJoinClause, fullWhereClause);
+				mainQuerySql += factWithoutFilterSql + ") b \n";
 			}
 		} catch (I2B2Exception i2b2Ex) {
 			throw new I2B2DAOException(i2b2Ex.getMessage(), i2b2Ex);
@@ -750,17 +673,13 @@ IFactRelatedQueryHandler {
 				int totOcurranceValue = totOccurance.getValue();
 				String totOccuranceOperator = ">=";
 				if (totOccurance.getOperator() != null) {
-					String totOccuranceOperatorValue = totOccurance.getOperator()
-							.value();
+					String totOccuranceOperatorValue = totOccurance.getOperator().value();
 					totOccuranceOperator = XMLOperatorLookup
 							.getComparisonOperatorFromAcronum(totOccuranceOperatorValue);
-					if (totOccuranceOperator == null) {
+					if (totOccuranceOperator == null)
 						totOccuranceOperator = ">=";
-					}
 				}
-
-				mainQuerySql += " AND seqNumber " + totOccuranceOperator
-						+ totOcurranceValue;
+				mainQuerySql += " AND seqNumber " + totOccuranceOperator + totOcurranceValue;
 			}
 
 			//check for version 1.5, if so return the fact without the duplicates in modifier_cd and instance num
@@ -800,14 +719,10 @@ IFactRelatedQueryHandler {
 
 			
 			if (this.outputOptionList.getObservationSet().getSelectionfilter().value().equalsIgnoreCase("last_n_values"))
-			{
 				mainQuerySql +=	") f where f.rank <  " + this.outputOptionList.getObservationSet().getValue();
-			} else {
+			else
 				mainQuerySql +=	") f where f.rank = 1 ";
-			}
-				
 		}
-	
 		return mainQuerySql;
 	}
 
@@ -824,26 +739,20 @@ IFactRelatedQueryHandler {
 	 * @param fullWhereClause
 	 * @return
 	 */
-	private String factQueryWithDimensionFilter(String obsFactSelectClause,
-			String tableLookupJoinClause, String fullWhereClause,
-			PanelType panel) throws I2B2Exception {
-		String factByProviderSql = "";
+	private String factQueryWithDimensionFilter(String obsFactSelectClause, String tableLookupJoinClause,
+												String fullWhereClause, PanelType panel) throws I2B2Exception {
+		String factByProviderSql = StringUtils.EMPTY;
 		int i = 0;
 		String panelName = null;
-		DateConstrainHandler dateConstrainHandler = new DateConstrainHandler(
-				dataSourceLookup);
+		DateConstrainHandler dateConstrainHandler = new DateConstrainHandler(dataSourceLookup);
 
-
-
-		if (panel.getName() != null) {
+		if (panel.getName() != null)
 			panelName = JDBCUtil.escapeSingleQuote(panel.getName());
-		}
 
 		obsFactSelectClause += (", '" + panelName + "' panel_name ");
 		int totalItemOccurance = 0;
-		if (panel.getTotalItemOccurrences() != null) {
+		if (panel.getTotalItemOccurrences() != null)
 			totalItemOccurance = panel.getTotalItemOccurrences().getValue();
-		}
 
 		int panelAccuracyScale = panel.getPanelAccuracyScale();
 		//ignore panel accuracy scale value bcos the function is reverted
@@ -851,44 +760,35 @@ IFactRelatedQueryHandler {
 
 		String panelDateConstrain = null;
 		// generate panel date constrain
-		if (panel.getPanelDateFrom() != null || panel.getPanelDateTo() != null) {
-			panelDateConstrain = generatePanelDateConstrain(
-					dateConstrainHandler, panel.getPanelDateFrom(), panel
-					.getPanelDateTo());
-		}
+		if (panel.getPanelDateFrom() != null || panel.getPanelDateTo() != null)
+			panelDateConstrain = generatePanelDateConstrain(dateConstrainHandler,
+					panel.getPanelDateFrom(), panel.getPanelDateTo());
 
 		for (ItemType item : panel.getItem()) {
-
-			if (item.getFacttablecolumn() != null
-					|| item.getDimColumnname() != null || item.getItemKey().toLowerCase().startsWith(ItemKeyUtil.ITEM_KEY_MASTERID)) {
-
+			if (item.getFacttablecolumn() != null || item.getDimColumnname() != null
+					|| item.getItemKey().toLowerCase().startsWith(ItemKeyUtil.ITEM_KEY_MASTERID)) {
 				if (item.getDimTablename() != null) {
 					if (item.getDimTablename().equalsIgnoreCase("patient_dimension") ||
-							item.getDimTablename().equalsIgnoreCase("visit_dimension")) { 
+							item.getDimTablename().equalsIgnoreCase("visit_dimension"))
 						continue;
-					}
 				}
 
 				// read the first item
 				// ItemType item = panel.getItem().get(0);
 
-				if (i == 0) {
+				if (i == 0)
 					i = 1;
-				} else {
-					if (totalItemOccurance > 1) {
+				else
+					if (totalItemOccurance > 1)
 						factByProviderSql += "UNION ALL \n";
-					} else {
+					else
 						factByProviderSql += "UNION \n";
-					}
-				}
 
-				factByProviderSql += (" SELECT  "
-						+ obsFactSelectClause + " FROM \n");
+				factByProviderSql += (" SELECT " + obsFactSelectClause + " FROM \n");
 
 				// check if the item key has "patient_set_coll_id:XXXX" as
 				// prefix
 				String itemKey = item.getItemKey();
-
 				if (itemKey.toLowerCase().startsWith(ItemKeyUtil.ITEM_KEY_PATIENT_SET)) {
 					String[] itemKeyParam = itemKey.split(":");
 					factByProviderSql += (" select patient_num from "
@@ -896,7 +796,6 @@ IFactRelatedQueryHandler {
 							+ "qt_patient_set_collection where patient_set_coll_id = "
 							+ itemKeyParam[1] + "  \n");
 					item.setFacttablecolumn("patient_num");
-
 				} else if (itemKey.toLowerCase().startsWith(ItemKeyUtil.ITEM_KEY_PATIENT_ENCOUNTER_SET)) { // check
 					// if
 					// the
@@ -915,32 +814,23 @@ IFactRelatedQueryHandler {
 				} else {
 					DimensionFilter providerFilter = new DimensionFilter(item,
 							this.getDbSchemaName(), dataSourceLookup);
-					factByProviderSql += (" "
-							+ providerFilter.getFromSqlString() + "  \n");
-
+					factByProviderSql += (" " + providerFilter.getFromSqlString() + "  \n");
 				}
 
 				String facttablecolumn = item.getFacttablecolumn();
-				if(derivedFactTable == true){
-
+				if(derivedFactTable) {
 					if(item.getFacttablecolumn().contains(".")){
 						String factColumnName = item.getFacttablecolumn();
-
 						int lastIndex = factColumnName.lastIndexOf(".");
 						facttablecolumn = (factColumnName.substring(lastIndex+1));
-
 					}
 				}
 				// OMOP WAS...
 				//				factByProviderSql += ", " + this.getDbSchemaName()
 				//				+ "observation_FACT obs \n";
-				factByProviderSql += ", " + this.getDbSchemaName()
-				+ factTable + " obs \n";
-
-				String tempSqlClause = "",containsJoinSql = "";
-
-				String fullWhereClause1 = fullWhereClause
-						+ (" AND obs." + facttablecolumn
+				factByProviderSql += ", " + this.getDbSchemaName() + factTable + " obs \n";
+				String tempSqlClause = StringUtils.EMPTY ,containsJoinSql = StringUtils.EMPTY;
+				String fullWhereClause1 = fullWhereClause + (" AND obs." + facttablecolumn
 								+ " = dimension." + facttablecolumn);
 
 				//factByProviderSql += tableLookupJoinClause;
@@ -950,7 +840,7 @@ IFactRelatedQueryHandler {
 				tempSqlClause += (" WHERE \n" + fullWhereClause1 + "\n");
 
 				//if output option has modifier option false, then select modifier_cd = '@'
-				if (outputOptionList.getObservationSet() != null && outputOptionList.getObservationSet().isWithmodifiers() == false) {
+				if (outputOptionList.getObservationSet() != null && !outputOptionList.getObservationSet().isWithmodifiers()) {
 					//factByProviderSql += (" AND  obs.modifier_cd = '@' \n");
 					tempSqlClause += (" AND  obs.modifier_cd = '@' \n");
 				}
@@ -972,18 +862,14 @@ IFactRelatedQueryHandler {
 						modifierConstrainValueFlag = true;
 					}
 				}
-				if (item.getConstrainByValue() != null
-						&& item.getConstrainByValue().size() > 0) { 
+				if (item.getConstrainByValue() != null && item.getConstrainByValue().size() > 0)
 					itemConstrainValueFlag = true;
-				}
 
-				String unitCdSwitchClause = "", unitCdInClause = "";
-				String modifierUnitCdSwitchClause = "", modifierUnitCdInClause = "";
+				String unitCdSwitchClause = StringUtils.EMPTY, unitCdInClause = StringUtils.EMPTY;
+				String modifierUnitCdSwitchClause = StringUtils.EMPTY, modifierUnitCdInClause = StringUtils.EMPTY;
 				// if value constrain is given, generate value constrain sql
 				if (itemConstrainValueFlag ||  modifierConstrainValueFlag ) {
-
 					//generate sql for unit_cd conversion
-
 					if ( projectParamMap != null && projectParamMap.get(ParamUtil.CRC_ENABLE_UNITCD_CONVERSION) != null) {
 						String unitCdConversionFlag = (String)projectParamMap.get(ParamUtil.CRC_ENABLE_UNITCD_CONVERSION);
 						if (unitCdConversionFlag != null && unitCdConversionFlag.equalsIgnoreCase("ON")) { 
@@ -991,7 +877,7 @@ IFactRelatedQueryHandler {
 								Element valueMetadataElement = (Element)item.getMetadataxml().getContent().get(0);
 								UnitConverstionUtil unitConverstionUtil = new UnitConverstionUtil();
 								unitCdSwitchClause = unitConverstionUtil.buildUnitCdSwitchClause(valueMetadataElement,false,"obs.");
-								unitCdInClause = unitConverstionUtil.buildUnitCdInClause(valueMetadataElement,"");
+								unitCdInClause = unitConverstionUtil.buildUnitCdInClause(valueMetadataElement,StringUtils.EMPTY);
 							}
 							if (modifierConstrainValueFlag) { 
 								XmlValueType xmlValueType = this.modifierMetadataXmlMap.get(item.getConstrainByModifier().getModifierKey()+item.getConstrainByModifier().getAppliedPath());
@@ -999,7 +885,7 @@ IFactRelatedQueryHandler {
 									Element valueMetadataElement = xmlValueType.getAny().get(0);
 									UnitConverstionUtil unitConverstionUtil = new UnitConverstionUtil();
 									modifierUnitCdSwitchClause = unitConverstionUtil.buildUnitCdSwitchClause(valueMetadataElement,false,"obs.");
-									modifierUnitCdInClause = unitConverstionUtil.buildUnitCdInClause(valueMetadataElement,"");
+									modifierUnitCdInClause = unitConverstionUtil.buildUnitCdInClause(valueMetadataElement,StringUtils.EMPTY);
 								} else { 
 									log.debug("No metadata xml for modifier key = " +item.getConstrainByModifier().getModifierKey() + " applied path " + item.getConstrainByModifier().getAppliedPath());
 								}
@@ -1009,35 +895,29 @@ IFactRelatedQueryHandler {
 				}
 
 				ValueConstrainsHandler vh = new ValueConstrainsHandler();
-
-				if (unitCdSwitchClause.length()>0) {
+				if (unitCdSwitchClause.length() > 0)
 					vh.setUnitCdConversionFlag(true, unitCdInClause, unitCdSwitchClause);
-				}
-				String[] valueConstrainSql = new String[] {"",""} ;
+				String[] valueConstrainSql = new String[] {StringUtils.EMPTY,StringUtils.EMPTY} ;
 				if (itemConstrainValueFlag) { 
 					valueConstrainSql = vh
 							.constructValueConstainClause(item.getConstrainByValue(),this.dataSourceLookup.getServerType(),this.getDbSchemaName(),panelAccuracyScale);
-					if (panelAccuracyScale>0) { 
+					if (panelAccuracyScale > 0)
 						containsJoinSql = valueConstrainSql[1];
-					}
 				}
-				String[] modifierConstrainValueSql = new String[]{"",""};
+				String[] modifierConstrainValueSql = new String[]{StringUtils.EMPTY,StringUtils.EMPTY};
 				if (modifierConstrainValueFlag) { 
-					if (modifierUnitCdInClause.length()>0) { 
+					if (modifierUnitCdInClause.length() > 0)
 						vh.setUnitCdConversionFlag(true, modifierUnitCdInClause, modifierUnitCdSwitchClause);
-					}
 					modifierConstrainValueSql = vh.constructValueConstainClause(buildItemValueConstrain(modifierConstrain.getConstrainByValue()),this.dataSourceLookup.getServerType(),this.getDbSchemaName(),panelAccuracyScale);
-					if (panelAccuracyScale>0) { 
+					if (panelAccuracyScale > 0)
 						containsJoinSql += modifierConstrainValueSql[1];
-					}
 				}
 
 				if ((valueConstrainSql[0] != null
 						&& valueConstrainSql[0].length() > 0) || (modifierConstrainValueSql[0] != null
-						&& modifierConstrainValueSql[0].length() > 0)) {
+						&& modifierConstrainValueSql[0].length() > 0))
 					// factByProviderSql += (" AND (" + valueConstrainSql + modifierConstrainValueSql +  ")\n");
 					tempSqlClause += (" AND (" + valueConstrainSql[0] + modifierConstrainValueSql[0] +  ")\n");
-				}
 
 				factByProviderSql += containsJoinSql;
 
@@ -1057,38 +937,26 @@ IFactRelatedQueryHandler {
 					String dateConstrainSql = null;
 
 					if (dateFrom != null || dateTo != null) {
-
 						if (dateFrom != null) {
 							dateFromInclusive = dateFrom.getInclusive();
 							dateFromValue = dateFrom.getValue();
 							dateFrom.getTime();
-							if (dateFrom.getTime() != null
-									&& dateFrom.getTime().name() != null
-									&& dateFrom.getTime().name()
-									.equalsIgnoreCase(
-											ConstrainDateTimeType.END_DATE
-											.name())) {
+							if (dateFrom.getTime() != null && dateFrom.getTime().name() != null
+									&& dateFrom.getTime().name() .equalsIgnoreCase(ConstrainDateTimeType.END_DATE.name()))
 								dateFromColumn = "obs.end_date";
-							} else {
+							else
 								dateFromColumn = "obs.start_date";
-							}
-
 						}
 
 						if (dateTo != null) {
 							dateToInclusive = dateTo.getInclusive();
 							dateToValue = dateTo.getValue();
 							dateTo.getTime();
-							if (dateTo.getTime() != null
-									&& dateTo.getTime().name() != null
-									&& dateTo.getTime().name()
-									.equalsIgnoreCase(
-											ConstrainDateTimeType.END_DATE
-											.name())) {
+							if (dateTo.getTime() != null && dateTo.getTime().name() != null
+									&& dateTo.getTime().name().equalsIgnoreCase(ConstrainDateTimeType.END_DATE.name()))
 								dateToColumn = "obs.end_date";
-							} else {
+							else
 								dateToColumn = "obs.start_date";
-							}
 						}
 
 						dateConstrainSql = dateConstrainHandler
@@ -1096,24 +964,21 @@ IFactRelatedQueryHandler {
 										dateToColumn, dateFromInclusive,
 										dateToInclusive, dateFromValue,
 										dateToValue);
-						if (dateConstrainSql != null) {
+						if (dateConstrainSql != null)
 							factByProviderSql += (" AND " + dateConstrainSql + "\n");
-						}
 
 						// item.getConstrainByModifier().get(0).getModifierName()
 					}
 				}
 				// generate panel date constrain
-				if (panelDateConstrain != null) {
+				if (panelDateConstrain != null)
 					factByProviderSql += (" AND (" + panelDateConstrain + ")\n");
-				}
 				// item.getConstrainByModifier().get(0).getModifierName()
 			}
 		}
 
-		if (factByProviderSql.trim().length()<10) { 
-			return "";
-		}
+		if (factByProviderSql.trim().length() < 10)
+			return StringUtils.EMPTY;
 
 		int invert = panel.getInvert();
 
@@ -1127,21 +992,18 @@ IFactRelatedQueryHandler {
 					+ factByProviderSql + ")";
 		}
 
-		if (totalItemOccurance > 1) {
-			factByProviderSql = "SELECT  a.*,  rank() OVER (partition by obs_encounter_num,obs_patient_num,obs_start_date,obs_concept_cd order by rownum ) as seqNumber FROM (\n"
-					+ factByProviderSql;
-		} else {
+		if (totalItemOccurance > 1)
+			factByProviderSql = "SELECT  a.*,  rank() OVER (partition by obs_encounter_num,obs_patient_num,obs_start_date," +
+					"obs_concept_cd order by rownum ) as seqNumber FROM (\n" + factByProviderSql;
+		else
 			factByProviderSql = "SELECT  a.* FROM (\n" + factByProviderSql;
-		}
 
 		// factByProviderSql += " ORDER BY
 		// obs.patient_num,obs.start_date,obs.concept_cd,obs.rowid) a \n";
-		if (this.requestVersion.startsWith("1.5")) { 
+		if (this.requestVersion.startsWith("1.5"))
 			factByProviderSql += "  ) a \n";
-		} else { 
+		else
 			factByProviderSql += "  ORDER BY 2,5,3,7,6) a \n";
-		}
-
 		return factByProviderSql;
 	}
 
@@ -1163,15 +1025,11 @@ IFactRelatedQueryHandler {
 
 		factSql += (" SELECT  "
 				+ obsFactSelectClause + " FROM " + this.getDbSchemaName() + getFactTable() + " obs\n");
-
 		factSql += tableLookupJoinClause;
-
 		factSql += (" WHERE \n" + fullWhereClause + "\n");
-		if (this.outputOptionList.getObservationSet().isWithmodifiers() == false) {
+		if (!this.outputOptionList.getObservationSet().isWithmodifiers())
 			factSql += " AND obs.modifier_cd = '@' ";
-		}
 		factSql += " ORDER BY obs.patient_num,obs.start_date,obs.concept_cd,obs.instance_num,obs.modifier_cd,obs.rowid) b \n";
-
 		return factSql;
 	}
 
@@ -1184,19 +1042,15 @@ IFactRelatedQueryHandler {
 	 * @param fullWhereClause
 	 * @return
 	 */
-	private String postgresFactQueryWithoutFilter(String obsFactSelectClause,
-			String tableLookupJoinClause, String fullWhereClause) {
-		String factSql = "SELECT  b.*, ROW_NUMBER() OVER (order by obs_patient_num) rnum FROM (\n";
-		factSql += (" SELECT  "
-				+ obsFactSelectClause + " FROM " + this.getDbSchemaName() +  getFactTable() + " obs\n");
+	private String irisFactQueryWithoutFilter(String obsFactSelectClause, String tableLookupJoinClause, String fullWhereClause) {
+		String factSql = "SELECT  b.*, %VID rnum FROM (\n";
+		factSql += (" SELECT " + obsFactSelectClause + " FROM " + this.getDbSchemaName() +  getFactTable() + " obs\n");
 
 		factSql += tableLookupJoinClause;
-
 		factSql += (" WHERE \n" + fullWhereClause + "\n");
-		if (this.outputOptionList.getObservationSet().isWithmodifiers() == false) {
+		if (!this.outputOptionList.getObservationSet().isWithmodifiers())
 			factSql += " AND obs.modifier_cd = '@' ";
-		}
-
+		factSql += " order by obs_patient_num";
 		return factSql;
 	}
 	
@@ -1208,11 +1062,10 @@ IFactRelatedQueryHandler {
 	 * @param statusFlag
 	 * @return
 	 */
-	private String getLookupJoinClause(boolean detailFlag, boolean blobFlag,
-			boolean statusFlag) {
+	private String getLookupJoinClause(boolean detailFlag, boolean blobFlag, boolean statusFlag) {
 		String joinClause = " ";
 
-		if (detailFlag) {
+		if (detailFlag)
 			joinClause = " left JOIN "
 					+ this.getDbSchemaName()
 					+ "code_lookup modifier_lookup \n"
@@ -1230,8 +1083,6 @@ IFactRelatedQueryHandler {
 					+ this.getDbSchemaName()
 					+ "code_lookup location_lookup \n"
 					+ " ON (obs.location_Cd = location_lookup.code_Cd AND location_lookup.column_cd = 'LOCATION_CD') \n";
-		}
-
 		return joinClause;
 	}
 
@@ -1245,36 +1096,27 @@ IFactRelatedQueryHandler {
 	 * @param conceptCd
 	 */
 	private void addToDistinctList(String encounterNum, String patientNum,
-			String providerId, String conceptCd,String modifierCd) {
-		if (visitFactRelated.isSelected() || eidFactRelated.isSelected()) {
-			if (!visitFactList.contains(encounterNum)) {
+								   String providerId, String conceptCd,
+								   String modifierCd) {
+		if (visitFactRelated.isSelected() || eidFactRelated.isSelected())
+			if (!visitFactList.contains(encounterNum))
 				visitFactList.add(encounterNum);
-			}
-		}
 
-		if (patientFactRelated.isSelected() || pidFactRelated.isSelected()) {
-			if (!patientFactList.contains(patientNum)) {
+		if (patientFactRelated.isSelected() || pidFactRelated.isSelected())
+			if (!patientFactList.contains(patientNum))
 				patientFactList.add(patientNum);
-			}
-		}
 
-		if (providerFactRelated.isSelected()) {
-			if (!providerFactList.contains(providerId)) {
+		if (providerFactRelated.isSelected())
+			if (!providerFactList.contains(providerId))
 				providerFactList.add(providerId);
-			}
-		}
 
-		if (conceptFactRelated.isSelected()) {
-			if (!conceptFactList.contains(conceptCd)) {
+		if (conceptFactRelated.isSelected())
+			if (!conceptFactList.contains(conceptCd))
 				conceptFactList.add(conceptCd);
-			}
-		}
 
-		if (modifierFactRelated.isSelected()) {
-			if (!modifierFactList.contains(modifierCd)) {
+		if (modifierFactRelated.isSelected())
+			if (!modifierFactList.contains(modifierCd))
 				modifierFactList.add(modifierCd);
-			}
-		}
 	}
 
 	/**
@@ -1286,20 +1128,13 @@ IFactRelatedQueryHandler {
 	 * @throws SQLException
 	 */
 	private ResultSet executeQuery(Connection conn, String querySql,
-			int sqlParamCount) throws SQLException {
+								   int sqlParamCount) throws SQLException {
 		PreparedStatement stmt = conn.prepareStatement(querySql);
-
 		if (inputOptionListHandler.isCollectionId()) {
-			for (int i = 1; i <= sqlParamCount; i++) {
-				stmt.setInt(i, Integer.parseInt(inputOptionListHandler
-						.getCollectionId()));
-			}
-		} 
-
-		ResultSet resultSet = stmt.executeQuery();
-
-		return resultSet;
-
+			for (int i = 1; i <= sqlParamCount; i++)
+				stmt.setInt(i, Integer.parseInt(inputOptionListHandler.getCollectionId()));
+		}
+		return stmt.executeQuery();
 		// JdbcRowSet rowSet = new JdbcRowSetImpl(resultSet);
 		// return rowSet;
 	}
@@ -1312,29 +1147,23 @@ IFactRelatedQueryHandler {
 	 * @throws SQLException
 	 * @throws IOException
 	 */
-	private ObservationSet buildPDOFact(ResultSet rowSet, String panelName)
-			throws SQLException, IOException {
+	private ObservationSet buildPDOFact(ResultSet rowSet, String panelName) throws SQLException, IOException {
 		ObservationSet currentObsFactSetType = new ObservationSet();
 		currentObsFactSetType.setPanelName(panelName);
 
 		I2B2PdoFactory.ObservationFactBuilder observationFactBuilder = new I2B2PdoFactory().new ObservationFactBuilder(
 				obsFactFactRelated.isSelectDetail(), obsFactFactRelated
 				.isSelectBlob(), obsFactFactRelated.isSelectStatus(), dataSourceLookup.getServerType());
-
 		while (rowSet.next()) {
 			ObservationType obsFactType = null;
-
 			obsFactType = observationFactBuilder.buildObservationSet(rowSet);
-
-			if (obsFactFactRelated.isSelected()) {
+			if (obsFactFactRelated.isSelected())
 				currentObsFactSetType.getObservation().add(obsFactType);
-			}
 
 			addToDistinctList(obsFactType.getEventId().getValue(), obsFactType
 					.getPatientId().getValue(), obsFactType.getObserverCd()
 					.getValue(), obsFactType.getConceptCd().getValue(),obsFactType.getModifierCd().getValue());
 		}
-
 		return currentObsFactSetType;
 	}
 
@@ -1346,8 +1175,7 @@ IFactRelatedQueryHandler {
 	 * @throws SQLException
 	 * @throws IOException
 	 */
-	private ObservationSet buildTablePDOFact(ResultSet rowSet, String panelName)
-			throws SQLException, IOException {
+	private ObservationSet buildTablePDOFact(ResultSet rowSet, String panelName) throws SQLException, IOException {
 		// obsFactSetTypeList = new
 		// Vector<PatientDataType.ObservationFactSet>();
 		boolean detailFlag = obsFactFactRelated.isSelectDetail();
@@ -1361,17 +1189,15 @@ IFactRelatedQueryHandler {
 
 		while (rowSet.next()) {
 			ObservationType observation = null;
-			observation = observationFactBuilder.buildObservationSet(rowSet,
-					"HIVE");
+			observation = observationFactBuilder.buildObservationSet(rowSet, "HIVE");
 
-			if (obsFactFactRelated.isSelected()) {
+			if (obsFactFactRelated.isSelected())
 				currentObservationSet.getObservation().add(observation);
-			}
 
-			addToDistinctList(observation.getEventId().getValue(),  observation.getPatientId().getValue(),
-					observation.getObserverCd().getValue(), observation.getConceptCd().getValue(),observation.getModifierCd().getValue());
+			addToDistinctList(observation.getEventId().getValue(), observation.getPatientId().getValue(),
+					observation.getObserverCd().getValue(), observation.getConceptCd().getValue(),
+					observation.getModifierCd().getValue());
 		}
-
 		return currentObservationSet;
 	}
 
@@ -1388,51 +1214,38 @@ IFactRelatedQueryHandler {
 		return itemValueConstrainList;
 	}
 
-	private String generatePanelDateConstrain(
-			DateConstrainHandler dateConstrainHandler,
-			ConstrainDateType dateFrom, ConstrainDateType dateTo)
-					throws I2B2Exception {
-
+	private String generatePanelDateConstrain(DateConstrainHandler dateConstrainHandler, ConstrainDateType dateFrom,
+											  ConstrainDateType dateTo) throws I2B2Exception {
 		String dateFromColumn = null, dateToColumn = null;
 		InclusiveType dateFromInclusive = null, dateToInclusive = null;
 		XMLGregorianCalendar dateFromValue = null, dateToValue = null;
 		String dateConstrainSql = null;
 
 		if (dateFrom != null || dateTo != null) {
-
 			if (dateFrom != null) {
 				dateFromInclusive = dateFrom.getInclusive();
 				dateFromValue = dateFrom.getValue();
 				dateFrom.getTime();
-				if (dateFrom.getTime() != null
-						&& dateFrom.getTime().name() != null
-						&& dateFrom.getTime().name().equalsIgnoreCase(
-								ConstrainDateTimeType.END_DATE.name())) {
+				if (dateFrom.getTime() != null && dateFrom.getTime().name() != null
+						&& dateFrom.getTime().name().equalsIgnoreCase( ConstrainDateTimeType.END_DATE.name()))
 					dateFromColumn = "obs.end_date";
-				} else {
+				else
 					dateFromColumn = "obs.start_date";
-				}
-
 			}
 
 			if (dateTo != null) {
 				dateToInclusive = dateTo.getInclusive();
 				dateToValue = dateTo.getValue();
 				dateTo.getTime();
-				if (dateTo.getTime() != null
-						&& dateTo.getTime().name() != null
-						&& dateTo.getTime().name().equalsIgnoreCase(
-								ConstrainDateTimeType.END_DATE.name())) {
+				if (dateTo.getTime() != null && dateTo.getTime().name() != null
+						&& dateTo.getTime().name().equalsIgnoreCase(ConstrainDateTimeType.END_DATE.name()))
 					dateToColumn = "obs.end_date";
-				} else {
+				else
 					dateToColumn = "obs.start_date";
-				}
 			}
 
-			dateConstrainSql = dateConstrainHandler
-					.constructDateConstrainClause(dateFromColumn, dateToColumn,
-							dateFromInclusive, dateToInclusive, dateFromValue,
-							dateToValue);
+			dateConstrainSql = dateConstrainHandler.constructDateConstrainClause(dateFromColumn,
+					dateToColumn, dateFromInclusive, dateToInclusive, dateFromValue, dateToValue);
 		}
 		return dateConstrainSql;
 	}
@@ -1450,19 +1263,16 @@ IFactRelatedQueryHandler {
 			throws ConceptNotFoundException, OntologyException {
 		DerivedFactColumnsType factColumns = new DerivedFactColumnsType();
 		try {
-			
 			QueryProcessorUtil qpUtil = QueryProcessorUtil.getInstance();
 			String ontologyUrl = qpUtil
 					.getCRCPropertyValue(QueryProcessorUtil.ONTOLOGYCELL_ROOT_WS_URL_PROPERTIES);
 
-			SecurityType securityType = PMServiceAccountUtil
-					.getServiceSecurityType(dataSourceLookup.getDomainId());
+			SecurityType securityType = PMServiceAccountUtil.getServiceSecurityType(dataSourceLookup.getDomainId());
 			
 			factColumns = CallOntologyUtil.callGetFactColumns(itemKey,
 					securityType, dataSourceLookup.getProjectPath(),
 					ontologyUrl +"/getDerivedFactColumns");
 		} catch (JAXBUtilException e) {
-
 			log.error("Error while fetching metadata [" + itemKey
 					+ "] from ontology ", e);
 			throw new OntologyException("Error while fetching metadata ["
@@ -1484,10 +1294,6 @@ IFactRelatedQueryHandler {
 					+ itemKey + "] from ontology "
 					+ StackTraceUtil.getStackTrace(e));
 		}
-
 		return factColumns;
 	}
-
-	
-
 }

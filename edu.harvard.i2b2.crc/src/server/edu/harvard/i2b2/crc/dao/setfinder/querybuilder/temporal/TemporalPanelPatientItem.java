@@ -20,6 +20,7 @@ import edu.harvard.i2b2.crc.dao.setfinder.querybuilder.ConceptNotFoundException;
 import edu.harvard.i2b2.crc.dao.setfinder.querybuilder.OntologyException;
 import edu.harvard.i2b2.crc.datavo.ontology.ConceptType;
 import edu.harvard.i2b2.crc.datavo.setfinder.query.ItemType;
+import org.apache.commons.lang3.StringUtils;
 
 public class TemporalPanelPatientItem extends TemporalPanelItem {
 
@@ -28,22 +29,15 @@ public class TemporalPanelPatientItem extends TemporalPanelItem {
 		super(parent, item);
 	}
 
-
 	@Override
 	protected String buildSql() throws I2B2DAOException {
-		if (this.returnEncounterNum()||
-				this.returnInstanceNum()||
-				this.hasItemDateConstraint()||
-				this.hasModiferConstraint()||
-				this.hasPanelDateConstraint()||
-				this.hasPanelOccurrenceConstraint()||
-				this.hasValueConstraint()
-				){
+		if (this.returnEncounterNum() || this.returnInstanceNum() ||
+				this.hasItemDateConstraint() || this.hasModiferConstraint() ||
+				this.hasPanelDateConstraint() || this.hasPanelOccurrenceConstraint() ||
+				this.hasValueConstraint())
 			return super.buildSql();
-		}
 		else{
 			String itemKey = baseItem.getItemKey();
-			
 			String[] patientId = itemKey.split(":");
 			if (patientId.length > 2 &&
 					patientId[1] != null && 
@@ -53,23 +47,19 @@ public class TemporalPanelPatientItem extends TemporalPanelItem {
 						+ parent.getDatabaseSchema() + "patient_mapping "
 						+ "where patient_ide_source = '" + patientId[1] + "' "
 						+ "and patient_ide = '" + patientId[2] + "' "
-						+ "";
+						+ StringUtils.EMPTY;
 			}
 			else
 				return null;
 		}
 	}
 
-
 	@Override
-	protected ConceptType getConceptType() throws ConceptNotFoundException,
-			OntologyException {
+	protected ConceptType getConceptType() throws ConceptNotFoundException, OntologyException {
 		if (conceptType==null){
 			String itemKey = baseItem.getItemKey();
-	
 			String[] patientId = itemKey.split(":");
-			if (patientId.length > 2 &&
-					patientId[1] != null && 
+			if (patientId.length > 2 && patientId[1] != null &&
 					//patientId[1].trim().toUpperCase().equals("HIVE") && 
 					patientId[2] != null) {
 				String patientNum = patientId[2];
@@ -81,25 +71,21 @@ public class TemporalPanelPatientItem extends TemporalPanelItem {
 				conceptType.setDimcode(patientNum);
 			}
 		}
-
 		return conceptType;
 	}
 
-
 	@Override
 	protected String buildDimensionJoinSql(String tableAlias) {
-		String dimensionSql = "";
-
-		if (tableAlias!=null&&tableAlias.trim().length()>0)
-			tableAlias += ".";
+		String dimensionSql = StringUtils.EMPTY;
+		if (tableAlias != null && tableAlias.trim().length() > 0) {
+			if(!tableAlias.trim().endsWith("."))
+				tableAlias += ".";
+		} else
+			tableAlias = StringUtils.EMPTY;
 		
 		String itemKey = baseItem.getItemKey();
-		
 		String[] patientId = itemKey.split(":");
-		if (patientId.length > 2 &&
-				patientId[1] != null && 
-				patientId[2] != null) {
-			
+		if (patientId.length > 2 && patientId[1] != null && patientId[2] != null) {
 			dimensionSql = tableAlias + this.factTableColumn + " IN (select "
 					+ "patient_num from " + noLockSqlServer
 					+ parent.getDatabaseSchema() + "patient_mapping "
@@ -107,23 +93,18 @@ public class TemporalPanelPatientItem extends TemporalPanelItem {
 					+ "and patient_ide = '" + patientId[2] + "' "
 					+ ")";
 		}
-
 		return dimensionSql;
 	}
 
-
 	@Override
 	protected String getJoinTable() {
-		if (this.returnInstanceNum()||
-				hasItemDateConstraint()||
-				hasPanelDateConstraint()||
-				hasValueConstraint()||
-				hasPanelOccurrenceConstraint()) {
+		if (this.returnInstanceNum() || hasItemDateConstraint() ||
+				hasPanelDateConstraint() || hasValueConstraint() ||
+				hasPanelOccurrenceConstraint())
 			return "observation_fact";
-		} else if (this.returnEncounterNum()) {
+		else if (this.returnEncounterNum())
 			return "visit_dimension";
-		} else {
+		else
 			return "patient_dimension";
-		}
 	}
 }

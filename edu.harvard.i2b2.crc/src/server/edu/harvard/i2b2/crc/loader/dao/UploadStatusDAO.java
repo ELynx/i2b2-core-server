@@ -121,7 +121,7 @@ public class UploadStatusDAO extends CRCLoaderDAO implements UploadStatusDAOI {
 	/**
 	 * Insert SetUploadStatus
 	 * 
-	 * @param uploadStatus
+	 * @param uploadSetStatus
 	 * @return
 	 */
 	@Override
@@ -155,14 +155,9 @@ public class UploadStatusDAO extends CRCLoaderDAO implements UploadStatusDAOI {
 				ps.setInt(4, uploadSetStatus.getNoOfRecord());
 				ps.setInt(5, uploadSetStatus.getLoadedRecord());
 				ps.setInt(6, uploadSetStatus.getDeletedRecord());
-				ps.setTimestamp(7, new java.sql.Timestamp(uploadSetStatus
-						.getLoadDate().getTime()));
-				ps
-						.setTimestamp(
-								8,
-								(uploadSetStatus.getEndDate() != null) ? new java.sql.Timestamp(
-										uploadSetStatus.getEndDate().getTime())
-										: null);
+				ps.setTimestamp(7, new java.sql.Timestamp(uploadSetStatus.getLoadDate().getTime()));
+				ps.setTimestamp(8, (uploadSetStatus.getEndDate() != null)
+						? new java.sql.Timestamp(uploadSetStatus.getEndDate().getTime()) : null);
 				ps.setString(9, uploadSetStatus.getLoadStatus());
 				ps.setString(10, uploadSetStatus.getMessage());
 				ps.setString(11, uploadSetStatus.getInputFileName());
@@ -170,7 +165,6 @@ public class UploadStatusDAO extends CRCLoaderDAO implements UploadStatusDAOI {
 				ps.setString(13, uploadSetStatus.getTransformName());
 			}
 		});
-
 	}
 
 	/**
@@ -204,18 +198,10 @@ public class UploadStatusDAO extends CRCLoaderDAO implements UploadStatusDAOI {
 				ps.setInt(1, uploadSetStatus.getNoOfRecord());
 				ps.setInt(2, uploadSetStatus.getLoadedRecord());
 				ps.setInt(3, uploadSetStatus.getDeletedRecord());
-				ps
-						.setTimestamp(
-								4,
-								(uploadSetStatus.getLoadDate() != null) ? new java.sql.Timestamp(
-										uploadSetStatus.getLoadDate().getTime())
-										: null);
-				ps
-						.setTimestamp(
-								5,
-								(uploadSetStatus.getEndDate() != null) ? new java.sql.Timestamp(
-										uploadSetStatus.getEndDate().getTime())
-										: null);
+				ps.setTimestamp(4, (uploadSetStatus.getLoadDate() != null)
+						? new java.sql.Timestamp(uploadSetStatus.getLoadDate().getTime()) : null);
+				ps.setTimestamp(5, (uploadSetStatus.getEndDate() != null) ?
+						new java.sql.Timestamp(uploadSetStatus.getEndDate().getTime()) : null);
 				ps.setString(6, uploadSetStatus.getLoadStatus());
 				ps.setString(7, uploadSetStatus.getMessage());
 				ps.setString(8, uploadSetStatus.getInputFileName());
@@ -225,7 +211,6 @@ public class UploadStatusDAO extends CRCLoaderDAO implements UploadStatusDAOI {
 				ps.setInt(12, uploadSetStatus.getSetTypeId());
 			}
 		});
-
 	}
 
 	/**
@@ -234,44 +219,28 @@ public class UploadStatusDAO extends CRCLoaderDAO implements UploadStatusDAOI {
 	@Override
 	public UploadSetStatus getUploadSetStatus(int uploadId, int setId) {
 		UploadSetStatus uploadSetStatus = (UploadSetStatus) jdbcTemplate
-				.queryForObject(
-						"select * from "
-								+ this.getDbSchemaName()
+				.queryForObject("select * from " + this.getDbSchemaName()
 								+ "SET_UPLOAD_STATUS where UPLOAD_ID=? and SET_TYPE_ID=?",
-						new Object[] { uploadId, setId }, new RowMapper() {
-
+						new Object[] {uploadId, setId}, new RowMapper() {
 							@Override
 							public Object mapRow(ResultSet rs, int rowNum)
 									throws SQLException {
 								UploadSetStatus uploadSetStatus = new UploadSetStatus();
-								uploadSetStatus.setUploadId(rs
-										.getInt("UPLOAD_ID"));
-								uploadSetStatus.setSetTypeId(rs
-										.getInt("SET_TYPE_ID"));
-								uploadSetStatus.setLoadDate(rs
-										.getTimestamp("LOAD_DATE"));
-								uploadSetStatus.setEndDate(rs
-										.getTimestamp("END_DATE"));
-								uploadSetStatus.setDeletedRecord(rs
-										.getInt("DELETED_RECORD"));
-								uploadSetStatus.setLoadedRecord(rs
-										.getInt("LOADED_RECORD"));
-								uploadSetStatus.setLoadStatus(rs
-										.getString("LOAD_STATUS"));
-								uploadSetStatus.setLogFileName(rs
-										.getString("LOG_FILE_NAME"));
-								uploadSetStatus.setMessage(rs
-										.getString("MESSAGE"));
-								uploadSetStatus.setNoOfRecord(rs
-										.getInt("NO_OF_RECORD"));
-								uploadSetStatus.setSourceCd(rs
-										.getString("SOURCE_CD"));
-								uploadSetStatus.setTransformName(rs
-										.getString("TRANSFORM_NAME"));
+								uploadSetStatus.setUploadId(rs.getInt("UPLOAD_ID"));
+								uploadSetStatus.setSetTypeId(rs.getInt("SET_TYPE_ID"));
+								uploadSetStatus.setLoadDate(rs.getTimestamp("LOAD_DATE"));
+								uploadSetStatus.setEndDate(rs.getTimestamp("END_DATE"));
+								uploadSetStatus.setDeletedRecord(rs.getInt("DELETED_RECORD"));
+								uploadSetStatus.setLoadedRecord(rs.getInt("LOADED_RECORD"));
+								uploadSetStatus.setLoadStatus(rs.getString("LOAD_STATUS"));
+								uploadSetStatus.setLogFileName(rs.getString("LOG_FILE_NAME"));
+								uploadSetStatus.setMessage(rs.getString("MESSAGE"));
+								uploadSetStatus.setNoOfRecord(rs.getInt("NO_OF_RECORD"));
+								uploadSetStatus.setSourceCd(rs.getString("SOURCE_CD"));
+								uploadSetStatus.setTransformName(rs.getString("TRANSFORM_NAME"));
 								return uploadSetStatus;
 							}
 						});
-
 		return uploadSetStatus;
 	}
 
@@ -288,9 +257,8 @@ public class UploadStatusDAO extends CRCLoaderDAO implements UploadStatusDAOI {
 				+ this.getDbSchemaName()
 				+ "SET_UPLOAD_STATUS where UPLOAD_ID=?",Integer.class,
 				new Object[] { uploadId });
-		if (rowCount < 1) {
+		if (rowCount < 1)
 			return setUploadStatusList;
-		}
 		System.out.println("ROW COUNT " + rowCount);
 		Connection conn = null;
 		try {
@@ -320,11 +288,9 @@ public class UploadStatusDAO extends CRCLoaderDAO implements UploadStatusDAOI {
 				uploadSetStatus.setMessage(rs.getString("MESSAGE"));
 				uploadSetStatus.setNoOfRecord(rs.getInt("NO_OF_RECORD"));
 				uploadSetStatus.setSourceCd(rs.getString("SOURCE_CD"));
-				uploadSetStatus
-						.setTransformName(rs.getString("TRANSFORM_NAME"));
+				uploadSetStatus.setTransformName(rs.getString("TRANSFORM_NAME"));
 				setUploadStatusList.add(uploadSetStatus);
 			}
-
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -350,7 +316,6 @@ public class UploadStatusDAO extends CRCLoaderDAO implements UploadStatusDAOI {
 		 * +"SET_UPLOAD_STATUS where UPLOAD_ID=?", new Object[]{uploadId});
 		 */
 		return setUploadStatusList;
-
 	}
 
 	/**
@@ -358,44 +323,34 @@ public class UploadStatusDAO extends CRCLoaderDAO implements UploadStatusDAOI {
 	 */
 	@Override
 	public void updateUploadStatus(UploadStatus uploadStatus) {
-		UploadStatusUpdate uploadStatusUpdate = new UploadStatusUpdate(
-				getDataSource(), this.getDbSchemaName());
+		UploadStatusUpdate uploadStatusUpdate = new UploadStatusUpdate(getDataSource(), this.getDbSchemaName());
 		uploadStatusUpdate.update(uploadStatus);
 		uploadStatusUpdate.flush();
 	}
 
 	@Override
 	public List getAllUploadStatus() {
-		List uploadStatusList = null;
 		UploadStatusQuery uploadStatusQuery = new UploadStatusQuery(
 				getDataSource(), "select * from " + this.getDbSchemaName()
 						+ "upload_status order by upload_id desc");
-		uploadStatusList = uploadStatusQuery.execute();
-		return uploadStatusList;
+		return uploadStatusQuery.execute();
 	}
 
 	@Override
 	@SuppressWarnings("unchecked")
 	public List<UploadStatus> getUpoadStatusByUser(String userId) {
-		List<UploadStatus> uploadStatusList = null;
-		UploadStatusQuery uploadStatusQuery = new UploadStatusQuery(
-				getDataSource(),
-				"select * from "
-						+ this.getDbSchemaName()
-						+ "upload_status where user_id = ? order by upload_id desc");
-		uploadStatusQuery.declareParameter(new SqlParameter("user_id",
-				Types.CHAR));
-		uploadStatusList = uploadStatusQuery
-				.execute(userId);
-		return uploadStatusList;
+		UploadStatusQuery uploadStatusQuery = new UploadStatusQuery(getDataSource(),
+				"select * from " + this.getDbSchemaName() +
+						"upload_status where user_id = ? order by upload_id desc");
+		uploadStatusQuery.declareParameter(new SqlParameter("user_id", Types.CHAR));
+		return uploadStatusQuery.execute(userId);
 	}
 
 	/**
 	 * Calculate upload status information like records loaded,etc for given
 	 * upload id using stored proc.
 	 * 
-	 * @param upload
-	 *            id
+	 * @param uploadId
 	 * @throws Exception
 	 */
 	@Override
@@ -409,8 +364,7 @@ public class UploadStatusDAO extends CRCLoaderDAO implements UploadStatusDAOI {
 			callStmt.execute();
 		} catch (SQLException sqlEx) {
 			sqlEx.printStackTrace();
-			throw new I2B2Exception(
-					"SQLException occured" + sqlEx.getMessage(), sqlEx);
+			throw new I2B2Exception("SQLException occured" + sqlEx.getMessage(), sqlEx);
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			throw new I2B2Exception("Exception occured" + ex.getMessage(), ex);
@@ -445,8 +399,7 @@ public class UploadStatusDAO extends CRCLoaderDAO implements UploadStatusDAOI {
 			callStmt.execute();
 		} catch (SQLException sqlEx) {
 			sqlEx.printStackTrace();
-			throw new I2B2Exception(
-					"SQLException occured" + sqlEx.getMessage(), sqlEx);
+			throw new I2B2Exception("SQLException occured" + sqlEx.getMessage(), sqlEx);
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			throw new I2B2Exception("Exception occured" + ex.getMessage(), ex);
@@ -486,9 +439,7 @@ public class UploadStatusDAO extends CRCLoaderDAO implements UploadStatusDAOI {
 		 * @param ds
 		 *            the DataSource to use for the query
 		 */
-		protected UploadStatusQuery(DataSource ds, String schemaName,
-				DataSourceLookup dataSourceLookup) {
-
+		protected UploadStatusQuery(DataSource ds, String schemaName, DataSourceLookup dataSourceLookup) {
 			super(ds, "SELECT upload_id, " + " upload_label, " + " user_id, "
 					+ " source_cd, " + " no_of_record, " + " deleted_record, "
 					+ " loaded_record, " + " load_date, " + " end_date, "
@@ -532,14 +483,8 @@ public class UploadStatusDAO extends CRCLoaderDAO implements UploadStatusDAOI {
 		 *            the DataSource to use for the insert
 		 */
 		protected UploadStatusInsert(DataSource ds, String schemaName,
-				DataSourceLookup dataSourceLookup) {
-
-			String sql = null;
-			if (dataSourceLookup.getServerType().equalsIgnoreCase(LoaderDAOFactoryHelper.SQLSERVER)
-					|| (dataSourceLookup.getServerType().equalsIgnoreCase(LoaderDAOFactoryHelper.POSTGRESQL)
-					|| dataSourceLookup.getServerType().equalsIgnoreCase(LoaderDAOFactoryHelper.IRIS))) {
-				sql = "INSERT INTO " + schemaName + "upload_status (" +
-
+									 DataSourceLookup dataSourceLookup) {
+			String sql = "INSERT INTO " + schemaName + "upload_status (" +
 				" upload_label, " + " user_id, " + " source_cd, "
 						+ " no_of_record, " + " deleted_record, "
 						+ " loaded_record, " + " load_date, " + " end_date, "
@@ -547,24 +492,10 @@ public class UploadStatusDAO extends CRCLoaderDAO implements UploadStatusDAOI {
 						+ " log_file_name, " + " message, "
 						+ " transform_name) "
 						+ " VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)";
-			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(LoaderDAOFactoryHelper.ORACLE)) {
-				sql = "INSERT INTO " + schemaName + "upload_status ("
-						+ " upload_id," + " upload_label, " + " user_id, "
-						+ " source_cd, " + " no_of_record, "
-						+ " deleted_record, " + " loaded_record, "
-						+ " load_date, " + " end_date, " + " load_status, "
-						+ " input_file_name, " + " log_file_name, "
-						+ " message, " + " transform_name) "
-						+ " VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
-			}
+
 			this.setSql(sql);
 			this.setDataSource(dataSource);
-
-			if (dataSourceLookup.getServerType().equalsIgnoreCase(LoaderDAOFactoryHelper.ORACLE)
-					|| dataSourceLookup.getServerType().equalsIgnoreCase(LoaderDAOFactoryHelper.POSTGRESQL)
-					|| dataSourceLookup.getServerType().equalsIgnoreCase(LoaderDAOFactoryHelper.IRIS)) {
-				declareParameter(new SqlParameter(Types.INTEGER));
-			}
+			declareParameter(new SqlParameter(Types.INTEGER));
 			declareParameter(new SqlParameter(Types.VARCHAR));
 			declareParameter(new SqlParameter(Types.VARCHAR));
 			declareParameter(new SqlParameter(Types.VARCHAR));
@@ -582,52 +513,27 @@ public class UploadStatusDAO extends CRCLoaderDAO implements UploadStatusDAOI {
 		}
 
 		protected void insert(UploadStatus uploadStatus) {
-			int uploadId = 0;
-			Object[] objs = null;
-			if (dataSourceLookup.getServerType().equalsIgnoreCase(LoaderDAOFactoryHelper.ORACLE)
-					|| dataSourceLookup.getServerType().equalsIgnoreCase(LoaderDAOFactoryHelper.POSTGRESQL)
-					|| dataSourceLookup.getServerType().equalsIgnoreCase(LoaderDAOFactoryHelper.IRIS)) {
-				uploadId = getJdbcTemplate().queryForObject(
-						"select sq_uploadstatus_uploadid.nextval from dual",Integer.class);
-				uploadStatus.setUploadId(uploadId);
-				objs = new Object[] { uploadStatus.getUploadId(),
-						uploadStatus.getUploadLabel(),
-						uploadStatus.getUserId(), uploadStatus.getSourceCd(),
-						uploadStatus.getNoOfRecord(),
-						uploadStatus.getDeletedRecord(),
-						uploadStatus.getLoadedRecord(),
-						uploadStatus.getLoadDate(), uploadStatus.getEndDate(),
-						uploadStatus.getLoadStatus(),
-						uploadStatus.getInputFileName(),
-						uploadStatus.getLogFileName(),
-						uploadStatus.getMessage(),
-						uploadStatus.getTransformName() };
-				update(objs);
-
-			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(LoaderDAOFactoryHelper.SQLSERVER)) {
-				objs = new Object[] { uploadStatus.getUploadLabel(),
-						uploadStatus.getUserId(), uploadStatus.getSourceCd(),
-						uploadStatus.getNoOfRecord(),
-						uploadStatus.getDeletedRecord(),
-						uploadStatus.getLoadedRecord(),
-						uploadStatus.getLoadDate(), uploadStatus.getEndDate(),
-						uploadStatus.getLoadStatus(),
-						uploadStatus.getInputFileName(),
-						uploadStatus.getLogFileName(),
-						uploadStatus.getMessage(),
-						uploadStatus.getTransformName() };
-				update(objs);
-				uploadId = getJdbcTemplate().queryForObject("SELECT @@IDENTITY", Integer.class);
-			}
-
+			int uploadId = getJdbcTemplate().queryForObject("select I2B2.Utils_nextval('sq_uploadstatus_uploadid')", Integer.class);
+			uploadStatus.setUploadId(uploadId);
+			Object[] objs = new Object[]{uploadStatus.getUploadId(),
+					uploadStatus.getUploadLabel(),
+					uploadStatus.getUserId(), uploadStatus.getSourceCd(),
+					uploadStatus.getNoOfRecord(),
+					uploadStatus.getDeletedRecord(),
+					uploadStatus.getLoadedRecord(),
+					uploadStatus.getLoadDate(), uploadStatus.getEndDate(),
+					uploadStatus.getLoadStatus(),
+					uploadStatus.getInputFileName(),
+					uploadStatus.getLogFileName(),
+					uploadStatus.getMessage(),
+					uploadStatus.getTransformName()};
+			update(objs);
 			uploadStatus.setUploadId(uploadId);
 		}
 
 		protected int generateUploadStatusId() {
-			return getJdbcTemplate().queryForObject(
-					"select sq_uploadstatus_uploadid.nextval from dual", Integer.class);
+			return getJdbcTemplate().queryForObject("select I2B2.Utils_nextval('sq_uploadstatus_uploadid')", Integer.class);
 		}
-
 	}
 
 	/**
@@ -669,8 +575,7 @@ public class UploadStatusDAO extends CRCLoaderDAO implements UploadStatusDAOI {
 		/**
 		 * Method to update <code>UploadStatus</code>'s data.
 		 * 
-		 * @param UploadStatus
-		 *            to update
+		 * @param uploadStatus to update
 		 * @return the number of rows affected by the update
 		 */
 		protected int update(UploadStatus uploadStatus) {
@@ -684,9 +589,7 @@ public class UploadStatusDAO extends CRCLoaderDAO implements UploadStatusDAOI {
 					uploadStatus.getLogFileName(),
 					uploadStatus.getTransformName(), uploadStatus.getMessage(),
 					uploadStatus.getUploadId()
-
 			});
-
 		}
 	}
 

@@ -34,7 +34,6 @@ import edu.harvard.i2b2.common.exception.StackTraceUtil;
 import edu.harvard.i2b2.common.util.db.JDBCUtil;
 import edu.harvard.i2b2.common.util.jaxb.JAXBUtilException;
 import edu.harvard.i2b2.crc.dao.CRCDAO;
-import edu.harvard.i2b2.crc.dao.DAOFactoryHelper;
 import edu.harvard.i2b2.crc.dao.pdo.output.ObservationFactFactRelated;
 import edu.harvard.i2b2.crc.dao.setfinder.querybuilder.ConceptNotFoundException;
 import edu.harvard.i2b2.crc.dao.setfinder.querybuilder.OntologyException;
@@ -103,39 +102,22 @@ public class ObservationFactDao extends CRCDAO implements IObservationFactDao {
 
 		// make given start date to 'mm-dd-yyyy hh24:mi' format
 		if (factPrimaryKey.getStartDate() != null) {
-			GregorianCalendar gc = factPrimaryKey.getStartDate()
-					.toGregorianCalendar();
-			String sqlFormatedStartDate = "";
-			if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE)) {
-				SimpleDateFormat dateFormat = new SimpleDateFormat(
-						"dd-MMM-yyyy HH:mm:ss");
-				sqlFormatedStartDate = dateFormat.format(gc.getTime());
-				sql += (" AND obs.start_date = to_date('"
-						+ sqlFormatedStartDate + " ', 'DD-MON-YYYY HH24:MI:SS') ");
-			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)
-					|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
-					|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
-				SimpleDateFormat dateFormat = new SimpleDateFormat(
-						"yyyy-MM-dd'T'HH:mm:ss");
-				sqlFormatedStartDate = dateFormat.format(gc.getTime());
-				sql += (" AND obs.start_date = '" + sqlFormatedStartDate + "'");
-			}
+			GregorianCalendar gc = factPrimaryKey.getStartDate().toGregorianCalendar();
+			SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+			String sqlFormatedStartDate = dateFormat.format(gc.getTime());
+			sql += (" AND obs.start_date = '" + sqlFormatedStartDate + "'");
 		}
 
-		if (factPrimaryKey.getModifierCd() != null) {
+		if (factPrimaryKey.getModifierCd() != null)
 			sql += " AND obs.modifier_cd = ? ";
-		}
-		if (factPrimaryKey.getInstanceNum() != null) {
-			sql += " AND obs.instance_num = ? ";
-		}
 
-//		log.info("Pre Sql from ObservationFactDAO[" + sql + "]");
-		
-		
+		if (factPrimaryKey.getInstanceNum() != null)
+			sql += " AND obs.instance_num = ? ";
+
 		int numDerivedTables = 1;
 		boolean derivedFactTable = QueryProcessorUtil.getInstance().getDerivedFactTable();
 		String finalSql = sql;
-		if(derivedFactTable == true){
+		if(derivedFactTable){
 			// call ONT to get concept info 
 			DerivedFactColumnsType columns = getFactColumnsFromOntologyCellByCode(factPrimaryKey.getConceptCd());
 			
@@ -162,7 +144,6 @@ public class ObservationFactDao extends CRCDAO implements IObservationFactDao {
 							finalSql += "\n union all \n";
 							finalSql  += sql.replace(defaultTableName, table);
 					}
-				
 				}
 			}
 		}
@@ -247,11 +228,9 @@ public class ObservationFactDao extends CRCDAO implements IObservationFactDao {
 					factRelated.isSelectDetail(), factRelated.isSelectBlob(),
 					factRelated.isSelectStatus(), dataSourceLookup.getServerType());
 			while (resultSet.next()) {
-				ObservationType observationFactType = observationFactBuilder
-						.buildObservationSet(resultSet);
+				ObservationType observationFactType = observationFactBuilder.buildObservationSet(resultSet);
 				obsFactSet.getObservation().add(observationFactType);
 			}
-
 			patientDataType.getObservationSet().add(obsFactSet);
 		} catch (SQLException sqlEx) {
 			log.error(sqlEx);
@@ -266,17 +245,13 @@ public class ObservationFactDao extends CRCDAO implements IObservationFactDao {
 				sqlEx.printStackTrace();
 			}
 		}
-
 		return patientDataType;
 	}
-	
-
 	
 	protected DerivedFactColumnsType getFactColumnsFromOntologyCellByCode(String conceptCd)
 			throws ConceptNotFoundException, OntologyException {
 		DerivedFactColumnsType factColumns = new DerivedFactColumnsType();
 		try {
-			
 			QueryProcessorUtil qpUtil = QueryProcessorUtil.getInstance();
 			String ontologyUrl = qpUtil
 					.getCRCPropertyValue(QueryProcessorUtil.ONTOLOGYCELL_ROOT_WS_URL_PROPERTIES);
@@ -288,7 +263,6 @@ public class ObservationFactDao extends CRCDAO implements IObservationFactDao {
 					securityType, dataSourceLookup.getProjectPath(),
 					ontologyUrl +"/getCodeInfo");
 		} catch (JAXBUtilException e) {
-
 			log.error("Error while fetching metadata [" + conceptCd
 					+ "] from ontology ", e);
 			throw new OntologyException("Error while fetching metadata ["
@@ -310,9 +284,6 @@ public class ObservationFactDao extends CRCDAO implements IObservationFactDao {
 					+ conceptCd + "] from ontology "
 					+ StackTraceUtil.getStackTrace(e));
 		}
-
 		return factColumns;
 	}
-	
-
 }

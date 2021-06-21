@@ -24,16 +24,14 @@ public class DAOFactoryHelper {
 	DataSource dataSource = null;
 	DataSourceLookup originalDataSourceLookup = null;
 
-	public DAOFactoryHelper(String hiveId, String projectId, String ownerId)
-			throws I2B2DAOException {
+	public DAOFactoryHelper(String hiveId, String projectId, String ownerId) throws I2B2DAOException {
 		originalDataSourceLookup = new DataSourceLookup();
 		originalDataSourceLookup.setProjectPath(projectId);
 		originalDataSourceLookup.setOwnerId(ownerId);
 		originalDataSourceLookup.setDomainId(hiveId);
 		try {
 			DataSourceLookupHelper dsHelper = new DataSourceLookupHelper();
-			dataSourceLookup = dsHelper.matchDataSource(hiveId, projectId,
-					ownerId);
+			dataSourceLookup = dsHelper.matchDataSource(hiveId, projectId, ownerId);
 		} catch (I2B2Exception i2b2Ex) {
 			throw new I2B2DAOException("DataSource lookup error"
 					+ i2b2Ex.getMessage(), i2b2Ex);
@@ -61,38 +59,10 @@ public class DAOFactoryHelper {
 	}
 
 	public IDAOFactory getDAOFactory() throws I2B2DAOException {
-		String dataSourceName = dataSourceLookup.getServerType();
-		if (dataSourceName.equalsIgnoreCase(ORACLE)) {
-			if (dataSource != null) {
-				return new OracleDAOFactory(dataSourceLookup, dataSource);
-			} else {
-				return new OracleDAOFactory(dataSourceLookup,
-						originalDataSourceLookup);
-			}
-		} else if (dataSourceName.equalsIgnoreCase(SQLSERVER)) {
-			if (dataSource != null) {
-				return new OracleDAOFactory(dataSourceLookup, dataSource);
-			} else {
-				return new OracleDAOFactory(dataSourceLookup,
-						originalDataSourceLookup);
-			}
-		} else if (dataSourceName.equalsIgnoreCase(POSTGRESQL)) {
-			if (dataSource != null) {
-				return new OracleDAOFactory(dataSourceLookup, dataSource);
-			} else {
-				return new OracleDAOFactory(dataSourceLookup,
-						originalDataSourceLookup);
-			}
-		} else if (dataSourceName.equalsIgnoreCase(IRIS)) {
-			if (dataSource != null) {
-				return new OracleDAOFactory(dataSourceLookup, dataSource);
-			} else {
-				return new OracleDAOFactory(dataSourceLookup,
-						originalDataSourceLookup);
-			}
-		} else {
-			return null;
-		}
+		if (dataSource != null)
+			return new OracleDAOFactory(dataSourceLookup, dataSource);
+		else
+			return new OracleDAOFactory(dataSourceLookup, originalDataSourceLookup);
 	}
 
 }

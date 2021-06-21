@@ -22,7 +22,6 @@ import edu.harvard.i2b2.common.util.ServiceLocator;
 import edu.harvard.i2b2.crc.util.QueryProcessorUtil;
 
 public class DataSourceLookupDAOFactory {
-
 	/** log **/
 	protected final static Log log = LogFactory.getLog(DataSourceLookupDAOFactory.class);
 
@@ -38,53 +37,34 @@ public class DataSourceLookupDAOFactory {
 	private static  ServiceLocator serviceLocator = ServiceLocator.getInstance();
 	//private static CRCLoaderUtil crcUtil = CRCLoaderUtil.getInstance();
 
-	public static DataSourceLookupDAO getDataSourceLookupDAO()
-			throws I2B2DAOException {
-		if (serverType == null) { 
-		getLookupDataSourceFromPropertyFile();
-		}
-		if (serverType.equalsIgnoreCase(ORACLE)) {
+	public static DataSourceLookupDAO getDataSourceLookupDAO() throws I2B2DAOException {
+		if (serverType == null)
+			getLookupDataSourceFromPropertyFile();
+		if (serverType.equalsIgnoreCase(IRIS))
 			return new OracleDataSourceLookupDAO(lookupDataSource, schemaName);
-		} else if (serverType.equalsIgnoreCase(SQLSERVER)) {
-			return new OracleDataSourceLookupDAO(lookupDataSource,
-					schemaName);
-		} else if (serverType.equalsIgnoreCase(POSTGRESQL)) {
-			return new OracleDataSourceLookupDAO(lookupDataSource,
-					schemaName);
-		} else if (serverType.equalsIgnoreCase(IRIS)) {
-			return new OracleDataSourceLookupDAO(lookupDataSource,
-				schemaName);
-		} else {
+		else
 			throw new I2B2DAOException("DataSourceLookupDAOFactory.getDataSourceLookupDAO: serverType=" + serverType + " not valid");
-		}
 	}
 
-
-	private static void getLookupDataSourceFromPropertyFile()
-			throws I2B2DAOException {
+	private static void getLookupDataSourceFromPropertyFile() throws I2B2DAOException {
 		QueryProcessorUtil crcUtil = QueryProcessorUtil.getInstance();
 		try {
 			//dataSourceName = crcUtil.getCRCDBLookupDataSource();
 			//serverType = crcUtil.getCRCDBLookupServerType();
 			//schemaName = crcUtil.getCRCDBLookupSchemaName();
-			lookupDataSource = crcUtil
-					.getDataSource("java:/CRCBootStrapDS");
+			lookupDataSource = crcUtil.getDataSource("java:/CRCBootStrapDS");
 			Connection conn = lookupDataSource.getConnection();
-			
 			serverType = conn.getMetaData().getDatabaseProductName().toUpperCase();
 			schemaName = conn.getSchema();
 			conn.close();
 		} catch (I2B2Exception i2b2Ex) {
-			log.error(
-					"DataSourceLookupDAOFactory.getLookupDataSourceFromPropertyFile"
+			log.error("DataSourceLookupDAOFactory.getLookupDataSourceFromPropertyFile"
 							+ i2b2Ex.getMessage(), i2b2Ex);
-			throw new I2B2DAOException(
-					"DataSourceLookupDAOFactory.getLookupDataSourceFromPropertyFile"
+			throw new I2B2DAOException("DataSourceLookupDAOFactory.getLookupDataSourceFromPropertyFile"
 							+ i2b2Ex.getMessage(), i2b2Ex);
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
-			throw new I2B2DAOException(
-					"DataSourceLookupDAOFactory.getLookupDataSourceFromPropertyFile SQL Error"
+			throw new I2B2DAOException("DataSourceLookupDAOFactory.getLookupDataSourceFromPropertyFile SQL Error"
 							+ e.getMessage(), e);
 		}
 	}

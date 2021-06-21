@@ -20,13 +20,13 @@ import edu.harvard.i2b2.crc.dao.setfinder.querybuilder.ConceptNotFoundException;
 import edu.harvard.i2b2.crc.dao.setfinder.querybuilder.OntologyException;
 import edu.harvard.i2b2.crc.datavo.ontology.ConceptType;
 import edu.harvard.i2b2.crc.datavo.setfinder.query.ItemType;
+import org.apache.commons.lang3.StringUtils;
 
 public class TemporalPanelEncounterItem extends TemporalPanelItem {
-	
-	public TemporalPanelEncounterItem(TemporalPanel parent, ItemType item)
-				throws I2B2Exception {
-			super(parent, item);
-		}
+
+	public TemporalPanelEncounterItem(TemporalPanel parent, ItemType item) throws I2B2Exception {
+		super(parent, item);
+	}
 	
 	
 	@Override
@@ -36,8 +36,7 @@ public class TemporalPanelEncounterItem extends TemporalPanelItem {
 				this.hasModiferConstraint()||
 				this.hasPanelDateConstraint()||
 				this.hasPanelOccurrenceConstraint()||
-				this.hasValueConstraint()
-				){
+				this.hasValueConstraint()) {
 			return super.buildSql();
 		}
 		else{
@@ -54,11 +53,9 @@ public class TemporalPanelEncounterItem extends TemporalPanelItem {
 
 	
 	@Override
-	protected ConceptType getConceptType() throws ConceptNotFoundException,
-			OntologyException {
+	protected ConceptType getConceptType() throws ConceptNotFoundException, OntologyException {
 		if (conceptType==null){
 			String itemKey = baseItem.getItemKey();
-		
 			String[] encounterId = itemKey.split(":");
 			if (encounterId[1] != null) {
 				String encounterNum = encounterId[1];
@@ -70,7 +67,6 @@ public class TemporalPanelEncounterItem extends TemporalPanelItem {
 				conceptType.setDimcode(encounterNum);
 			}
 		}
-		
 		return conceptType;
 	}
 
@@ -91,9 +87,11 @@ public class TemporalPanelEncounterItem extends TemporalPanelItem {
 	@Override
 	protected String buildDimensionJoinSql(String tableAlias) {
 		String dimensionSql = "";
-
-		if (tableAlias!=null&&tableAlias.trim().length()>0)
-			tableAlias += ".";
+		if (tableAlias != null && tableAlias.trim().length() > 0) {
+			if(!tableAlias.trim().endsWith("."))
+				tableAlias += ".";
+		} else
+			tableAlias = StringUtils.EMPTY;
 		
 		String itemKey = baseItem.getItemKey();
 		
@@ -109,7 +107,6 @@ public class TemporalPanelEncounterItem extends TemporalPanelItem {
 					+ "and encounter_ide = '" + encounterId[2] + "' "
 					+ ")";
 		}
-
 		return dimensionSql;
 	}
 

@@ -15,6 +15,7 @@ import java.util.List;
 
 import javax.sql.DataSource;
 
+import edu.harvard.i2b2.common.util.db.QueryUtil;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.jdbc.core.RowMapper;
@@ -49,11 +50,13 @@ public class OracleDataSourceLookupDAO extends DataSourceLookupDAO  {
 	@SuppressWarnings("unchecked")
 	public List<DataSourceLookup> getDbLookupByHiveProjectOwner(String domainId, String projectId, String ownerId) {
 		log.info("OracleDataSourceLookupDAO.class: getDbLookupByHiveProjectOwner(String domainId, String projectId, String ownerId)");
-		//TODO: only for the IRIS
-		String sql = "select * from crc_db_lookup where LOWER(c_domain_id) = ? and c_project_path [  ? " +
+		String sql = "select * from crc_db_lookup where LOWER(c_domain_id) = ? and c_project_path " +
+				QueryUtil.getOperatorByValue(projectId + "%") + " ? " +
 				"and (LOWER(c_owner_id) =? or c_owner_id = '@') order by c_project_path";
 		log.info("Script: " + sql);
-		List<DataSourceLookup> dataSourceLookupList = this.query(sql, new Object[]{domainId.toLowerCase(),projectId+"%",ownerId.toLowerCase()},new int[]{Types.VARCHAR,Types.VARCHAR,Types.VARCHAR},new mapper()  );
+		List<DataSourceLookup> dataSourceLookupList = this.query(sql,
+				new Object[] { domainId.toLowerCase(), QueryUtil.getCleanValue(projectId + "%"), ownerId.toLowerCase()},
+				new int[] {Types.VARCHAR,Types.VARCHAR,Types.VARCHAR},new mapper());
 		return dataSourceLookupList;
 	}
 	
@@ -62,7 +65,6 @@ public class OracleDataSourceLookupDAO extends DataSourceLookupDAO  {
 	}
 
 	public class mapper implements RowMapper {
-
 	    @Override
 		public Object mapRow(ResultSet rs, int rowNum) throws SQLException {
 	        DataSourceLookup dataSourceLookup = new DataSourceLookup();

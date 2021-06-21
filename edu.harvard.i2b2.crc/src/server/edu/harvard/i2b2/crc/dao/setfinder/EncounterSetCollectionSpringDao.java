@@ -63,37 +63,24 @@ public class EncounterSetCollectionSpringDao extends CRCDAO implements
 	 * 
 	 * @param patientSetId
 	 */
-	public EncounterSetCollectionSpringDao(DataSource dataSource,
-			DataSourceLookup dataSourceLookup) {
+	public EncounterSetCollectionSpringDao(DataSource dataSource, DataSourceLookup dataSourceLookup) {
 		setDataSource(dataSource);
 		setDbSchemaName(dataSourceLookup.getFullSchema());
 		jdbcTemplate = new JdbcTemplate(dataSource);
 		this.dataSourceLookup = dataSourceLookup;
 
-		if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE)) {
-			insert_sql = "insert into "
-					+ getDbSchemaName()
-					+ "qt_patient_enc_collection(patient_enc_coll_id,result_instance_id,set_index,patient_num,encounter_num) values ("
-					+ getDbSchemaName() + "QT_SQ_QPER_PECID.nextval,?,?,?,?)";
-		} else if (dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)
-					|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
-					|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
-			insert_sql = "insert into "
+		insert_sql = "insert into "
 					+ getDbSchemaName()
 					+ "qt_patient_enc_collection(result_instance_id,set_index,patient_num,encounter_num) values (?,?,?,?)";
-		}
-		sqlServerSequenceDao = new SQLServerSequenceDAO(dataSource,
-				dataSourceLookup);
+		sqlServerSequenceDao = new SQLServerSequenceDAO(dataSource, dataSourceLookup);
 		resultInstance = new QtQueryResultInstance();
 		patientEncColl = new QtPatientEncCollection[INITIAL_ARRAY_SIZE];
-
 	}
 
 	@Override
 	public void createPatientEncCollection(String resultInstanceId) {
 		resultInstance = new QtQueryResultInstance();
 		resultInstance.setResultInstanceId(resultInstanceId);
-
 	}
 
 	@Override
@@ -110,21 +97,17 @@ public class EncounterSetCollectionSpringDao extends CRCDAO implements
 	@Override
 	public void addEncounter(long encounterId, long patientId) {
 		setIndex++;
-
 		QtPatientEncCollection collElement = new QtPatientEncCollection();
 		int patientSetCollId = 0;
 		collElement.setPatientId(patientId);
 		collElement.setEncounterId(encounterId);
 		collElement.setQtQueryResultInstance(resultInstance);
 		collElement.setSetIndex(setIndex);
-
 		patientEncColl[batchDataIndex++] = collElement;
 
 		if ((setIndex % 1000) == 0) {
-			InsertStatementSetter batchSetter = new InsertStatementSetter(
-					patientEncColl, batchDataIndex);
+			InsertStatementSetter batchSetter = new InsertStatementSetter(patientEncColl, batchDataIndex);
 			jdbcTemplate.batchUpdate(insert_sql, batchSetter);
-
 			Arrays.fill(patientEncColl, null);
 			batchDataIndex = 0;
 		}
@@ -136,8 +119,7 @@ public class EncounterSetCollectionSpringDao extends CRCDAO implements
 	 */
 	@Override
 	public void flush() {
-		InsertStatementSetter batchSetter = new InsertStatementSetter(
-				patientEncColl, batchDataIndex);
+		InsertStatementSetter batchSetter = new InsertStatementSetter(patientEncColl, batchDataIndex);
 		jdbcTemplate.batchUpdate(insert_sql, batchSetter);
 		Arrays.fill(patientEncColl, null);
 		batchDataIndex = 0;
@@ -145,12 +127,11 @@ public class EncounterSetCollectionSpringDao extends CRCDAO implements
 	}
 
 	class InsertStatementSetter implements BatchPreparedStatementSetter {
-
 		private QtPatientEncCollection[] data;
 		private int batchSize = 0;
 
 		public InsertStatementSetter(QtPatientEncCollection[] data,
-				int batchSize) {
+									 int batchSize) {
 			this.data = data;
 			this.batchSize = batchSize;
 		}
@@ -163,16 +144,12 @@ public class EncounterSetCollectionSpringDao extends CRCDAO implements
 		// this is called for each row
 		@Override
 		public void setValues(PreparedStatement ps, int i) throws SQLException {
-
 			// ps.setLong(1, data[i].getPatientSetCollId()); // set first value
 			ps.setInt(1, Integer.parseInt(data[i].getQtQueryResultInstance()
 					.getResultInstanceId()));
 			ps.setLong(2, data[i].getSetIndex());
 			ps.setLong(3, data[i].getPatientId());
 			ps.setLong(4, data[i].getEncounterId());
-
 		}
-
 	}
-
 }

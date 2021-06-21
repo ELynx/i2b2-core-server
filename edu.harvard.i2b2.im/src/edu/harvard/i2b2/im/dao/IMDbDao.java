@@ -14,17 +14,13 @@
  */
 package edu.harvard.i2b2.im.dao;
 
-import java.io.IOException;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.sql.Types;
-import java.util.Calendar;
-import java.util.Iterator;
 import java.util.List;
 
 import javax.sql.DataSource;
 
+import edu.harvard.i2b2.common.util.db.QueryUtil;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.dao.DataAccessException;
@@ -34,12 +30,6 @@ import org.springframework.jdbc.core.support.JdbcDaoSupport;
 
 import edu.harvard.i2b2.common.exception.I2B2DAOException;
 import edu.harvard.i2b2.common.exception.I2B2Exception;
-import edu.harvard.i2b2.common.util.db.JDBCUtil;
-import edu.harvard.i2b2.im.datavo.i2b2message.MessageHeaderType;
-import edu.harvard.i2b2.im.datavo.pdo.PidSet;
-import edu.harvard.i2b2.im.datavo.pdo.PidType;
-import edu.harvard.i2b2.im.datavo.pm.ProjectType;
-import edu.harvard.i2b2.im.datavo.wdo.DblookupType;
 import edu.harvard.i2b2.im.ejb.DBInfoType;
 import edu.harvard.i2b2.im.util.IMUtil;
 
@@ -62,20 +52,19 @@ public class IMDbDao extends JdbcDaoSupport {
 		this.jt = new JdbcTemplate(ds);
 	}
 
-	private String getIMSchema() throws I2B2Exception{
-
+	private String getIMSchema() throws I2B2Exception {
 		return IMUtil.getInstance().getIMDataSchemaName();
 	}
-
 
 	public List<DBInfoType> getDbLookupByHiveOwner(String domainId,String ownerId) throws I2B2Exception, I2B2DAOException {
 		log.info("IMDbDao.class: getDbLookupByHiveOwner(String domainId,String ownerId)");
 		String metadataSchema = getIMSchema();
-		String sql =  "select * from " + metadataSchema + "im_db_lookup where LOWER(c_domain_id) = ? and c_project_path = ? and (LOWER(c_owner_id) = ? or c_owner_id ='@') order by c_project_path";
+		String sql =  "select * from " + metadataSchema + "im_db_lookup where LOWER(c_domain_id) = ? " +
+				"and c_project_path = ? and (LOWER(c_owner_id) = ? or c_owner_id ='@') order by c_project_path";
 		String projectId = "@";
 		//		log.info(sql + domainId + projectId + ownerId);
 		log.info("Script [" + domainId + ", " + projectId + ", " + ownerId + "]: " + sql);
-		List queryResult = null;
+		List queryResult;
 		try {
 			queryResult = jt.query(sql, new getDBMapper(), domainId.toLowerCase(),projectId,ownerId.toLowerCase());
 		} catch (DataAccessException e) {
@@ -83,7 +72,6 @@ public class IMDbDao extends JdbcDaoSupport {
 			throw new I2B2DAOException("Database error: "+ e.getMessage());
 		}
 		return queryResult;
-
 		//		List<DBInfoType> dataSourceLookupList = 
 		//			this.query(sql, new Object[]{domainId,projectId,ownerId}, new mapper());
 		//		return dataSourceLookupList;
@@ -94,25 +82,20 @@ public class IMDbDao extends JdbcDaoSupport {
 			throws I2B2Exception, I2B2DAOException{
 		log.info("IMDbDao.class: getDbLookupByHiveProjectOwner(String domainId, String projectId, String ownerId)");
 		String metadataSchema = getIMSchema();
-		//TODO: only for the IRIS
-		//TODO: check if [ is enough for IRIS
-		String sql = "select * from " + metadataSchema + "im_db_lookup where LOWER(c_domain_id) = ? and LOWER(c_project_path) [ ? " +
-				" and (LOWER(c_owner_id) =? or c_owner_id = '@') order by c_project_path"; // desc  c_owner_id desc";
-		//		List<DBInfoType> dataSourceLookupList = this.query(sql, new Object[]{domainId,projectId+"%",ownerId},new int[]{Types.VARCHAR,Types.VARCHAR,Types.VARCHAR},new mapper()  );
-		//		return dataSourceLookupList;
-		//		log.info(sql + domainId + projectId + ownerId);
+		String sql = "select * from " + metadataSchema + "im_db_lookup where LOWER(c_domain_id) = ? " +
+				"and LOWER(c_project_path) " + QueryUtil.getOperatorByValue(projectId.toLowerCase()) +
+				" ? and (LOWER(c_owner_id) =? or c_owner_id = '@') order by c_project_path"; // desc  c_owner_id desc";
 		log.info("Script [" + domainId + ", " + projectId + ", " + ownerId + "]: " + sql);
-		List queryResult = null;
+		List queryResult;
 		try {
-			queryResult = jt.query(sql, new getDBMapper(), domainId.toLowerCase(),projectId.toLowerCase(),ownerId.toLowerCase());
+			queryResult = jt.query(sql, new getDBMapper(), domainId.toLowerCase(),
+					QueryUtil.getCleanValue(projectId.toLowerCase()), ownerId.toLowerCase());
 		} catch (DataAccessException e) {
 			log.error(e.getMessage());
 			throw new I2B2DAOException("Database error:" + e.getMessage());
 		}
 		return queryResult;
-
 	}
-
 }
 
 class getDBMapper implements RowMapper<DBInfoType> {
@@ -122,14 +105,11 @@ class getDBMapper implements RowMapper<DBInfoType> {
 		dataSourceLookup.setHive(rs.getString("c_domain_id"));
 		dataSourceLookup.setProjectId(rs.getString("c_project_path"));
 		dataSourceLookup.setOwnerId(rs.getString("c_owner_id"));
-		//				dataSourceLookup.setDatabaseName(rs.getString("c_db_datasource"));
+	  //dataSourceLookup.setDatabaseName(rs.getString("c_db_datasource"));
+		dataSourceLookup.setDb_serverType("INTERSYSTEMS IRIS");
 		dataSourceLookup.setDb_fullSchema(rs.getString("c_db_fullschema"));
 		dataSourceLookup.setDb_dataSource(rs.getString("c_db_datasource"));
 		dataSourceLookup.setDb_serverType(rs.getString("c_db_servertype"));
-		//TODO: IRIS
-		dataSourceLookup.setDb_serverType("INTERSYSTEMS IRIS");
-
 		return dataSourceLookup;
-	} 
-
+	}
 }

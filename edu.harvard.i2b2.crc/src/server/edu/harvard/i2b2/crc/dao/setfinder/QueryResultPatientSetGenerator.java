@@ -25,8 +25,7 @@ import edu.harvard.i2b2.crc.ejb.role.MissingRoleException;
 import edu.harvard.i2b2.crc.role.AuthrizationHelper;
 import edu.harvard.i2b2.crc.util.LogTimingUtil;
 
-public class QueryResultPatientSetGenerator extends CRCDAO implements
-		IResultGenerator {
+public class QueryResultPatientSetGenerator extends CRCDAO implements IResultGenerator {
 
 	@Override
 	public String getResults() {
@@ -35,14 +34,11 @@ public class QueryResultPatientSetGenerator extends CRCDAO implements
 
 	private String xmlResult = null;
 	
-	
 	@Override
 	public void generateResult(Map param) throws I2B2DAOException {
-
-		SetFinderConnection sfConn = (SetFinderConnection) param
-				.get("SetFinderConnection");
-		SetFinderDAOFactory sfDAOFactory = (SetFinderDAOFactory) param
-				.get("SetFinderDAOFactory");
+		log.info("QueryResultPatientSetGenerator.class: generateResult(Map param)");
+		SetFinderConnection sfConn = (SetFinderConnection) param.get("SetFinderConnection");
+		SetFinderDAOFactory sfDAOFactory = (SetFinderDAOFactory) param.get("SetFinderDAOFactory");
 		// String patientSetId = (String)param.get("PatientSetId");
 		String queryInstanceId = (String) param.get("QueryInstanceId");
 		String TEMP_DX_TABLE = (String) param.get("TEMP_DX_TABLE");
@@ -50,8 +46,7 @@ public class QueryResultPatientSetGenerator extends CRCDAO implements
 		String resultTypeName = (String) param.get("ResultOptionName");
 		String processTimingFlag = (String) param.get("ProcessTimingFlag");
 		int obfucatedRecordCount = (Integer) param.get("ObfuscatedRecordCount");
-		DataSourceLookup originalDataSource = (DataSourceLookup) param
-				.get("OriginalDataSourceLookup");
+		DataSourceLookup originalDataSource = (DataSourceLookup) param.get("OriginalDataSourceLookup");
 		List<String> roles = (List<String>) param.get("Roles");
 		this.setDbSchemaName(sfDAOFactory.getDataSourceLookup().getFullSchema()); 
 
@@ -61,38 +56,19 @@ public class QueryResultPatientSetGenerator extends CRCDAO implements
 		String obfuscationDescription = "", obfusMethod = "";
 
 		try {
-
 			int i = 0;
-			IPatientSetCollectionDao patientSetCollectionDao = sfDAOFactory
-					.getPatientSetCollectionDAO();
-			patientSetCollectionDao
-					.createPatientSetCollection(resultInstanceId);
-
+			IPatientSetCollectionDao patientSetCollectionDao = sfDAOFactory.getPatientSetCollectionDAO();
+			patientSetCollectionDao.createPatientSetCollection(resultInstanceId);
 			String patientIdSql = " select distinct patient_num from " + TEMP_DX_TABLE
 					+ " order by patient_num ";
-			
 			////
 			//JNix: refactored to no longer pull down records just to insert back.
 			String sql = null;
 			String dbSchemaName = this.getDbSchemaName();
-			if (sfDAOFactory.getDataSourceLookup().getServerType().equals(DAOFactoryHelper.ORACLE)) {
-				sql = "INSERT INTO " + dbSchemaName + "qt_patient_set_collection"
-						+ " (patient_set_coll_id, result_instance_id, set_index, patient_num) "
-						+ "SELECT " + dbSchemaName + "QT_SQ_QPR_PCID.nextval AS patient_set_coll_id, ? AS result_instance_id, rownum AS set_index, t.patient_num "
-						+ "FROM (SELECT DISTINCT patient_num FROM " + TEMP_DX_TABLE + ") t";
-			} else if (sfDAOFactory.getDataSourceLookup().getServerType().equalsIgnoreCase(DAOFactoryHelper.SQLSERVER) ||
-					sfDAOFactory.getDataSourceLookup().getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)) {
-				sql = "INSERT INTO " + dbSchemaName + "qt_patient_set_collection"
-						+ " (result_instance_id, set_index, patient_num) "
-						+ "SELECT ? AS result_instance_id, ROW_NUMBER() OVER(ORDER BY patient_num) AS set_index, t.patient_num "
-						+ "FROM (SELECT DISTINCT patient_num FROM " + TEMP_DX_TABLE + ") t";
-			} else if (sfDAOFactory.getDataSourceLookup().getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
-				sql = "INSERT INTO " + dbSchemaName + "qt_patient_set_collection"
+			sql = "INSERT INTO " + dbSchemaName + "qt_patient_set_collection"
 						+ " (result_instance_id, set_index, patient_num) "
 						+ "SELECT ? AS result_instance_id, %VID AS set_index, t.patient_num "
-						+ "FROM (SELECT DISTINCT patient_num FROM " + TEMP_DX_TABLE + ") t ORDER BY patient_num";
-			}
-
+						+ "FROM (SELECT DISTINCT patient_num FROM " + TEMP_DX_TABLE + ") t ";
 			log.info("Executing sql:\n" + sql);
 			log.debug("Executing sql:\n" + sql);
 
@@ -103,17 +79,16 @@ public class QueryResultPatientSetGenerator extends CRCDAO implements
 			loadCount = ps.executeUpdate();
 			ps.close();
 			logTimingUtil.setEndTime();
-			log.debug("Total patients loaded for query instance ="
-					+ queryInstanceId + " is [" + loadCount + "]");
+			log.debug("Total patients loaded for query instance =" + queryInstanceId + " is [" + loadCount + "]");
 			////
 			if (processTimingFlag != null) {
 				if (!processTimingFlag.trim().equalsIgnoreCase(ProcessTimingReportUtil.NONE) ) {
 					ProcessTimingReportUtil ptrUtil = new ProcessTimingReportUtil(sfDAOFactory.getDataSourceLookup());
-					ptrUtil.logProcessTimingMessage(queryInstanceId, ptrUtil.buildProcessTiming(logTimingUtil, "BUILD - PATIENTSET", ""));
+					ptrUtil.logProcessTimingMessage(queryInstanceId, ptrUtil.buildProcessTiming(logTimingUtil,
+							"BUILD - PATIENTSET", ""));
 				}
 			}
 			realCount = loadCount;
-			
 
 			// check for the user role to see if it needs data obfscation
 			DataSourceLookup dataSourceLookup = sfDAOFactory
@@ -122,26 +97,21 @@ public class QueryResultPatientSetGenerator extends CRCDAO implements
 			String projectId = originalDataSource.getProjectPath();
 			String userId = originalDataSource.getOwnerId();
 			boolean noDataAggFlag = false, noDataObfscFlag = false;
-
-			DAOFactoryHelper helper = new DAOFactoryHelper(dataSourceLookup
-					.getDomainId(), dataSourceLookup.getProjectPath(),
+			DAOFactoryHelper helper = new DAOFactoryHelper(dataSourceLookup.getDomainId(),
+					dataSourceLookup.getProjectPath(),
 					dataSourceLookup.getOwnerId());
 
 			IDAOFactory daoFactory = helper.getDAOFactory();
-			AuthrizationHelper authHelper = new AuthrizationHelper(domainId,
-					projectId, userId, daoFactory);
-
+			AuthrizationHelper authHelper = new AuthrizationHelper(domainId, projectId, userId, daoFactory);
 			try {
-				authHelper.checkRoleForProtectionLabel(
-						"SETFINDER_QRY_WITHOUT_DATAOBFSC", roles);
+				authHelper.checkRoleForProtectionLabel("SETFINDER_QRY_WITHOUT_DATAOBFSC", roles);
 			} catch (MissingRoleException noRoleEx) {
 				noDataAggFlag = true;
 			} catch (I2B2Exception e) {
 				throw e;
 			}
 			try {
-				authHelper.checkRoleForProtectionLabel(
-						"SETFINDER_QRY_WITH_DATAOBFSC", roles);
+				authHelper.checkRoleForProtectionLabel("SETFINDER_QRY_WITH_DATAOBFSC", roles);
 			} catch (MissingRoleException noRoleEx) {
 				noDataObfscFlag = true;
 			} catch (I2B2Exception e) {
@@ -164,36 +134,27 @@ public class QueryResultPatientSetGenerator extends CRCDAO implements
 			// readQueryStmt.close();
 		} catch (SQLException sqlEx) {
 			exception = sqlEx;
-			log.error("QueryResultPatientSetGenerator.generateResult:"
-					+ sqlEx.getMessage(), sqlEx);
-			throw new I2B2DAOException(
-					"QueryResultPatientSetGenerator.generateResult:"
-							+ sqlEx.getMessage(), sqlEx);
+			log.error("QueryResultPatientSetGenerator.generateResult:" + sqlEx.getMessage(), sqlEx);
+			throw new I2B2DAOException( "QueryResultPatientSetGenerator.generateResult:" + sqlEx.getMessage(), sqlEx);
 
 		} catch (Throwable throwable) {
 			throwable.printStackTrace();
 		} finally {
-			IQueryResultInstanceDao resultInstanceDao = sfDAOFactory
-					.getPatientSetResultDAO();
-			
+			IQueryResultInstanceDao resultInstanceDao = sfDAOFactory.getPatientSetResultDAO();
 			String queryName = sfDAOFactory.getQueryMasterDAO().getQueryDefinition(
-					sfDAOFactory.getQueryInstanceDAO().getQueryInstanceByInstanceId(queryInstanceId).getQtQueryMaster().getQueryMasterId()).getName();
-
-			if (errorFlag) {
-				resultInstanceDao.updatePatientSet(resultInstanceId,
-						QueryStatusTypeId.STATUSTYPE_ID_ERROR, 0);
-			} else {
-				resultInstanceDao.updatePatientSet(resultInstanceId,
-						QueryStatusTypeId.STATUSTYPE_ID_FINISHED, "",
+					sfDAOFactory.getQueryInstanceDAO().getQueryInstanceByInstanceId(queryInstanceId)
+							.getQtQueryMaster().getQueryMasterId()).getName();
+			if (errorFlag)
+				resultInstanceDao.updatePatientSet(resultInstanceId, QueryStatusTypeId.STATUSTYPE_ID_ERROR, 0);
+			else {
+				resultInstanceDao.updatePatientSet(resultInstanceId, QueryStatusTypeId.STATUSTYPE_ID_FINISHED, "",
 						obfucatedRecordCount, 
 						//loadCount, 
 						realCount, obfusMethod);
 				//String description = "Patient Set - " + obfuscationDescription
 				//		+ loadCount + " Patients";
 				String description = "Patient Set for \"" + queryName +"\"";
-				resultInstanceDao.updateResultInstanceDescription(
-						resultInstanceId, description);
-
+				resultInstanceDao.updateResultInstanceDescription(resultInstanceId, description);
 			}
 		}
 	}

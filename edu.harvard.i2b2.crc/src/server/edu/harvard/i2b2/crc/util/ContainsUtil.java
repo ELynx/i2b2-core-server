@@ -21,33 +21,21 @@ public class ContainsUtil {
 			return null;
 		}
 		//1: check if value is enclosed in []
-		if (containsValue.startsWith("[") && containsValue.endsWith("]")) { 
-			return  containsValue.substring(1,containsValue.length()-1).replaceAll("'","''");
-			 
-		}
+		if (containsValue.startsWith("[") && containsValue.endsWith("]"))
+			return containsValue.substring(1,containsValue.length()-1).replaceAll("'","''");
+
 		//2: check if value is enclosed in ""
-		if (containsValue.startsWith("\"") && containsValue.endsWith("\"")) {
-			if (dbServerType.equalsIgnoreCase(DAOFactoryHelper.ORACLE) == false) { 
-				return  "\"" + containsValue.substring(1,containsValue.length()-1).replaceAll(REMOVE_PUNCTUATION,"") + "\"";
-			} else { 
-				return   containsValue.substring(1,containsValue.length()-1).replaceAll(REMOVE_PUNCTUATION,"");
-			}
-		}
+		if (containsValue.startsWith("\"") && containsValue.endsWith("\""))
+			return  "\"" + containsValue.substring(1,containsValue.length()-1).replaceAll(REMOVE_PUNCTUATION,"") + "\"";
 		
 		boolean textWithoutOperator = true;
-		if (containsValue.indexOf("-") > 0 ||
-				containsValue.indexOf("AND") > 0 || 
-				containsValue.indexOf("OR") > 0 ||
-				containsValue.indexOf("*") > 0) { 
+		if (containsValue.indexOf("-") > 0 || containsValue.indexOf("AND") > 0 ||
+				containsValue.indexOf("OR") > 0 || containsValue.indexOf("*") > 0)
 			textWithoutOperator = false;
-		}
-				
 		
 		//3: remove punctuation 
 		String punctuationStr = containsValue.replaceAll(REMOVE_PUNCTUATION,"");
-		
-		
-		
+
 		//4 word start with "-", then add NOT
 		StringTokenizer strTokenizer = new StringTokenizer(punctuationStr);
 		String singleToken = null;
@@ -67,22 +55,12 @@ public class ContainsUtil {
 			}
 		}
 		
-		 
-		
 		//5 replace CAPS AND with accum (only for oracle)
 		String accumStr = "";
-		if (dbServerType.equalsIgnoreCase(DAOFactoryHelper.ORACLE)) { 
-			accumStr  = notStr.replaceAll("\\s(AND)\\s", " ACCUM ");
-		} else { 
-			accumStr  = notStr.replaceAll("\\s(AND)\\s", "  ");
-		}
-		
+		accumStr  = notStr.replaceAll("\\s(AND)\\s", "  ");
 		
 		//6: replace "*" with  %, or *(only for oracle)
 		String starStr = accumStr;
-		if (dbServerType.equalsIgnoreCase(DAOFactoryHelper.ORACLE)) {
-			starStr = accumStr.replaceAll("(\\*)", "%");	
-		} 
 		System.out.println("start value [" + starStr + "]"); 
 		
 		//7: replace DB_AND with AND
@@ -90,9 +68,6 @@ public class ContainsUtil {
 		
 		//8: replace OR with  minus(only for oracle)
 		String orStr = andStr;
-		if (dbServerType.equalsIgnoreCase(DAOFactoryHelper.ORACLE)) {
-			orStr = andStr.replaceAll("\\s(OR)\\s", " MINUS ");
-		}
 		
 		//9: single
 		String finalStr = orStr;
@@ -102,37 +77,20 @@ public class ContainsUtil {
 			StringTokenizer accumTokenizer = new StringTokenizer(finalStr);
 			while(accumTokenizer.hasMoreTokens()) {
 				singleToken = accumTokenizer.nextToken();
-				if (dbServerType.equalsIgnoreCase(DAOFactoryHelper.ORACLE)
-						|| dbServerType.equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
-						|| dbServerType.equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
-					defaultAccumStr += singleToken;
-				} else if (dbServerType.equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)) { 
-					defaultAccumStr += "\"" + singleToken + "\"";
-				}
-				
-				if (accumTokenizer.hasMoreTokens()) { 
-					if (dbServerType.equalsIgnoreCase(DAOFactoryHelper.ORACLE)) { 
-						defaultAccumStr += " ACCUM ";
-					} else if (dbServerType.equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)) { 
-						defaultAccumStr += " OR ";
-					} else if (dbServerType.equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
-							 	|| dbServerType.equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
-						defaultAccumStr += " | ";
-					}
-				}
+				defaultAccumStr += singleToken;
+
+				if (accumTokenizer.hasMoreTokens())
+					defaultAccumStr += " | ";
 			}
 			return defaultAccumStr;
 		} else { 
 			return finalStr;
 		}
-		
-		
 	}
 	
 	public static void main(String[] args) { 
 		ContainsUtil conUtil = new ContainsUtil();
-	String formattedVal = conUtil.formatValue("MRI Knee","SQLSERVER");
+		String formattedVal = conUtil.formatValue("MRI Knee","SQLSERVER");
 		System.out.println("formattedVal[" + formattedVal + "]");
 	}
-	
 }
