@@ -606,30 +606,9 @@ public class ConceptDao extends JdbcDaoSupport {
 							skipCount++;
 						} else {
 							try {
-//								jt.execute("CREATE GLOBAL TEMPORARY TABLE temp_path_order( c_name varchar(2000), " +
-//										"c_fullname varchar(2000), c_path varchar(200), c_pathorder int)");
-								List<String> insertSQL = new ArrayList<>();
-								jt.update("insert into temp_path_order(c_name, c_fullname, c_path, c_pathorder) " +
-										"select c_name, c_fullname, substr(c_fullname, 1, length(c_fullname) - position( '\\' in substr(reverse(c_fullname), 2)) ) as c_path, 1 as c_pathorder " +
-										"from \"public\".I2B2 " +
-										"where c_fullname = ? and c_synonym_cd='N'", parentPath);
-								for (int k = 0; k < 15; k++) {
-//									insertSQL.add("insert into temp_path_order(c_name, c_fullname, c_path, c_pathorder) " +
-//											"select m.c_name, m.c_fullname, substr(m.c_fullname, 1, length(m.c_fullname) - position('\' in substr(reverse(m.c_fullname), 2)) ) as c_path, " +
-//											"c_pathorder + 1 as c_pathorder    from \"public\".I2B2  m " +
-//											" inner join temp_path_order p on m.c_fullname = p.c_path " +
-//											"where c_synonym_cd='N' and c_pathorder = " + k);
-									jt.update("insert into temp_path_order(c_name, c_fullname, c_path, c_pathorder) " +
-											"select m.c_name, m.c_fullname, substr(m.c_fullname, 1, length(m.c_fullname) - position('\' in substr(reverse(m.c_fullname), 2)) ) as c_path, " +
-											"c_pathorder + 1 as c_pathorder    from \"public\".I2B2  m " +
-											" inner join temp_path_order p on m.c_fullname = p.c_path " +
-											"where c_synonym_cd='N' and c_pathorder = " + k);
-								}
-							//	jt.batchUpdate(insertSQL.toArray(new String[]{}));
-								String sql1 = "SELECT distinct c_name, c_fullname, c_pathorder as c_hlevel " +
-										"FROM temp_path_order order by c_pathorder desc";
-								log.info("Script: " + sql1);
-								List<ConceptType> names = jt.query(sql1, new RowMapper<ConceptType>() {
+								String sql = "call I2B2.get_path_order('" + parentPath + "')";
+								log.info("Script: " + sql);
+								List<ConceptType> names = jt.query(sql, new RowMapper<ConceptType>() {
 									public ConceptType mapRow(ResultSet rs, int rowNum) throws SQLException {
 										ConceptType category = new ConceptType();
 										category.setKey(rs.getString("c_fullname"));
@@ -638,48 +617,6 @@ public class ConceptDao extends JdbcDaoSupport {
 										return category;
 									}
 								});
-
-								//substr(c_fullname, 1, length(c_fullname) - position( '\' in substr(reverse(c_fullname), 2) ) ) as c_path,
-//							sql = "WITH RECURSIVE pathnames ";
-//							sql += " AS";
-//							sql += " (";
-//							sql += "    select c_name, c_fullname,";
-//							sql += "      substr(c_fullname, 1, length(c_fullname) - position( '\' in substr(reverse(c_fullname), 2)) ) as c_path,";
-//							sql += "      1 as c_pathorder";
-//							sql += "    from " + metadataSchema + tableName + "  where c_fullname =  ? and c_synonym_cd='N'";
-//							sql += "    UNION ALL";
-//							sql += "    select m.c_name, m.c_fullname,  ";
-//							sql += "      substr(m.c_fullname, 1, length(m.c_fullname) - position('\' in substr(reverse(m.c_fullname), 2)) ) as c_path, c_pathorder + 1 as c_pathorder";
-//
-//							sql += "    from " + metadataSchema + tableName + "  m";
-//							sql += "        inner join pathnames p on m.c_fullname = p.c_path where c_synonym_cd='N'";
-//
-//							sql += " ) ";
-//							sql += " SELECT distinct c_name, c_fullname, c_pathorder as c_hlevel";
-//							sql += " FROM   pathnames";
-//							sql += " order by c_pathorder desc";
-
-
-								//List  rows = jt.queryForList(sql, path);
-		
-							/*
-							 * 			List<String> names = jt.query(sql,  new RowMapper() {
-							      public Object mapRow(ResultSet resultSet, int i) throws SQLException {
-							        return resultSet.getString(1);
-							      }
-							    }, path);
-							 */
-//							log.info("Script: " + sql);
-//							List<ConceptType> names = jt.query(sql, new RowMapper<ConceptType>() {
-//									public ConceptType mapRow(ResultSet rs, int rowNum) throws SQLException {
-//										ConceptType category = new ConceptType();
-//
-//										category.setKey(rs.getString("c_fullname"));
-//										category.setLevel(rs.getInt("c_hlevel"));
-//										category.setName(rs.getString("c_name"));
-//										return category;
-//									}
-//								}/*new GetConceptParentMapper()*/, parentPath);
 
 								cType.setKeyName("\\");
 								for (int y = 0; y < names.size(); y++) {
@@ -699,7 +636,7 @@ public class ConceptDao extends JdbcDaoSupport {
 									cType.setKeyName("\\" + name + cType.getKeyName());
 							} finally {
 //								jt.execute("DROP TABLE temp_path_order")
-								jt.execute("delete from temp_path_order");
+							//	jt.execute("delete from temp_path_order");
 							}
 						}
 						KeynameCache.put(parentPath, cType.getKeyName());
