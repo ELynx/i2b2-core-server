@@ -476,10 +476,12 @@ public class ConceptDao extends JdbcDaoSupport {
 			return null;
 		}
 
+		compareName = value.toUpperCase();
 		for (int i=0; i < categoryResult.size(); i++) {
 			String category = categoryResult.get(i).getKey();
 			if (category.contains("'"))
 				category = category.replaceAll("'", "''");
+			category += '%';
 
 			// dont do the sql injection replace; it breaks the service.
 			if (vocabType.getMatchStr().getStrategy().equals("exact")) {
@@ -487,7 +489,6 @@ public class ConceptDao extends JdbcDaoSupport {
 						" '" + QueryUtil.getCleanValue(category) + "' ";
 				nameInfoSql = "select " + parameters  + " from " + metadataSchema + categoryResult.get(i).getTablename() +
 						" where upper(c_name) = ? " + causeFullname;
-				compareName = value.toUpperCase();  	
 			} else if (vocabType.getMatchStr().getStrategy().equals("left")) {
 				compareName = compareName + "%";
 				nameInfoSql = "select " + parameters + " from " + metadataSchema + categoryResult.get(i).getTablename() +
@@ -499,11 +500,11 @@ public class ConceptDao extends JdbcDaoSupport {
 							" where upper(c_name) " + QueryUtil.getOperatorByValue(compareName) + " ? " +
 						" and c_fullname " + QueryUtil.getOperatorByValue(category) + " '" + QueryUtil.getCleanValue(category) + "'";
 			} else if (vocabType.getMatchStr().getStrategy().equals("contains")) {
-				if (!(value.contains(" "))) {
-					nameInfoSql = "select " + parameters  + " from " + metadataSchema+categoryResult.get(i).getTablename() +
-							" where " + (compareName != null ? (" upper(c_name) " + QueryUtil.getOperatorByValue(compareName) + " ?  and ") : "") +
+				if (!value.contains(" ")) {
+					compareName = "%" + compareName + "%";
+					nameInfoSql = "select " + parameters  + " from " + metadataSchema + categoryResult.get(i).getTablename() +
+							" where upper(c_name) " + QueryUtil.getOperatorByValue(compareName) + " ? and " +
 							"c_fullname " + QueryUtil.getOperatorByValue(category) + " '" + QueryUtil.getCleanValue(category) + "'";
-				//	compareName =  "%" + compareName + "%";
 				} else {
 					nameInfoSql = "select " + parameters  + " from " + metadataSchema+categoryResult.get(i).getTablename();
 					nameInfoSql = nameInfoSql + parseMatchString((compareName.replaceAll("'", "''")), dbInfo)+
