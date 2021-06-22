@@ -55,13 +55,11 @@ public class MetadataDbDao extends JdbcDaoSupport {
 	}
 
 	public List<DBInfoType> getDbLookupByHiveOwner(String domainId,String ownerId) throws I2B2Exception, I2B2DAOException {
-		log.info("MetadataDbDao.class: getDbLookupByHiveOwner(String domainId,String ownerId)");
 		String metadataSchema = getMetadataSchema();
 		String sql =  "select * from " + metadataSchema + "ont_db_lookup " +
 				"where LOWER(c_domain_id) = ? and c_project_path = ? and " +
 				"(LOWER(c_owner_id) = ? or c_owner_id ='@') order by c_project_path";
 		String projectId = "@";
-		log.info("Script [" + domainId + ", " + projectId + ", " + ownerId + "]: " + sql);
 		List queryResult;
 		try {
 			queryResult = jt.query(sql, new getMapper(), domainId.toLowerCase(),projectId,ownerId.toLowerCase());
@@ -75,15 +73,13 @@ public class MetadataDbDao extends JdbcDaoSupport {
 	@SuppressWarnings("unchecked")
 	public List<DBInfoType> getDbLookupByHiveProjectOwner(String domainId, String projectId,
 														  String ownerId) throws I2B2Exception, I2B2DAOException {
-		log.info("MetadataDbDao.class: getDbLookupByHiveProjectOwner(String domainId, String projectId, String ownerId)");
-    	String metadataSchema = getMetadataSchema();
+		String metadataSchema = getMetadataSchema();
 		String sql = "select * from " + metadataSchema + "ont_db_lookup " +
 				" where LOWER(c_domain_id) = ? and LOWER(c_project_path) " +
 				QueryUtil.getOperatorByValue(projectId.toLowerCase()) +
 				" '" + QueryUtil.getCleanValue(projectId.toLowerCase()) +
 				"' and (LOWER(c_owner_id) = ? or c_owner_id = '@') order by c_project_path";
 		List queryResult;
-		log.info("Script: " + sql);
 		try {
 			queryResult = jt.query(sql, new getDBInfoMapper(), domainId.toLowerCase(), ownerId.toLowerCase());
 		} catch (DataAccessException e) {

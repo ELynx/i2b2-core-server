@@ -110,7 +110,6 @@ public class QueryMasterSpringDao extends CRCDAO implements IQueryMasterDao {
 	@Override
 	@SuppressWarnings("unchecked")
 	public List<QtQueryMaster> getQueryMasterByNameInfo(SecurityType userRequestType, FindByChildType findChildType) throws I2B2DAOException {
-		log.info("QueryMasterSpringDao.class: getQueryMasterByNameInfo(SecurityType userRequestType, FindByChildType findChildType)");
 		String rolePath = dataSourceLookup.getDomainId() + dataSourceLookup.getProjectPath()
 				+ userRequestType.getUsername();
 
@@ -161,7 +160,6 @@ public class QueryMasterSpringDao extends CRCDAO implements IQueryMasterDao {
 				sql += "desc";
 		} 
 		if (findChildType.getCategory().equals("@")) {
-			log.info("Script: " + sql);
 			if (roles != null && roles.contains("MANAGER"))
 				queryMasterList = jdbcTemplate.query(sql,
 						new Object[] { getCleanValue(str.toLowerCase()), DELETE_NO_FLAG }, queryMasterMapper);
@@ -209,7 +207,6 @@ public class QueryMasterSpringDao extends CRCDAO implements IQueryMasterDao {
 			//		sql += "asc";
 		}  
 		if ((findChildType.getCategory().equalsIgnoreCase("@"))) {
-			log.info("Script: " + sql);
 			if (roles != null && roles.contains("MANAGER"))
 				queryMasterList.addAll(jdbcTemplate.query(sql,
 						new Object[] { getCleanValue(str.toLowerCase()), DELETE_NO_FLAG }, queryMasterMapper));
@@ -273,8 +270,6 @@ public class QueryMasterSpringDao extends CRCDAO implements IQueryMasterDao {
 			args = new Object[] {  str.toLowerCase(), DELETE_NO_FLAG };
 		else
 			args = new Object[] { userid, str.toLowerCase(), DELETE_NO_FLAG };
-
-		log.info("Script: " + sql);
 
 		if (!findChildType.getCategory().equalsIgnoreCase("@"))
 			queryMasterList = jdbcTemplate.query(getCleanValue(sql), args, queryMasterMapper);
@@ -355,11 +350,9 @@ public class QueryMasterSpringDao extends CRCDAO implements IQueryMasterDao {
 	 */
 	@Override
 	public QtQueryMaster getQueryDefinition(String masterId) {
-		log.info("QueryMasterSpringDao.class: getQueryDefinition(String masterId)");
 		String sql = "select * from " + getDbSchemaName() + "qt_query_master "
 				+ " where query_master_id = ? and delete_flag = ? ";
 		QtQueryMaster queryMaster = null;
-		log.info("Script [" + Integer.parseInt(masterId) + ", " + DELETE_NO_FLAG + "]: " + sql);
 		try {
 			queryMaster = (QtQueryMaster) jdbcTemplate.queryForObject(sql,
 					new Object[] { Integer.parseInt(masterId), DELETE_NO_FLAG },

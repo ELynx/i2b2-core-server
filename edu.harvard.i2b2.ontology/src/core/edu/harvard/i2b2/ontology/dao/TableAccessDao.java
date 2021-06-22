@@ -56,7 +56,6 @@ public class TableAccessDao extends JdbcDaoSupport {
 
 	public List<String> getEditorTableName(ProjectType projectInfo, DBInfoType dbInfo,
 										   boolean synchronizeAllFlag) throws I2B2Exception {
-		log.info("TableAccessDao.class: getEditorTableName(ProjectType projectInfo,DBInfoType dbInfo, boolean synchronizeAllFlag)");
 		String metadataSchema = dbInfo.getDb_fullSchema();
 		if (jt == null)
 			setDataSource(dbInfo.getDb_dataSource());
@@ -71,7 +70,6 @@ public class TableAccessDao extends JdbcDaoSupport {
 		else if (!protectedAccess)
 			sql += " where c_protected_access = ? ";
 
-		log.info("Script: " + sql);
 		List<String> tableNameList;
 		log.debug("Executing sql [" + sql + "]");
 		if (!protectedAccess)

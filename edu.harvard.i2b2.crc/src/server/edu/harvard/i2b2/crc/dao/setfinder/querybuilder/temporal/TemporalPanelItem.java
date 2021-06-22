@@ -176,32 +176,19 @@ public abstract class TemporalPanelItem {
 	 * @throws I2B2DAOException - thrown when an i2b2 specific data or database error occurs
 	 */
 	protected String buildSql() throws I2B2DAOException {
-		log.info("TemporalPanelItem.class: buildSql()");
 		checkLargeTextConstrainPermission();
 
 		String sqlHintClause = buildSqlHintClause();
-		log.info("Script - sqlHintClause: " + sqlHintClause);
 		String selectSql = buildSelectSql();
-		log.info("Script - selectSql: " + selectSql);
 		String fromSql = buildFromSql();
-		log.info("Script - fromSql: " + fromSql);
 		String dimensionJoinSql = buildDimensionJoinSql();
-		log.info("Script - dimensionJoinSql: " + dimensionJoinSql);
 		String modifierConstraintSql = buildModifierConstraintSql();
-		log.info("Script - modifierConstraintSql: " + modifierConstraintSql);
 		String[] modifierValueConstrainSql = buildModifierValueConstraintSql();
-		log.info("Script - modifierValueConstrainSql: " + modifierValueConstrainSql);
 		String dateConstraintSql = buildItemDateConstraintSql();
-		log.info("Script - dateConstraintSql: " + dateConstraintSql);
 		String[] valueConstraintSql = buildValueConstraintSql();
-		for(String valueConstraint : valueConstraintSql)
-			log.info("Script - valueConstraint: " + valueConstraint);
 		String panelDateConstraintSql = buildPanelDateConstraintSql();
-		log.info("Script - panelDateConstraintSql: " + panelDateConstraintSql);
 		String groupbyClause = buildGroupBySql();
-		log.info("Script - groupbyClause: " + groupbyClause);
 		String havingClause = buildHavingSql();
-		log.info("Script - havingClause: " + havingClause);
 
 		if (parent.getAccuracyScale() > 0 &&
 				valueConstraintSql[1] != null &&
@@ -226,7 +213,6 @@ public abstract class TemporalPanelItem {
 				+ " \ngroup by " + groupbyClause
 				+ formatSql(havingClause);
 		log.debug("Derived table sql [" + derivedTableSql + "]");
-		log.info("Script - derivedTableSql: " + derivedTableSql);
 		return derivedTableSql;
 	}
 

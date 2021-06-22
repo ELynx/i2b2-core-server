@@ -18,6 +18,7 @@ package edu.harvard.i2b2.crc.dao.setfinder.querybuilder;
 import java.util.List;
 
 import edu.harvard.i2b2.common.util.db.QueryUtil;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -42,7 +43,7 @@ public class ValueConstrainsHandler {
 	protected final Log log = LogFactory.getLog(getClass());
 
 	private boolean unitCdConverstionFlag = false;
-	private String unitCdInClause = "", unitCdSwitchClause = "";
+	private String unitCdInClause = StringUtils.EMPTY, unitCdSwitchClause = StringUtils.EMPTY;
 
 	// ch@0013012 - The decision was made that modifier_cd needs to have a
 	// default value when querying for concept value (numeric, text, large text) - 
@@ -70,18 +71,14 @@ public class ValueConstrainsHandler {
 	public String[] constructValueConstainClause(List<ItemType.ConstrainByValue> valueConstrainList,
 												 String dbServerType, String dbSchemaName, int panelAccuracyScale) throws I2B2DAOException{
 		//used for backward compatibility
-		defaultModifierConstraint = "";
+		defaultModifierConstraint = StringUtils.EMPTY;
 		return constructValueConstainClause(valueConstrainList, dbServerType, dbSchemaName, panelAccuracyScale, false);
 	}
 
 	public String[] constructValueConstainClause(List<ItemType.ConstrainByValue> valueConstrainList,
 												 String dbServerType, String dbSchemaName,
-												 int panelAccuracyScale, boolean useDefaultModifier)
-					throws I2B2DAOException {
-		log.info("ValueConstrainsHandler.class: constructValueConstainClause(List<ItemType.ConstrainByValue> valueConstrainList, " +
-				"String dbServerType, String dbSchemaName, " +
-				"int panelAccuracyScale, boolean useDefaultModifier)");
-		String fullConstrainSql = "", containsJoinSql = "";
+												 int panelAccuracyScale, boolean useDefaultModifier) throws I2B2DAOException {
+		String fullConstrainSql = StringUtils.EMPTY, containsJoinSql = StringUtils.EMPTY;
 		System.out.println("panel accuracy scale" + panelAccuracyScale);
 		panelAccuracyScale = 0;
 
@@ -92,13 +89,13 @@ public class ValueConstrainsHandler {
 					.getValueOperator();
 			String value = valueConstrain.getValueConstraint();
 			String unitCd = valueConstrain.getValueUnitOfMeasure();
-			String constraintSql = "";
+			String constraintSql = StringUtils.EMPTY;
 			// check if value type is not null
 			if (valueType == null || operatorType == null)
 				continue;
 			if (valueType.equals(ConstrainValueType.LARGETEXT)) {
 				ContainsUtil containsUtil = new ContainsUtil();
-				String containsSql = "";
+				String containsSql = StringUtils.EMPTY;
 				if (operatorType.value().equalsIgnoreCase(ConstrainOperatorType.CONTAINS.value()))
 					containsSql = containsUtil.formatValue(value, dbServerType);
 				else if (operatorType.value().equalsIgnoreCase(ConstrainOperatorType.CONTAINS_DATABASE.value()))
@@ -141,7 +138,7 @@ public class ValueConstrainsHandler {
 					String operatorOption = RegExUtil.getOperatorOption(operatorType.value());
 					if (operatorOption == null)
 						operatorOption = "[begin]";
-					String likeValueFormat = "";
+					String likeValueFormat = StringUtils.EMPTY;
 					if (operatorOption.equalsIgnoreCase("[begin]"))
 						likeValueFormat = "'" + value.replaceAll("'", "''") + "%'";
 					else if (operatorOption.equalsIgnoreCase("[end]"))
@@ -302,9 +299,6 @@ public class ValueConstrainsHandler {
 				fullConstrainSql += constraintSql;
 			}
 		}
-		log.info("Script (fullConstrainSql): " + fullConstrainSql);
-		log.info("Script (containsJoinSql): " + containsJoinSql);
-
 		return new String[] { fullConstrainSql, containsJoinSql };
 	}
 }

@@ -278,8 +278,6 @@ public class PdoDao  extends JdbcDaoSupport {
 	public AuditsType getAudit(final GetAuditType auditType, final String userId,
 							   final ProjectType projectInfo,
 							   final DBInfoType dbInfo) throws Exception{
-		log.info("PdoDao.class: getAudit(final GetAuditType auditType, final String userId, " +
-				"final ProjectType projectInfo, final DBInfoType dbInfo)");
 		String metadataSchema = dbInfo.getDb_fullSchema();
 		setDataSource(dbInfo.getDb_dataSource());
 		//		 First step is to call PM to see what roles user belongs to.
@@ -326,7 +324,6 @@ public class PdoDao  extends JdbcDaoSupport {
 				"    ) as  RowConstrainedResult " +
 				"    WHERE RowNum >= " + min + " and RowNum < " + max +
 				" ORDER BY RowNum ";
-		log.info("Script: " + tablesSql);
 		try {
 			queryResult = jt.query(tablesSql, new getAuditMapper());
 			//				queryResult = jt.query(tablesSql, mapper, "N", projectInfo.getId().toLowerCase());

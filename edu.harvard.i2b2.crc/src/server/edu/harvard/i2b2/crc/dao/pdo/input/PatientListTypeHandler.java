@@ -90,7 +90,6 @@ public class PatientListTypeHandler extends CRCDAO implements IInputOptionListHa
 	@Override
 	public String generateMinIndexSql(String panelSql) {
 		String sqlString = null;
-		log.info("PatientListTypeHandler.class: generateMinIndexSql(String panelSql)");
 		if (patientListType.getPatientSetCollId() != null) {
 			// set patient set coll id
 			this.patientSetCollId = this.getCollectionId();
@@ -132,7 +131,6 @@ public class PatientListTypeHandler extends CRCDAO implements IInputOptionListHa
 					+ "patient_dimension p) as p1  where rnum between  "
 					+ minIndex + "  and  " + maxIndex + " order by patient_num asc";
 		}
-		log.info("Script: " + sqlString);
 		return sqlString;
 	}
 
@@ -141,9 +139,7 @@ public class PatientListTypeHandler extends CRCDAO implements IInputOptionListHa
 	 */
 	@Override
 	public String generateWhereClauseSql() {
-		log.info("PatientListTypeHandler.class: generateWhereClauseSql()");
 		String sqlString = null;
-
 		if (patientListType.getPatientSetCollId() != null) {
 			// set patient set coll id
 			this.patientSetCollId = this.getCollectionId();
@@ -174,7 +170,6 @@ public class PatientListTypeHandler extends CRCDAO implements IInputOptionListHa
 					+ "patient_dimension p) as p1  where rnum between  "
 					+ minIndex + "  and  " + maxIndex + " order by patient_num asc";
 		}
-		log.info("Script: " + sqlString);
 		return sqlString;
 	}
 

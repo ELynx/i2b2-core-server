@@ -233,7 +233,6 @@ public class SQLServerFactRelatedQueryHandler extends CRCDAO implements
 	 */
 	@Override
 	public List<ObservationSet> getPdoObservationFact() throws I2B2DAOException {
-		log.info("SQLServerFactRelatedQueryHandler.class: getPdoObservationFact()");
 		ResultSet resultSet = null;
 		Connection conn = null;
 		List<ObservationSet> observationFactSetList = new ArrayList<ObservationSet>();
@@ -274,7 +273,6 @@ public class SQLServerFactRelatedQueryHandler extends CRCDAO implements
 				// generate sql
 				String querySql = buildQuery(null, PdoQueryHandler.PLAIN_PDO_TYPE);
 				panelSqlList.add(buildQueryCommon(null, PdoQueryHandler.PLAIN_PDO_TYPE));
-				log.info("Script: " + querySql);
 				log.debug("Executing sql[" + querySql + "]");
 				if (inputOptionListHandler.isEnumerationSet())
 					inputOptionListHandler.uploadEnumerationValueToTempTable(conn);
@@ -318,7 +316,6 @@ public class SQLServerFactRelatedQueryHandler extends CRCDAO implements
 										factTable += " )";
 									}
 								}
-								log.info("Parse columns " + factTable);
 								log.debug("Parse columns " + factTable);
 								querySql=querySql.replaceAll(defaultTableName, factTable)	;
 							}
@@ -376,7 +373,6 @@ public class SQLServerFactRelatedQueryHandler extends CRCDAO implements
 	 */
 	@Override
 	public List<ObservationSet> getTablePdoObservationFact() throws I2B2DAOException {
-		log.info("SQLServerFactRelatedQueryHandler.class: getTablePdoObservationFact()");
 		Connection conn = null;
 		List<ObservationSet> observationSetList = new ArrayList<ObservationSet>();
 		ResultSet resultSet = null;
@@ -390,14 +386,13 @@ public class SQLServerFactRelatedQueryHandler extends CRCDAO implements
 			if(!checkFilter) {
 //WAS			if (filterList.getPanel().size() == 0) {				
 				if(derivedFactTable) {
-					String sql =  "select * from information_schema.tables where lower(table_name) = 'observation_fact'";
+					String sql = "select * from information_schema.tables where lower(table_name) = 'observation_fact'";
 					if(dataSourceLookup.getFullSchema() != null) {
 		//				log.info("schema: " + dataSourceLookup.getFullSchema());
 						int lastIndex = dataSourceLookup.getFullSchema().lastIndexOf(".");
 						sql += " and table_catalog = '" +	dataSourceLookup.getFullSchema().substring(0, lastIndex) + "'";
 						sql += " and table_schema = '" + 	dataSourceLookup.getFullSchema().substring(lastIndex+1, (dataSourceLookup.getFullSchema().length())) + "'";
 					}
-					log.info("Script: " + sql);
 		//			log.info("no filter tablePDO sql: " + sql);
 					PreparedStatement stmt1 = conn.prepareStatement(sql);
 					ResultSet resultSet1 = stmt1.executeQuery();
@@ -416,7 +411,6 @@ public class SQLServerFactRelatedQueryHandler extends CRCDAO implements
 				}
 				// generate sql
 				String querySql = buildQuery(null, PdoQueryHandler.PLAIN_PDO_TYPE);
-				log.info("Script: " + querySql);
 				log.debug("Executing sql PLAIN PDO[" + querySql + "]");
 				panelSqlList.add(buildQueryCommon(null, PdoQueryHandler.PLAIN_PDO_TYPE));
 				if (inputOptionListHandler.isEnumerationSet())
@@ -474,7 +468,6 @@ public class SQLServerFactRelatedQueryHandler extends CRCDAO implements
 						}
 					}
 					panelSqlList.add(querySql);
-					log.info("Script: " + querySql);
 					log.debug("TABLE PDO Executing sql[" + querySql + "]");
 
 					// execute fullsql
@@ -567,7 +560,6 @@ public class SQLServerFactRelatedQueryHandler extends CRCDAO implements
 	}
 
 	private String buildQueryCommon(PanelType panel, String pdoType) throws I2B2DAOException {
-		log.info("SQLServerFactRelatedQueryHandler.class: buildQueryCommon(PanelType panel, String pdoType)");
 		String obsFactSelectClause = null;
 		if (obsFactFactRelated != null) {
 			obsFactSelectClause = obsFactFactRelated.getSelectClauseWithoutBlob();
@@ -685,7 +677,6 @@ public class SQLServerFactRelatedQueryHandler extends CRCDAO implements
 			else
 				mainQuerySql +=	") f where f.rank = 1 ";
 		}
-		log.info("script: " + mainQuerySql);
 		return mainQuerySql;
 	}
 
@@ -698,7 +689,6 @@ public class SQLServerFactRelatedQueryHandler extends CRCDAO implements
 	 */
 	@Override
 	public String buildQuery(PanelType panel, String pdoType) throws I2B2DAOException {
-		log.info("SQLServerFactRelatedQueryHandler.class: buildQuery(PanelType panel, String pdoType)");
 		String mainQuerySql = this.buildQueryCommon(panel, pdoType);
 		if (mainQuerySql.length() == 0)
 			return StringUtils.EMPTY;
@@ -712,7 +702,6 @@ public class SQLServerFactRelatedQueryHandler extends CRCDAO implements
 		 }
 		 */ 
 		mainQuerySql += " ORDER BY obs_patient_num,obs_start_date,obs_concept_cd,obs_instance_num,obs_modifier_cd,rnum";
-		log.info("script: " + mainQuerySql);
 		return mainQuerySql;
 	}
 
@@ -731,8 +720,6 @@ public class SQLServerFactRelatedQueryHandler extends CRCDAO implements
 	 */
 	private String factQueryWithDimensionFilter(String obsFactSelectClause, String tableLookupJoinClause, 
 												String fullWhereClause, PanelType panel) throws I2B2Exception {
-		log.info("SQLServerFactRelatedQueryHandler.class: factQueryWithDimensionFilter(String obsFactSelectClause, " +
-				"String tableLookupJoinClause, String fullWhereClause, PanelType panel)");
 		String factByProviderSql = StringUtils.EMPTY;
 		int i = 0;
 		String panelName = null;
@@ -980,7 +967,6 @@ public class SQLServerFactRelatedQueryHandler extends CRCDAO implements
 
 		factByProviderSql += "  ) a \n" + "order by obs_patient_num";
 		// factByProviderSql += " ORDER BY 2,5,3) a \n";
-		log.info("Script: " + factByProviderSql);
 		return factByProviderSql;
 	}
 
@@ -994,19 +980,16 @@ public class SQLServerFactRelatedQueryHandler extends CRCDAO implements
 	 * @return
 	 */
 	private String factQueryWithoutFilter(String obsFactSelectClause, String tableLookupJoinClause, String fullWhereClause) {
-		log.info("SQLServerFactRelatedQueryHandler.class: factQueryWithoutFilter(String obsFactSelectClause, String tableLookupJoinClause, String fullWhereClause)");
 		String factSql = "SELECT  b.*, %VID rnum FROM (\n";
 		factSql += (" SELECT " + obsFactSelectClause + " FROM " + this.getDbSchemaName() +  getFactTable() + " obs\n");
 
 		factSql += tableLookupJoinClause;
-
 		factSql += (" WHERE \n" + fullWhereClause + "\n");
 		if (!this.outputOptionList.getObservationSet().isWithmodifiers())
 			factSql += " AND obs.modifier_cd = '@' ";
 		// lcp5 following was causing invalid sql  12/20/16
 //		factSql += " ORDER BY obs.patient_num,obs.start_date,obs.concept_cd,obs.instance_num,obs.modifier_cd,obs.rowid) b \n";
 		factSql += " ORDER obs.patient_num";
-		log.info("Script: " + factSql);
 		return factSql;
 	}
 
@@ -1019,7 +1002,6 @@ public class SQLServerFactRelatedQueryHandler extends CRCDAO implements
 	 * @return
 	 */
 	private String getLookupJoinClause(boolean detailFlag, boolean blobFlag, boolean statusFlag) {
-		log.info("SQLServerFactRelatedQueryHandler.class: factQueryWithoutFilter(String obsFactSelectClause, String tableLookupJoinClause, String fullWhereClause)");
 		String joinClause = " ";
 		joinClause = " left JOIN "
 				+ this.getDbSchemaName()

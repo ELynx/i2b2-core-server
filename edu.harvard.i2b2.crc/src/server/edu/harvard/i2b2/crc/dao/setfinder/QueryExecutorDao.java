@@ -116,12 +116,6 @@ public class QueryExecutorDao extends CRCDAO implements IQueryExecutorDao {
 							 String sqlString, String queryInstanceId, String patientSetId,
 							 ResultOutputOptionListType resultOutputList, boolean allowLargeTextValueConstrainFlag,
 							 String pmXml, List<String> userRoles) throws I2B2Exception, JAXBUtilException {
-		log.info("QueryExecutorDao.class: executeSQL(int transactionTimeout, DataSourceLookup dsLookup, " +
-				"SetFinderDAOFactory sfDAOFactory, String requestXml, " +
-				"String sqlString, String queryInstanceId, String patientSetId, " +
-				"ResultOutputOptionListType resultOutputList, boolean allowLargeTextValueConstrainFlag, " +
-				"String pmXml, List<String> userRoles)");
-
 		String singleSql = null;
 		int recordCount = 0;
 
@@ -459,7 +453,6 @@ public class QueryExecutorDao extends CRCDAO implements IQueryExecutorDao {
 					log.debug("Setfinder skip temp table missing item message " +  missingItemMessage);
 					log.debug("Setfinder skip temp table process timing message " + processTimingMessage);
 				}
-				log.info("Script: " + generatedSql);
 				queryMasterDao.updateQueryAfterRun(masterId, generatedSql, queryType);
 
 				if (missingItemMessage != null && missingItemMessage.trim().length() > 1) {
@@ -505,7 +498,6 @@ public class QueryExecutorDao extends CRCDAO implements IQueryExecutorDao {
 			// update the error status to result instance
 			setQueryResultInstanceStatus(sfDAOFactory, queryInstanceId,
 					4, e.getMessage());
-			log.info("Error in QueryExecutorDAO Throwing: " + e.getMessage());
 			log.debug("Error in QueryExecutorDAO Throwing: " + e.getMessage());
 			exception = e;
 			errorFlag = true;

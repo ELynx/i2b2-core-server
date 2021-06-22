@@ -52,9 +52,8 @@ public class GetNameInfoDao extends JdbcDaoSupport {
 	final static String DEFAULT = " c_name ";
 	final static String BLOB = ", c_metadataxml, c_comment ";
 
-	public List findNameInfo(final VocabRequestType vocabType, List categories, ProjectType projectInfo, final String dbType)
-			throws DataAccessException{
-		log.info("GetNameInfoDao.class: findNameInfo(final VocabRequestType vocabType, List categories, ProjectType projectInfo, final String dbType)");
+	public List findNameInfo(final VocabRequestType vocabType, List categories,
+							 ProjectType projectInfo, final String dbType) throws DataAccessException {
 		DataSource ds = null;
 		try {
 			ds = OntologyUtil.getInstance().getDataSource("java:OntologyLocalDS");
@@ -121,7 +120,6 @@ public class GetNameInfoDao extends JdbcDaoSupport {
 		nameInfoSql = nameInfoSql + hidden + synonym + " order by c_name ";
 		final  boolean obfuscatedUserFlag = Roles.getInstance().isRoleOfuscated( projectInfo );
 
-		log.info("Script: " + nameInfoSql);
 		List queryResult;
 		try {
 			queryResult = jt.query(nameInfoSql, getNamesInfoMapper(obfuscatedUserFlag,vocabType,dbType),

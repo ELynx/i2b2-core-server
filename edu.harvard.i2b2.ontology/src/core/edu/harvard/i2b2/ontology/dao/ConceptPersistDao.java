@@ -147,7 +147,6 @@ public class ConceptPersistDao extends JdbcDaoSupport {
 	}
 
 	public int deleteNode(final DeleteChildType deleteChildType, ProjectType projectInfo, DBInfoType dbInfo) throws DataAccessException, I2B2Exception{
-		log.info("ConceptPersistDao.class: deleteNode(final DeleteChildType deleteChildType, ProjectType projectInfo, DBInfoType dbInfo)");
 		String metadataSchema = dbInfo.getDb_fullSchema();
 		setDataSource(dbInfo.getDb_dataSource());
 		if (projectInfo.getRole().size() == 0) {
@@ -194,8 +193,6 @@ public class ConceptPersistDao extends JdbcDaoSupport {
 					QueryUtil.getOperatorByValue(StringUtil.getPath(deleteChildType.getKey()) + "%") +
 					" ? and c_visualattributes like '%E'";
 		}
-		log.info("Script [" + StringUtil.getPath(deleteChildType.getKey()) + ", " + deleteChildType.getBasecode() + "]: " + deleteSql);
-		log.info("Script [" + StringUtil.getPath(deleteChildType.getKey()) +"%" + "]: " + deleteChildrenSql);
 		int numRowsDeleted = -1;
 		try{	
 			numRowsDeleted = jt.update(deleteSql, StringUtil.getPath(deleteChildType.getKey()), deleteChildType.getBasecode());

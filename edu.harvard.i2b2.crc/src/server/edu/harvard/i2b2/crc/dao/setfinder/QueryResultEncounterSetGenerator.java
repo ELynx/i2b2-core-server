@@ -39,7 +39,6 @@ public class QueryResultEncounterSetGenerator extends CRCDAO implements IResultG
 	
 	@Override
 	public void generateResult(Map param) throws I2B2DAOException {
-		log.info("QueryResultEncounterSetGenerator.class: generateResult(Map param)");
 		SetFinderConnection sfConn = (SetFinderConnection) param.get("SetFinderConnection");
 		SetFinderDAOFactory sfDAOFactory = (SetFinderDAOFactory) param.get("SetFinderDAOFactory");
 		// String patientSetId = (String)param.get("PatientSetId");
@@ -77,7 +76,6 @@ public class QueryResultEncounterSetGenerator extends CRCDAO implements IResultG
 			// if the querytiming is not SAMEVISIT, then join the
 			// visit_dimension table to get encountner num for the patients.
 			String encounterSql = buildEncounterSetSql(sfDAOFactory, queryInstanceId, TEMP_DX_TABLE, queryGeneratorVersion);
-			log.info("Executing setfinder query result type encounter set sql [" + encounterSql + "]");
 			log.debug("Executing setfinder query result type encounter set sql [" + encounterSql + "]");
 			/////////
 			//JNix: refactored to no longer pull down records just to insert back.
@@ -139,8 +137,6 @@ public class QueryResultEncounterSetGenerator extends CRCDAO implements IResultG
 	private String buildEncounterSetSql(SetFinderDAOFactory sfDAOFactory,
 										String queryInstanceId, String TEMP_DX_TABLE,
 										String queryGeneratorVersion) throws I2B2DAOException {
-		log.info("QueryResultEncounterSetGenerator.class: buildEncounterSetSql(SetFinderDAOFactory sfDAOFactory, " +
-				"String queryInstanceId, String TEMP_DX_TABLE, String queryGeneratorVersion)");
 		// get request xml from query instance id
 		// call timing helper to find if timing is samevisit
 		String encounterSetSql = " select encounter_num,patient_num from " + TEMP_DX_TABLE;
@@ -166,7 +162,6 @@ public class QueryResultEncounterSetGenerator extends CRCDAO implements IResultG
 						+ ".visit_dimension  where patient_num in (select distinct patient_num from "
 						+ TEMP_DX_TABLE + ")  ";
 		}
-		log.info("Script: " + encounterSetSql);
 		return encounterSetSql;
 	}
 }

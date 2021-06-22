@@ -52,10 +52,8 @@ public class GetTermInfoDao extends JdbcDaoSupport {
 	final static String CORE = DEFAULT;
 	final static String BLOB = ", c_metadataxml, c_comment ";
 
-	public List findByFullname(final GetTermInfoType termInfoType, List categories,  ProjectType projectInfo, final String dbType)
-			throws DataAccessException{
-		log.info("GetTermInfoDao.class: findByFullname(final GetTermInfoType termInfoType, List categories, " +
-				"ProjectType projectInfo, final String dbType)");
+	public List findByFullname(final GetTermInfoType termInfoType, List categories, ProjectType projectInfo,
+							   final String dbType) throws DataAccessException {
 		DataSource ds = null;
 		try {
 			ds = OntologyUtil.getInstance().getDataSource("java:OntologyLocalDS");
@@ -98,7 +96,6 @@ public class GetTermInfoDao extends JdbcDaoSupport {
 		//				path="\\RPDR\\Providers";
 
 		String searchPath = path;
-
 		String hidden = StringUtils.EMPTY;
 		if (!termInfoType.isHiddens())
 			hidden = " and (not c_visualattributes %STARTSWITH '_H')";
@@ -113,10 +110,7 @@ public class GetTermInfoDao extends JdbcDaoSupport {
 
 		//	log.info(sql + path + level);
 		final  boolean obfuscatedUserFlag = Roles.getInstance().isRoleOfuscated( projectInfo );
-
-		log.info("Script: " + sql);
 		//	log.info(sql + " " + path + " " + level);
-
 		List queryResult;
 		try {
 			queryResult = jt.query(sql, getTermInfoConcept(obfuscatedUserFlag, termInfoType, dbType),

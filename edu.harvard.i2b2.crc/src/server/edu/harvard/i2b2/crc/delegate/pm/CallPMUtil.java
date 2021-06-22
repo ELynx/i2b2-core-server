@@ -104,15 +104,10 @@ public class CallPMUtil {
 
 			if (procStatus.equals("ERROR")) {
 				log.info("PM Error reported by CRC web Service " + procMessage);
-
-
-
-
 				int startstr = procMessage.indexOf("this domain") + 12;
 				int endstr = procMessage.indexOf(" ", startstr+1) -1;
 				hive = procMessage.substring(startstr, endstr);
 			}
-			
 		} catch (XMLStreamException e) {
 			e.printStackTrace();
 			throw new I2B2Exception("" + StackTraceUtil.getStackTrace(e));

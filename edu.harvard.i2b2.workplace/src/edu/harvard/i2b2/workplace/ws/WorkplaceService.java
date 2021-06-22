@@ -537,7 +537,7 @@ public class WorkplaceService {
 								unknownErrorMessage);
 						workplaceDataResponse = MessageFactory.convertToXMLString(responseMsgType);
 
-					} else if (er.isJobCompleteFlag() == false) {
+					} else if (!er.isJobCompleteFlag()) {
 						//<result_waittime_ms>5000</result_waittime_ms>
 						String timeOuterror = "Remote server timed out \n" +    		
 								"Result waittime = " +

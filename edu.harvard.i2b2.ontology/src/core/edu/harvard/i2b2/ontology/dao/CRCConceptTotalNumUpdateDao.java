@@ -127,15 +127,14 @@ public class CRCConceptTotalNumUpdateDao extends JdbcDaoSupport {
 				if (!synchronizeAllFlag)
 					selectStmt += " and c_totalnum is null ";
 
-				log.info("Script [" + tableAccessType.getFullName() + "%" + "]:" + selectStmt);
 				pStmt = conn.prepareStatement(selectStmt);
 				pStmt.setString(1, QueryUtil.getCleanValue(tableAccessType.getFullName() + "%"));
-				 resultSet = pStmt.executeQuery();
-				 resultSet.next();
-				 totalRecordToUpdate += resultSet.getInt(1);
-				 resultSet.close();
-				 pStmt.close();
-				 log.debug("Executing sql [" + selectStmt + "] c_fullname [" + tableAccessType.getFullName() + " ] totalCount" + totalRecordToUpdate );
+				resultSet = pStmt.executeQuery();
+				resultSet.next();
+				totalRecordToUpdate += resultSet.getInt(1);
+				resultSet.close();
+				pStmt.close();
+				log.debug("Executing sql [" + selectStmt + "] c_fullname [" + tableAccessType.getFullName() + " ] totalCount" + totalRecordToUpdate );
 			}
 
 			//update the step field (PROCESSED updatedrecord/totalrecordtoupdate format)
@@ -156,7 +155,6 @@ public class CRCConceptTotalNumUpdateDao extends JdbcDaoSupport {
 					selectStmt += " and c_totalnum is null ";
 				}
 				selectStmt += " order by c_fullname";
-				log.info("Script [" + tableAccessType.getFullName() + "%" + "]:" + selectStmt);
 
 				pStmt = conn.prepareStatement(selectStmt);
 				pStmt.setString(1, QueryUtil.getCleanValue(tableAccessType.getFullName() + "%"));
@@ -204,7 +202,6 @@ public class CRCConceptTotalNumUpdateDao extends JdbcDaoSupport {
 						} else {
 							totalNum = masterInstanceResultResponse.getQueryResultInstance().get(0).getSetSize();
 						}
-						log.info("Script [" + totalNum + ", " + cFullName + "]:" + updateSql);
 						//update total_num column
 						updatePStmt.setInt(1, totalNum);
 						updatePStmt.setString(2, cFullName);

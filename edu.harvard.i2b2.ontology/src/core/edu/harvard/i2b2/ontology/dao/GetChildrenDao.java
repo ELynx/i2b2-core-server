@@ -56,7 +56,6 @@ public class GetChildrenDao extends JdbcDaoSupport {
 	final static String BLOB = ", c_metadataxml, c_comment ";
 
 	public List findChildrenByParent(final GetChildrenType childrenType, final List categories, final ProjectType projectInfo) throws DataAccessException{
-		log.info("GetChildrenDao.class: findChildrenByParent(final GetChildrenType childrenType, final List categories, final ProjectType projectInfo)");
 		DataSource ds = null;
 		try {
 			ds = OntologyUtil.getInstance().getDataSource("java:OntologyLocalDS");
@@ -122,9 +121,6 @@ public class GetChildrenDao extends JdbcDaoSupport {
 
 		//	log.info(sql + path + level);
 		final  boolean obfuscatedUserFlag = Roles.getInstance().isRoleOfuscated( projectInfo );
-
-		log.info("Script [" + searchPath + ", " + (level + 1) + "]: " + sql);
-
 		List queryResult;
 		try {
 			queryResult = jt.query(sql, getChildrenType(obfuscatedUserFlag, childrenType), 

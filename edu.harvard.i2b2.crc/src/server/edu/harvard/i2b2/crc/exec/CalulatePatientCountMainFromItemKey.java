@@ -46,6 +46,7 @@ import edu.harvard.i2b2.crc.delegate.ontology.CallOntologyUtil;
 import edu.harvard.i2b2.crc.ejb.analysis.QueryMaster;
 import edu.harvard.i2b2.crc.util.I2B2RequestMessageHelper;
 import edu.harvard.i2b2.crc.util.QueryProcessorUtil;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * 
@@ -69,7 +70,9 @@ public class CalulatePatientCountMainFromItemKey extends CRCDAO {
 
 		// read command line params[domain, project, user and analysis
 		// instance id
-		String arg = "", domainId = "", projectId = "", userId = "", patientSetId = "", instanceId = "", conceptPath = "";
+		String arg = StringUtils.EMPTY, domainId = StringUtils.EMPTY, projectId = StringUtils.EMPTY,
+				userId = StringUtils.EMPTY, patientSetId = StringUtils.EMPTY, instanceId = StringUtils.EMPTY,
+				conceptPath = StringUtils.EMPTY;
 		int i = 0;
 		while (i < args.length) {
 			arg = args[i++];
@@ -94,7 +97,7 @@ public class CalulatePatientCountMainFromItemKey extends CRCDAO {
 										   String domainId, String patientSetId,
 										   String instanceId, String conceptPath) throws Exception {
 		boolean errorFlag = false;
-		String resultInstanceId = "";
+		String resultInstanceId = StringUtils.EMPTY;
 		SetFinderDAOFactory setfinderDaoFactory = null;
 		Throwable throwable = null;
 		try {
@@ -167,7 +170,7 @@ public class CalulatePatientCountMainFromItemKey extends CRCDAO {
 
 			if (errorFlag)
 				resultInstanceDao.updatePatientSet(resultInstanceId,
-						QueryStatusTypeId.STATUSTYPE_ID_ERROR, throwable.getMessage(), 0, 0, "");
+						QueryStatusTypeId.STATUSTYPE_ID_ERROR, throwable.getMessage(), 0, 0, StringUtils.EMPTY);
 			else
 				resultInstanceDao.updatePatientSet(resultInstanceId, QueryStatusTypeId.STATUSTYPE_ID_FINISHED, 0);
 		}
@@ -176,14 +179,12 @@ public class CalulatePatientCountMainFromItemKey extends CRCDAO {
 
 	public String buildXmlResult(DataSource dataSource, ConceptsType conceptsType,
 								 SetFinderDAOFactory sfDAOFactory) throws I2B2DAOException {
-		log.info("CalulatePatientCountMainFromItemKey.class: buildXmlResult(DataSource dataSource," +
-				" ConceptsType conceptsType, SetFinderDAOFactory sfDAOFactory)");
 		this.setDbSchemaName(sfDAOFactory.getDataSourceLookup().getFullSchema());
 
-		String tempTableName = "";
+		String tempTableName = StringUtils.EMPTY;
 		PreparedStatement stmt = null;
 		boolean errorFlag = false;
-		String itemKey = "";
+		String itemKey = StringUtils.EMPTY;
 		Connection conn = null;
 		try {
 			String itemCountSql = " select count(distinct PATIENT_NUM) as item_count  from "
@@ -198,7 +199,6 @@ public class CalulatePatientCountMainFromItemKey extends CRCDAO {
 					+ "concept_dimension where concept_path %STARTSWITH ? )";
 			ResultType resultType = new ResultType();
 			resultType.setName(RESULT_NAME);
-			log.info("Script: " + itemCountSql);
 			conn = dataSource.getConnection();
 			stmt = conn.prepareStatement(itemCountSql);
 			for (ConceptType conceptType : conceptsType.getConcept()) {

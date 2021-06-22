@@ -62,7 +62,6 @@ public class WorkplaceDbDao extends JdbcDaoSupport {
 	}
 
 	public List<DBInfoType> getDbLookupByHiveOwner(String domainId,String ownerId) throws I2B2Exception, I2B2DAOException {
-		log.info("WorkplaceDbDao.class: getDbLookupByHiveOwner(String domainId,String ownerId)");
 		String metadataSchema = getMetadataSchema();
 		String sql =  "select * from " + metadataSchema +
 				"work_db_lookup where LOWER(c_domain_id) = ? and c_project_path = ? " +
@@ -76,21 +75,16 @@ public class WorkplaceDbDao extends JdbcDaoSupport {
 			log.error(e.getMessage());
 			throw new I2B2DAOException("Database error");
 		}
-		log.info("SCRIPT: " + sql);
 		return queryResult;
 	}
 
 	@SuppressWarnings("unchecked")
 	public List<DBInfoType> getDbLookupByHiveProjectOwner(String domainId, String projectId,
-			String ownerId) throws I2B2Exception, I2B2DAOException{
-		log.info("WorkplaceDbDao.class: getDbLookupByHiveProjectOwner(String domainId, String projectId, String ownerId)");
+														  String ownerId) throws I2B2Exception, I2B2DAOException{
 		String metadataSchema = getMetadataSchema();
 		String sql = "select * from " + metadataSchema +
 				"work_db_lookup where LOWER(c_domain_id) = ? and LOWER(c_project_path) %STARTSWITH '" + projectId.replace("%", "").toLowerCase() +
 				"' and (LOWER(c_owner_id) =? or c_owner_id = '@') order by c_project_path"; // desc  c_owner_id desc";
-		log.info("Script [" + domainId.toLowerCase() + ", " +
-				projectId.toLowerCase() + ", " +
-				ownerId.toLowerCase() + "]: " + sql);
 		List queryResult;
 		try {
 			queryResult = jt.query(sql, new getDBInfoMapper(), domainId.toLowerCase(), ownerId.toLowerCase());
@@ -98,7 +92,6 @@ public class WorkplaceDbDao extends JdbcDaoSupport {
 			log.error(e.getMessage());
 			throw new I2B2DAOException("Database error");
 		}
-		log.info("SCRIPT: " + sql);
 		return queryResult;
 	}
 }

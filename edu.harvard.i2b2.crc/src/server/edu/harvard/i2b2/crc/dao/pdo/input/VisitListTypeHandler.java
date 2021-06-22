@@ -119,7 +119,6 @@ public class VisitListTypeHandler extends CRCDAO implements
 	 */
 	@Override
 	public String generateWhereClauseSql() {
-		log.info("VisitListTypeHandler.class: generateWhereClauseSql()");
 		String sqlString = null;
 		if (visitListType.getPatientEventCollId() != null) {
 			// set patient set coll id
@@ -147,12 +146,10 @@ public class VisitListTypeHandler extends CRCDAO implements
 					+ " and "
 					+ maxIndex + " order by encounter_num";
 		}
-		log.info("Script: " + sqlString);
 		return sqlString;
 	}
 
 	public String generatePatentSql() {
-		log.info("VisitListTypeHandler.class: generatePatentSql()");
 		String sqlString = null;
 
 		if (visitListType.getPatientEventCollId() != null) {
@@ -164,7 +161,6 @@ public class VisitListTypeHandler extends CRCDAO implements
 			if (minIndex < maxIndex)
 				sqlString += (" and eset.set_index between " + minIndex + " and " + maxIndex);
 		}
-		log.info("Script: " + sqlString);
 		return sqlString;
 	}
 

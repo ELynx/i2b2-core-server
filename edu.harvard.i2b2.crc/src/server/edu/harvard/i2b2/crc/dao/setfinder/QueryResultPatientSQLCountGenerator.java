@@ -160,7 +160,6 @@ public class QueryResultPatientSQLCountGenerator extends CRCDAO implements IResu
 				count++;
 			}
 
-			log.info("Script: " + sqls[count]);
 			stmt = sfConn.prepareStatement(JDBCUtil.escapeSingleQuote(sqls[count]));
 			stmt.setQueryTimeout(transactionTimeout);
 			log.debug("Executing count sql [" + sqls[count] + "]");

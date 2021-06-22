@@ -385,7 +385,6 @@ public class FolderDao extends JdbcDaoSupport {
 	public List findChildrenByParent(final GetChildrenType childrenType,
 									 ProjectType projectInfo,
 									 DBInfoType dbInfo) throws I2B2DAOException, I2B2Exception{
-		log.info("FolderDao.class: findChildrenByParent(final GetChildrenType childrenType, ProjectType projectInfo, DBInfoType dbInfo)");
 		// find return parameters
 		String type = "core";
 		String parameters = CORE;		
@@ -459,8 +458,6 @@ public class FolderDao extends JdbcDaoSupport {
 		sql = sql + hidden + " order by c_name ";
 
 		String parentIndex = StringUtil.getIndex(childrenType.getParent());
-
-		log.info("Script: " + sql);
 		log.debug(sql + " " + parentIndex);
 		//		log.info(type + " " + tableCd );
 
@@ -503,8 +500,6 @@ public class FolderDao extends JdbcDaoSupport {
 	public List findWorkplaceByKeyword(final FindByChildType returnType, String userId,
 									   final ProjectType projectInfo, final DBInfoType dbInfo)
 			throws DataAccessException, I2B2Exception{
-		log.info("FolderDao.class: findWorkplaceByKeyword(final FindByChildType returnType, String userId, " +
-				"final ProjectType projectInfo, final DBInfoType dbInfo)");
 		// find return parameters
 		String type = "core"; // Default Type is core
 		String parameters = CORE; // parameters to be used in select statement 
@@ -772,7 +767,6 @@ public class FolderDao extends JdbcDaoSupport {
 				}
 				 */
 				sql.append( " order by c_name ");
-				log.info("Script: " + sql);
 				// Executing the query to find the workplace content with the given name 
 				List<FolderType> workplaceResult;
 				try {
@@ -1535,7 +1529,6 @@ public class FolderDao extends JdbcDaoSupport {
 			}
 		};
 		 */
-		log.info("Script: " + folderSql);
 		List folders;
 		try{
 			folders = jt.queryForList(folderSql, String.class, nodeIndex);

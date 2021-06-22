@@ -99,11 +99,7 @@ public class CreateConceptXmlDao extends JdbcDaoSupport {
 	private void buildDimensionUpdateXml(ProjectType projectInfo,DBInfoType dbInfo,
 										 String pdoFileName, boolean synchronizeAllFlag,
 										 boolean hiddenConceptFlag,String dimensionTableName,
-										 PatientDataXMLWriterUtil xmlWriterUtil)
-			throws I2B2Exception {
-		log.info("CreateConceptXmlDao.class: buildDimensionUpdateXml(ProjectType projectInfo,DBInfoType dbInfo, " +
-				"String pdoFileName, boolean synchronizeAllFlag, boolean hiddenConceptFlag,String dimensionTableName, " +
-				"PatientDataXMLWriterUtil xmlWriterUtil)");
+										 PatientDataXMLWriterUtil xmlWriterUtil) throws I2B2Exception {
 		String metadataSchema = dbInfo.getDb_fullSchema();
 		TableAccessDao tableAccessDao = new TableAccessDao();
 		if (this.dataSource == null) {
@@ -151,7 +147,6 @@ public class CreateConceptXmlDao extends JdbcDaoSupport {
 						+ " where c_basecode is not null and "
 						+ emptyStringClause + updateOnlyClause
 						+ "   and lower(c_tablename) = '" + dimensionTableName.toLowerCase() + "'";
-				log.info("Script: " + selectSql);
 				log.debug("Executing sql [" + selectSql + "]");
 				query = conn.prepareStatement(JDBCUtil.escapeSingleQuote(selectSql));
 				resultSet = query.executeQuery();

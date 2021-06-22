@@ -168,7 +168,6 @@ public class ProcessQueue implements Runnable{
 										"  and qi.batch_mode = '" + queue +  "' " +
 										" and qi.end_date is null ";
 						finalSql += " order by qi.start_date ";
-						log.info("Script: " + finalSql);
 						log.debug("Execut SQL [" + finalSql + "] for " + dslookup.getDataSource());
 						preparedStmt = conn.prepareStatement(finalSql);
 

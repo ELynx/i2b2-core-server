@@ -16,6 +16,7 @@ package edu.harvard.i2b2.crc.dao.pdo.input;
 import java.util.List;
 
 import edu.harvard.i2b2.common.util.db.QueryUtil;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -38,7 +39,7 @@ public class ValueConstrainsHandler {
 	protected final Log log = LogFactory.getLog(getClass());
 
 	private boolean unitCdConverstionFlag = false;
-	private String unitCdInClause = "", unitCdSwitchClause = "";
+	private String unitCdInClause = StringUtils.EMPTY, unitCdSwitchClause = StringUtils.EMPTY;
 	
 	public void setUnitCdConversionFlag(boolean unitCdConverstionFlag, String unitCdInClause, String unitCdSwitchClause) { 
 		this.unitCdConverstionFlag = unitCdConverstionFlag;
@@ -49,10 +50,7 @@ public class ValueConstrainsHandler {
 	public String[] constructValueConstainClause(List<ItemType.ConstrainByValue> valueConstrainList,
 												 String dbServerType,String dbSchemaName,
 												 int panelAccuracyScale) throws I2B2Exception {
-		log.info("ValueConstrainsHandler.class: constructValueConstainClause(List<ItemType.ConstrainByValue> valueConstrainList, " +
-				"String dbServerType,String dbSchemaName," +
-				"int panelAccuracyScale)");
-		String fullConstrainSql = "",containsJoinSql = "";
+		String fullConstrainSql = StringUtils.EMPTY,containsJoinSql = StringUtils.EMPTY;
 		System.out.println("panel accuracy scale" + panelAccuracyScale );
 
 		for (ItemType.ConstrainByValue valueConstrain : valueConstrainList) {
@@ -67,7 +65,7 @@ public class ValueConstrainsHandler {
 				continue;
 
 			if (valueType.equals(ConstrainValueType.LARGETEXT)) { 
-				String containsSql = "";
+				String containsSql;
 				ContainsUtil containsUtil = new ContainsUtil();
 				if (operatorType.value().equalsIgnoreCase(ConstrainOperatorType.CONTAINS.value()))
 					containsSql = containsUtil.formatValue(value,dbServerType);
@@ -91,7 +89,7 @@ public class ValueConstrainsHandler {
 					if (operatorOption ==null)
 						operatorOption = "[begin]";
 
-					String likeValueFormat = "";
+					String likeValueFormat = StringUtils.EMPTY;
 					if (operatorOption.equalsIgnoreCase("[begin]"))
 						likeValueFormat = "'" + value.replaceAll("'", "''") + "%'";
 					else if (operatorOption.equalsIgnoreCase("[end]"))
@@ -139,7 +137,7 @@ public class ValueConstrainsHandler {
 
 				value.replaceAll("'", "''");
 				
-				String nvalNum = " nval_num ", unitsCdInClause = "";
+				String nvalNum = " nval_num ", unitsCdInClause = StringUtils.EMPTY;
 				if (this.unitCdConverstionFlag) { 
 					nvalNum = unitCdSwitchClause;
 					//unitsCdInClause = this.unitCdInClause + " AND ";
@@ -230,8 +228,6 @@ public class ValueConstrainsHandler {
 				fullConstrainSql += constrainSql;
 			}
 		}
-		log.info("Script (fullConstrainSql): " + fullConstrainSql);
-		log.info("Script (containsJoinSql): " + containsJoinSql);
 		return new String[] { fullConstrainSql, containsJoinSql};
 	}
 }

@@ -60,9 +60,6 @@ public class TablePdoQueryConceptDao extends CRCDAO implements
 									   List<Integer> sqlParamCountList,
 									   IInputOptionListHandler inputOptionListHandler, boolean detailFlag,
 									   boolean blobFlag, boolean statusFlag) throws I2B2DAOException {
-		log.info("TablePdoQueryConceptDao.class: getConceptByFact(List<String> panelSqlList," +
-				"List<Integer> sqlParamCountList, IInputOptionListHandler inputOptionListHandler, " +
-				"boolean detailFlag, boolean blobFlag, boolean statusFlag");
 		ConceptSet conceptSet = new ConceptSet();
 		RPDRPdoFactory.ConceptBuilder conceptBuilder = new RPDRPdoFactory.ConceptBuilder(
 				detailFlag, blobFlag, statusFlag);
@@ -106,7 +103,6 @@ public class TablePdoQueryConceptDao extends CRCDAO implements
 				log.debug("Executing SQL [ " + insertSql + "]");
 				sqlParamCount = sqlParamCountList.get(i++);
 				// conn.createStatement().executeUpdate(insertSql);
-				log.info("Script: " + insertSql);
 				executeTotalSql(insertSql, conn, sqlParamCount, inputOptionListHandler);
 			}
 
@@ -117,7 +113,6 @@ public class TablePdoQueryConceptDao extends CRCDAO implements
 					+ "concept_dimension concept where concept_cd in (select distinct char_param1 from "
 					+ factTempTable + ") order by concept_path";
 			log.debug("Executing SQL [" + finalSql + "]");
-			log.info("Script: " + finalSql);
 			query = conn.prepareStatement(finalSql);
 			resultSet = query.executeQuery();
 			while (resultSet.next()) {
@@ -152,7 +147,6 @@ public class TablePdoQueryConceptDao extends CRCDAO implements
 	private void executeTotalSql(String totalSql, Connection conn, int sqlParamCount, 
 								 IInputOptionListHandler inputOptionListHandler) throws SQLException {
 		PreparedStatement stmt = conn.prepareStatement(totalSql);
-		log.info(totalSql + " [ " + sqlParamCount + " ]");
 		log.debug(totalSql + " [ " + sqlParamCount + " ]");
 		if (inputOptionListHandler.isCollectionId()) {
 			for (int i = 1; i <= sqlParamCount; i++) {

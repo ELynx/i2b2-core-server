@@ -34,10 +34,8 @@ public class ExecUtil {
 		executor.setWatchdog(watchdog);
 		int errCode = -1;
 		try {
-			
-			
-			 MySecurityManager secManager = new MySecurityManager();
-			    System.setSecurityManager(secManager);
+			MySecurityManager secManager = new MySecurityManager();
+			System.setSecurityManager(secManager);
 
 			log.info("Executing command line [" + commandLine + "]");
 			// executor.setExitValue(0);

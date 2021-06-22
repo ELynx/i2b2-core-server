@@ -134,8 +134,6 @@ public class PdoQueryConceptDao extends CRCDAO implements IPdoQueryConceptDao {
 	@Override
 	public ConceptSet getChildrentByItemKey(String itemKey, boolean detailFlag, boolean blobFlag, boolean statusFlag)
 			throws I2B2DAOException {
-		log.info("PdoQueryConceptDao.class: getChildrentByItemKey(String itemKey, boolean detailFlag, " +
-				"boolean blobFlag, boolean statusFlag)");
 		ConceptSet conceptDimensionSet = new ConceptSet();
 		if (itemKey != null) {
 			if (itemKey.lastIndexOf('\\') == itemKey.length() - 1)
@@ -157,7 +155,6 @@ public class PdoQueryConceptDao extends CRCDAO implements IPdoQueryConceptDao {
 					+ selectClause + " %VID AS RowNum FROM " + getDbSchemaName()
 					+ "concept_dimension concept WHERE concept_path " + QueryUtil.getOperatorByValue(itemKey)
 					+ " ? order by concept_path)";
-			log.info("Script: " + finalSql);
 			log.debug("Pdo Concept sql [" + finalSql + "]");
 			query = conn.prepareStatement(finalSql);
 			query.setString(1, QueryUtil.getCleanValue(itemKey));

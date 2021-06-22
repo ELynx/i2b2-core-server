@@ -451,7 +451,6 @@ public class PdoQueryPidDao extends CRCDAO implements IPdoQueryPidDao {
 			finalSql += "from " + tempTable + ") order by patient_num";
 			log.debug("Executing SQL [" + finalSql + "]");
 			System.out.println("Final Sql " + finalSql);
-			log.info("Script: " + finalSql);
 			query = conn.prepareStatement(finalSql);
 			resultSet = query.executeQuery();
 

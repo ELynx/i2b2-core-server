@@ -48,7 +48,6 @@ public class GetCodeInfoDao extends JdbcDaoSupport {
 	final static String BLOB = ", c_metadataxml, c_comment ";	
 
 	public List findCodeInfo(final VocabRequestType vocabType, final List categories, ProjectType projectInfo) throws DataAccessException, I2B2Exception{
-		log.info("GetCodeInfoDao.class: findCodeInfo(final VocabRequestType vocabType, final List categories, ProjectType projectInfo)");
 		DataSource ds = null;
 		try {
 			ds = OntologyUtil.getInstance().getDataSource("java:OntologyLocalDS");
@@ -147,8 +146,6 @@ public class GetCodeInfoDao extends JdbcDaoSupport {
 
 		log.debug(codeInfoSql);
 		final  boolean obfuscatedUserFlag = Roles.getInstance().isRoleOfuscated( projectInfo );
-
-		log.info("Script: " + codeInfoSql);
 		List queryResult = null;
 		try {
 			if(tableNames != null)

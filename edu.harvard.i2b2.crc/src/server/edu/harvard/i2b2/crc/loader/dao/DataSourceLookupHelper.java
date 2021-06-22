@@ -87,25 +87,18 @@ public class DataSourceLookupHelper {
 					} else { 
 						log.info("Located DataSource for hiveId=[" + hiveId + 
 								"] projectId=[" + parentProjectId + "]");
-						
 					}
 				return matchedDataSource;
-				
-			}
-			else { 
+			} else {
 				log.info("Could not match Project id=[" + projectId+"] Trying with hive =" + hiveId);
 				matchedDataSourceLookup = matchHiveOwner(hiveId,ownerId);
 				return matchedDataSourceLookup;
 			}
-			
 		} else { 
 			log.info("Could not match Project id=[" + projectId+"] Trying with hive =" + hiveId);
 			matchedDataSourceLookup = matchHiveOwner(hiveId,ownerId);
 			return matchedDataSourceLookup;
 		}
-		
-		
-	
 	}
 	
 	private DataSourceLookup matchHiveOwner(String hiveId,String ownerId) throws I2B2Exception  { 
@@ -150,12 +143,9 @@ public class DataSourceLookupHelper {
 				if (owner.equalsIgnoreCase(lookupOwnerId)) { 
 					break;
 				}
-				
-				
 			}
 		}
 		return matchedDataSource;
 	}
-	
 	
 }

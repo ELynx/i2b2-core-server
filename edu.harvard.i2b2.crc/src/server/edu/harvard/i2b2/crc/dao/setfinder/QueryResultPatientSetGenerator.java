@@ -36,7 +36,6 @@ public class QueryResultPatientSetGenerator extends CRCDAO implements IResultGen
 	
 	@Override
 	public void generateResult(Map param) throws I2B2DAOException {
-		log.info("QueryResultPatientSetGenerator.class: generateResult(Map param)");
 		SetFinderConnection sfConn = (SetFinderConnection) param.get("SetFinderConnection");
 		SetFinderDAOFactory sfDAOFactory = (SetFinderDAOFactory) param.get("SetFinderDAOFactory");
 		// String patientSetId = (String)param.get("PatientSetId");
@@ -69,7 +68,6 @@ public class QueryResultPatientSetGenerator extends CRCDAO implements IResultGen
 						+ " (result_instance_id, set_index, patient_num) "
 						+ "SELECT ? AS result_instance_id, %VID AS set_index, t.patient_num "
 						+ "FROM (SELECT DISTINCT patient_num FROM " + TEMP_DX_TABLE + ") t ";
-			log.info("Executing sql:\n" + sql);
 			log.debug("Executing sql:\n" + sql);
 
 			LogTimingUtil logTimingUtil = new LogTimingUtil();

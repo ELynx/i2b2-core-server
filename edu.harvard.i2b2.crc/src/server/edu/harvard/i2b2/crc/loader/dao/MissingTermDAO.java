@@ -45,7 +45,6 @@ public class MissingTermDAO extends CRCLoaderDAO implements IMissingTermDAO {
 
 	@Override
 	public MissingTermSetReportType getMissingTermReport(int uploadId, String setName) throws I2B2DAOException {
-		log.info("MissingTermDAO.class: getMissingTermReport(int uploadId, String setName)");
 		String uploadConstrainSql = StringUtils.EMPTY, uploadConstrainMappedSql = StringUtils.EMPTY ;
 		Connection conn = null;
 		MissingTermSetReportType missingTermReport = new MissingTermSetReportType();
@@ -85,12 +84,10 @@ public class MissingTermDAO extends CRCLoaderDAO implements IMissingTermDAO {
 			}
 
 			Statement stmt = conn.createStatement();
-			log.info("Script [unmappedSql]: " + unmappedSql);
 			log.debug("Executing sql [" + unmappedSql + "]");
 			ResultSet resultSet = stmt.executeQuery(unmappedSql);
 			resultSet.next();
 			int unmappedCount = resultSet.getInt(1);
-			log.info("Script [mappedSql]: " + mappedSql);
 			log.debug("Executing sql [" + mappedSql + "]");
 			stmt = conn.createStatement();
 			resultSet = stmt.executeQuery(mappedSql);
@@ -122,7 +119,6 @@ public class MissingTermDAO extends CRCLoaderDAO implements IMissingTermDAO {
 	@Override
 	public MissingCodesConceptSetType getMissingConceptSet(int uploadId, int startPos,
 														   int endPos, boolean detailFlag) throws I2B2DAOException {
-		log.info("MissingTermDAO.class: getMissingConceptSet(int uploadId, int startPos, int endPos, boolean detailFlag)");
 		Connection conn = null;
 		String sql = StringUtils.EMPTY, uploadConstrainSql = StringUtils.EMPTY;
 		MissingCodesConceptSetType missConceptSetType = new MissingCodesConceptSetType();
@@ -153,7 +149,6 @@ public class MissingTermDAO extends CRCLoaderDAO implements IMissingTermDAO {
 //
 //			}
 			Statement stmt = conn.createStatement();
-			log.info("Executing sql ["+ sql + "]");
 			log.debug("Executing sql ["+ sql + "]");
 			ResultSet resultSet = stmt.executeQuery(sql);
 			MissingCodesConceptSetType.Concept concept = new MissingCodesConceptSetType.Concept();
@@ -189,7 +184,6 @@ public class MissingTermDAO extends CRCLoaderDAO implements IMissingTermDAO {
 	@Override
 	public MissingCodesModifierSetType getMissingModifierSet(int uploadId, int startPos,
 															 int endPos, boolean detailFlag) throws I2B2DAOException {
-		log.info("MissingTermDAO.class: getMissingModifierSet(int uploadId, int startPos, int endPos, boolean detailFlag)");
 		Connection conn = null;
 		String sql = StringUtils.EMPTY, uploadConstrainSql = StringUtils.EMPTY;
 		MissingCodesModifierSetType missModifierSetType = new MissingCodesModifierSetType();
@@ -218,7 +212,6 @@ public class MissingTermDAO extends CRCLoaderDAO implements IMissingTermDAO {
 //
 //			}
 			Statement stmt = conn.createStatement();
-			log.info("Executing sql ["+ sql + "]");
 			log.debug("Executing sql ["+ sql + "]");
 			ResultSet resultSet = stmt.executeQuery(sql);
 
@@ -252,7 +245,6 @@ public class MissingTermDAO extends CRCLoaderDAO implements IMissingTermDAO {
 	@Override
 	public MissingCodesObserverSetType getMissingObserverSet(int uploadId, int startPos,
 															 int endPos, boolean detailFlag) throws I2B2DAOException {
-		log.info("MissingTermDAO.class: getMissingObserverSet(int uploadId, int startPos, int endPos, boolean detailFlag)");
 		Connection conn = null;
 		String sql = StringUtils.EMPTY, uploadConstrainSql = StringUtils.EMPTY;
 		MissingCodesObserverSetType missObserverSetType = new MissingCodesObserverSetType();

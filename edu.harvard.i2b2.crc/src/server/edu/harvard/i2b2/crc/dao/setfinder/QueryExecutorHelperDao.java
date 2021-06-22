@@ -125,8 +125,6 @@ public class QueryExecutorHelperDao extends CRCDAO {
 							 String sqlString, String queryInstanceId, String patientSetId,
 							 ResultOutputOptionListType resultOutputList, String generatedSql, String pmXml)
 			throws CRCTimeOutException, I2B2DAOException {
-		log.info("QueryExecutorHelperDao.class: executeQuery(int transactionTimeout, DataSourceLookup dsLookup, SetFinderDAOFactory sfDAOFactory, String requestXml," +
-				"String sqlString, String queryInstanceId, String patientSetId, ResultOutputOptionListType resultOutputList, String generatedSql, String pmXml)");
 		Statement stmt = null;
 		ResultSet resultSet = null;
 		Connection manualConnection = null;
@@ -180,17 +178,14 @@ public class QueryExecutorHelperDao extends CRCDAO {
 					+ " ENCOUNTER_NUM int, " + " PATIENT_NUM int, INSTANCE_NUM int, CONCEPT_CD varchar(50), START_DATE TIMESTAMP, PROVIDER_ID varchar(50), "
 					+ " PANEL_COUNT int, " + " fact_count int, "
 					+ " fact_panels int " + ")";
-			log.info("Script - createSql: " + createSql);
 			stmt.executeUpdate(createSql);
 			createSql = " CREATE GLOBAL TEMPORARY TABLE " + TEMP_DX_TABLE + " ( " +
 					" ENCOUNTER_NUM int, " + " PATIENT_NUM int, INSTANCE_NUM int, CONCEPT_CD varchar(50), START_DATE TIMESTAMP, " +
 					"PROVIDER_ID varchar(50), temporal_start_date TIMESTAMP, temporal_end_date TIMESTAMP ) ";
-			log.info("Script - createSql: " + createSql);
 			stmt.executeUpdate(createSql);
 			createSql = " CREATE GLOBAL TEMPORARY TABLE " + TEMP_MASTER_TABLE + " ( " +
 					" ENCOUNTER_NUM int,  PATIENT_NUM int , INSTANCE_NUM int, CONCEPT_CD varchar(50), START_DATE TIMESTAMP, " +
 					"PROVIDER_ID varchar(50), MASTER_ID varchar(50), LEVEL_NO int, temporal_start_date TIMESTAMP, temporal_end_date TIMESTAMP ) ";
-			log.info("Script - createSql: " + createSql);
 			stmt.executeUpdate(createSql);
 
 			// set transaction timeout
