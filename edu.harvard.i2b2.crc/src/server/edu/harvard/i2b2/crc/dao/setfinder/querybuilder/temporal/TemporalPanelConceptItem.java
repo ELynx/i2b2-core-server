@@ -33,20 +33,7 @@ public class TemporalPanelConceptItem extends TemporalPanelItem {
 	
 	@Override
 	protected String buildSqlHintClause() {
-		if (parent.getServerType().equalsIgnoreCase("ORACLE")&&
-				parent.getQueryOptions().useSqlHints()){
-			String joinTable = getJoinTable();
-			if (joinTable.equalsIgnoreCase("observation_fact")){
-				if (tableName.equalsIgnoreCase("provider_dimension")) {
-					return " /*+ index(observation_fact observation_fact_pk) */ ";
-				} else {
-					return " /*+ index(f fact_cnpt_pat_enct_idx) */ ";
-				}
-			}
-			return "";
-		}
-		else
-			return " ";
+		return " ";
 	}
 
 	@Override

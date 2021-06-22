@@ -38,14 +38,13 @@ public class DAOFactoryHelper {
 		}
 	}
 
-	public DAOFactoryHelper(DataSourceLookup dataSourceLookup)
-			throws I2B2DAOException {
+	public DAOFactoryHelper(DataSourceLookup dataSourceLookup) throws I2B2DAOException {
 		this(dataSourceLookup.getDomainId(), dataSourceLookup.getProjectPath(),
 				dataSourceLookup.getOwnerId());
 	}
 
 	public DAOFactoryHelper(DataSourceLookup dataSourceLookup,
-			DataSource dataSource) {
+							DataSource dataSource) {
 		this.dataSourceLookup = dataSourceLookup;
 		this.dataSource = dataSource;
 	}

@@ -602,16 +602,6 @@ public class ConceptPersistDao extends JdbcDaoSupport {
 		String metadataSchema = dbInfo.getDb_fullSchema();
 		setDataSource(dbInfo.getDb_dataSource());
 		String checkForTableSql = "SELECT count(*) from " + metadataSchema + tableName ;
-
-		/*		if(dbInfo.getDb_serverType().equals("ORACLE"))
-			checkForTableSql = "SELECT count(*) from user_tab_cols where table_name = " + metadataSchema +"?";
-
-
-		if(dbInfo.getDb_serverType().equals("SQLSERVER"))
-			checkForTableSql = "SELECT count(*) from " + metadataSchema.replace("dbo.", "") + "information_schema.tables where table_name = ?";
-
-		//		log.info(checkForTableSql);
-		 */
 		boolean createTables = false;
 		try {
 			int count = jt.queryForObject(checkForTableSql, Integer.class); //, metadataSchema + tableName)	;

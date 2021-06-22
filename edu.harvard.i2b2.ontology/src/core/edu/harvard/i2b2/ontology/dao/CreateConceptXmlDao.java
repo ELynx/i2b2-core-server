@@ -107,17 +107,10 @@ public class CreateConceptXmlDao extends JdbcDaoSupport {
 		} else {
 			tableAccessDao.setDataSourceObject(this.dataSource);
 		}
-		String emptyStringClause = " ";
-		if (dbInfo.getDb_serverType().equalsIgnoreCase("ORACLE")) {
-			emptyStringClause = "trim(c_basecode) is not null ";
-		} else {
-			emptyStringClause = "rtrim(ltrim(c_basecode)) <> ''";
-		}
+		String emptyStringClause = "rtrim(ltrim(c_basecode)) <> ''";
 		String hiddenConceptSql = " ";
 		if (hiddenConceptFlag) {
-			hiddenConceptSql = dbInfo.getDb_serverType().equalsIgnoreCase("InterSystems IRIS")
-					? " and (not c_visualattributes %STARTSWITH '_H')"
-					: " and c_visualattributes not like '_H%' ";
+			hiddenConceptSql = " and (not c_visualattributes %STARTSWITH '_H')";
 		}
 		
 		String updateOnlyClause = " ";

@@ -236,8 +236,7 @@ public class QueryInstanceSpringDao extends CRCDAO implements IQueryInstanceDao 
 	}
 	
 	private static class SaveQueryInstance extends SqlUpdate {
-		private String INSERT_INTERSYSTEMS_IRIS;
-		private String SEQUENCE_INTERSYSTEMS_IRIS;
+		private String SEQUENCE;
 
 		private DataSourceLookup dataSourceLookup;
 
@@ -245,16 +244,13 @@ public class QueryInstanceSpringDao extends CRCDAO implements IQueryInstanceDao 
 								 DataSourceLookup dataSourceLookup) {
 			super();
 			this.dataSourceLookup = dataSourceLookup;
-			// sqlServerSequenceDao = new
-			// SQLServerSequenceDAO(dataSource,dataSourceLookup) ;
 			setDataSource(dataSource);
-			INSERT_INTERSYSTEMS_IRIS = "INSERT INTO "
+			setSql("INSERT INTO "
 					+ dbSchemaName
 					+ "QT_QUERY_INSTANCE "
 					+ "(QUERY_INSTANCE_ID, QUERY_MASTER_ID, USER_ID, GROUP_ID,BATCH_MODE,START_DATE,END_DATE,STATUS_TYPE_ID,DELETE_FLAG) "
-					+ "VALUES (?,?,?,?,?,?,?,?,?)";
-			setSql(INSERT_INTERSYSTEMS_IRIS);
-			SEQUENCE_INTERSYSTEMS_IRIS = "select I2B2.Utils_nextval('qt_query_instance_query_instance_id_seq')";
+					+ "VALUES (?,?,?,?,?,?,?,?,?)");
+			SEQUENCE = "select I2B2.Utils_nextval('qt_query_instance_query_instance_id_seq')";
 			declareParameter(new SqlParameter(Types.INTEGER));
 			declareParameter(new SqlParameter(Types.INTEGER));
 			declareParameter(new SqlParameter(Types.VARCHAR));
@@ -271,7 +267,7 @@ public class QueryInstanceSpringDao extends CRCDAO implements IQueryInstanceDao 
 			JdbcTemplate jdbc = getJdbcTemplate();
 			int queryInstanceId = 0;
 			Object[] object = null;
-			queryInstanceId = jdbc.queryForObject(SEQUENCE_INTERSYSTEMS_IRIS, Integer.class);
+			queryInstanceId = jdbc.queryForObject(SEQUENCE, Integer.class);
 			queryInstance.setQueryInstanceId(String.valueOf(queryInstanceId));
 			object = new Object[]{queryInstance.getQueryInstanceId(),
 					queryInstance.getQtQueryMaster().getQueryMasterId(),

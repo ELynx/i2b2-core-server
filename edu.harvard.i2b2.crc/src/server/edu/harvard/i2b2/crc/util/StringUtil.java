@@ -8,7 +8,6 @@
  ******************************************************************************/
 package edu.harvard.i2b2.crc.util;
 
-
 /*
 
  * 
@@ -18,8 +17,6 @@ package edu.harvard.i2b2.crc.util;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
-
 
 /**
  * StringUtil class to perform string parsing tasks
@@ -32,31 +29,11 @@ public class StringUtil {
     private static StringUtil thisInstance;
     
     static {
-            thisInstance = new StringUtil();
+    	thisInstance = new StringUtil();
     }
     
     public static StringUtil getInstance() {
         return thisInstance;
     }
-    
-    public static String escapeSQLSERVER(String sql){
-    
-    	sql=sql.replaceAll("\\?", "??");
-    	sql=sql.replaceAll("_", "?_");    
-    	sql=sql.replaceAll("%", "?%");
-    	sql=sql.replaceAll("\\[", "?["); 
-    //	sql += "%";
- 
-    	return sql;
-	}
-    
-    public static String escapeORACLE(String sql){
-        
-    	sql=sql.replaceAll("\\?", "??");
-    	sql=sql.replaceAll("_", "?_");
-    	sql=sql.replaceAll("%", "?%");
-  //  	sql += "%";
-    	return sql;
-	}
-    
+
 }

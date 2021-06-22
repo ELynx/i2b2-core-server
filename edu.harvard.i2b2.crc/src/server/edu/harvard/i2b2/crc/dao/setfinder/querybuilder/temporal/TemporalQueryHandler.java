@@ -50,7 +50,7 @@ public class TemporalQueryHandler extends CRCDAO {
 	private boolean isProtectedQuery = false;
 
 	public TemporalQueryHandler(DataSourceLookup dataSourceLookup, String queryXML,
-			boolean encounterSetOutputFlag) {
+								boolean encounterSetOutputFlag) {
 		this.setDbSchemaName(dataSourceLookup.getFullSchema());
 		this.dataSourceLookup = dataSourceLookup;
 		this.queryXML = queryXML;
@@ -60,18 +60,8 @@ public class TemporalQueryHandler extends CRCDAO {
 		} catch (I2B2DAOException e) {
 			log.error("Error creating ProcessTimingReportUtil [" + e.getMessage() + "]");
 		}
-
-		if (this.dataSourceLookup.getServerType().equalsIgnoreCase(
-				DAOFactoryHelper.SQLSERVER)) {
-			noLockSqlServer = " WITH(NOLOCK) ";
-			tempTableName = "#global_temp_table";
-			tempDxTableName = "#dx";
-		} else if (this.dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE)
-					|| this.dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
-					|| this.dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)) {
-			tempTableName = "QUERY_GLOBAL_TEMP";
-			tempDxTableName = "DX";
-		}
+		tempTableName = "QUERY_GLOBAL_TEMP";
+		tempDxTableName = "DX";
 	}
 
 	public int getMaxPanelNumber() {
@@ -99,18 +89,17 @@ public class TemporalQueryHandler extends CRCDAO {
 	}
 	
 	public String buildSql() throws JAXBUtilException, I2B2Exception {
-		TemporalQuery tQuery = new TemporalQuery(this.dataSourceLookup, this.projectParamMap, this.queryXML, this.allowLargeTextValueConstrainFlag, this.userRoles);
+		TemporalQuery tQuery = new TemporalQuery(this.dataSourceLookup, this.projectParamMap, this.queryXML,
+				this.allowLargeTextValueConstrainFlag, this.userRoles);
 		if (this.queryWithoutTempTableFlag)
 			tQuery.getQueryOptions().setQueryConstraintLogic(QueryConstraintStrategy.DERIVED_TABLES);
 		String tQuerySql = tQuery.buildSql();
 		this.ignoredItemMessageBuffer = tQuery.getIgnoredItemMessageBuffer();
 		this.maxPanelNum = tQuery.getMaxPanelIndex();
-		this.isTemporalQuery = (tQuery.getSubQueryCount()>1?true:false);
+		this.isTemporalQuery = tQuery.getSubQueryCount() > 1;
 		this.isProtectedQuery = tQuery.isProtectedQuery();
 		System.out.println(tQuerySql);
-		
 		return tQuerySql;
-
 	}
 	
 	public String getIgnoredItemMessage() {

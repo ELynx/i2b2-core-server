@@ -871,7 +871,7 @@ public class TemporalPanel implements Comparable<Object> {
 						invertClause +  ") i \n");
 			}
 			
-			innerSelectClause = buildInnerSelectClause(parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS) ? StringUtils.EMPTY : "t");
+			innerSelectClause = buildInnerSelectClause(StringUtils.EMPTY);
 			tSelect = "select " + innerSelectClause + " " + "from (" + withItemSql.toString() + ") t ";
 			selectIris = "select " + innerSelectClause;
 			itemSqlIris = selectIris + itemSql.substring(itemSql.indexOf("\nfrom "), itemSql.length());
@@ -883,7 +883,7 @@ public class TemporalPanel implements Comparable<Object> {
 			if (itemStatement != null && itemStatement.trim().length() > 0) {
 				withItemSql.append("with y as ( " + "\n" + itemStatement + "\n" + " ) " + "\n");
 				String invertClause;
-				if (parent.getQueryOptions().getInvertedConstraintLogic()==InvertedConstraintStrategy.MINUS_CLAUSE)
+				if (parent.getQueryOptions().getInvertedConstraintLogic() == InvertedConstraintStrategy.MINUS_CLAUSE)
 					invertClause = buildInvertExceptSql("y");
 				else
 					invertClause = buildInvertNotExistsSql("y");
@@ -892,7 +892,7 @@ public class TemporalPanel implements Comparable<Object> {
 			} else {
 				withItemSql.append("with y as ( " + "\n" + itemSql + "\n" + " ) " + "\n");
 				String invertClause = StringUtils.EMPTY;
-				if (parent.getQueryOptions().getInvertedConstraintLogic()==InvertedConstraintStrategy.MINUS_CLAUSE)
+				if (parent.getQueryOptions().getInvertedConstraintLogic() == InvertedConstraintStrategy.MINUS_CLAUSE)
 					invertClause = buildInvertExceptSql("y");
 				else
 					invertClause = buildInvertNotExistsSql("y");
@@ -1297,11 +1297,6 @@ public class TemporalPanel implements Comparable<Object> {
 		StringBuilder panelSql = new StringBuilder();
 		boolean addDelimiter = false;
 		StringBuilder tempItemSql = new StringBuilder();
-		
-		boolean useTempTables = false;
-		if (parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)
-				&& parent.getQueryOptions().getQueryConstraintLogic() == QueryConstraintStrategy.TEMP_TABLES)
-			useTempTables = true;
 
 		// OMOP WAS..
 		//for (String itemSql : itemSqlList) {
@@ -1336,65 +1331,21 @@ public class TemporalPanel implements Comparable<Object> {
 			if (this.isPanelInverted()) {
 				if (oldPanelIndex < 0)
 					oldPanelIndex = 0;
-
-				if (useTempTables) {
-					String suffix = StringUtils.EMPTY;
-					
-					nonFirstPanelItemSql += parent.buildTempTableCheckDrop("t" + suffix);
-					nonFirstPanelItemSql += parent.getSqlDelimiter();
-			
-					nonFirstPanelItemSql += buildSelectIntoStatement(itemSql, "t");
-					nonFirstPanelItemSql += parent.getSqlDelimiter();
-					
-					nonFirstPanelItemSql += " update " + tempTableName
-							+ " set panel_count = -1 " + " where " + tempTableName
-							+ ".panel_count =  " + oldPanelIndex + " and exists ( "
-							+ "select 1 " + "from #t t " + "where "
-							+ tempTableName + ".patient_num = t.patient_num "
-							+ encounterNumClause + instanceNumClause + " )  ";
-					
-					nonFirstPanelItemSql += parent.getSqlDelimiter();
-					nonFirstPanelItemSql += parent.buildTempTableCheckDrop("t" + suffix);
-			
-				} else {
-					nonFirstPanelItemSql += " update " + tempTableName
+				nonFirstPanelItemSql += " update " + tempTableName
 						+ " set panel_count = -1 " + " where " + tempTableName
 						+ ".panel_count =  " + oldPanelIndex + " and exists ( "
 						+ "select 1 " + "from (" + itemSql + ") t " + "where "
 						+ tempTableName + ".patient_num = t.patient_num "
 						+ encounterNumClause + instanceNumClause + " )  ";
-				}
-			} else {
-				if (useTempTables) {
-					String suffix = StringUtils.EMPTY;
-					
-					nonFirstPanelItemSql += parent.buildTempTableCheckDrop("t" + suffix);
-					nonFirstPanelItemSql += parent.getSqlDelimiter();
-			
-					nonFirstPanelItemSql += buildSelectIntoStatement(itemSql, "t");
-					nonFirstPanelItemSql += parent.getSqlDelimiter();
-					
-					nonFirstPanelItemSql += "update " + tempTableName
-							+ " set panel_count =" + panelIndex + " where "
-							+ tempTableName + ".panel_count =  " + oldPanelIndex
-							+ " and exists ( " + "select 1 " + "from #t"
-							+ " t " + "where " + tempTableName
-							+ ".patient_num = t.patient_num " + encounterNumClause
-							+ instanceNumClause + " ) ";
-					
-					nonFirstPanelItemSql += parent.getSqlDelimiter();
-					nonFirstPanelItemSql += parent.buildTempTableCheckDrop("t" + suffix);
-			
-				} else {
-					nonFirstPanelItemSql += "update " + tempTableName
-							+ " set panel_count =" + panelIndex + " where "
-							+ tempTableName + ".panel_count =  " + oldPanelIndex
-							+ " and exists ( " + "select 1 " + "from (" + itemSql
-							+ ") t " + "where " + tempTableName
-							+ ".patient_num = t.patient_num " + encounterNumClause
-							+ instanceNumClause + " ) ";
-				}
-			}
+			} else
+				nonFirstPanelItemSql += "update " + tempTableName
+						+ " set panel_count =" + panelIndex + " where "
+						+ tempTableName + ".panel_count =  " + oldPanelIndex
+						+ " and exists ( " + "select 1 " + "from (" + itemSql
+						+ ") t " + "where " + tempTableName
+						+ ".patient_num = t.patient_num " + encounterNumClause
+						+ instanceNumClause + " ) ";
+
 			if (addDelimiter)
 				panelSql.append(parent.getSqlDelimiter());
 
@@ -1428,7 +1379,7 @@ public class TemporalPanel implements Comparable<Object> {
 		} catch (I2B2DAOException e) {
 			return null;
 		}
-		if (this.parent.getQueryOptions()!=null&&this.parent.getQueryOptions().useDerivedFactTable())
+		if (this.parent.getQueryOptions() != null && this.parent.getQueryOptions().useDerivedFactTable())
 			factTables = buildFactTableList(itemSqlList);
 		
 		String invertTableName = patientTable;

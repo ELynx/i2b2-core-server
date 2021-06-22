@@ -109,10 +109,6 @@ public class UploadStatusDAO extends CRCLoaderDAO implements UploadStatusDAOI {
 	public int insertUploadStatus(UploadStatus uploadStatus) {
 		UploadStatusInsert uploadStatusInsert = new UploadStatusInsert(
 				getDataSource(), this.getDbSchemaName(), dataSourceLookup);
-		// if (dataSourceLookup.getServerType().equalsIgnoreCase(
-		// LoaderDAOFactoryHelper.ORACLE)) {
-		//uploadStatus.setUploadId(uploadStatusInsert.generateUploadStatusId());
-		// }
 		uploadStatusInsert.insert(uploadStatus);
 		// uploadStatusInsert.flush();
 		return uploadStatus.getUploadId();

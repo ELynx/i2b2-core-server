@@ -420,12 +420,6 @@ public class QueryMasterSpringDao extends CRCDAO implements IQueryMasterDao {
 			int queryMasterCount = jdbcTemplate.update(queryMasterSql,
 					new Object[] { DELETE_YES_FLAG, deleteDate, Integer.parseInt(masterId),
 							DELETE_NO_FLAG });
-//			if (queryMasterCount < 1 &&
-//					!(dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
-//							|| dataSourceLookup.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS))) {
-//				throw new I2B2DAOException("Query not found with masterid =["
-//						+ masterId + "]");
-//			}
 			int queryInstanceCount = jdbcTemplate.update(queryInstanceSql,
 					new Object[] { DELETE_YES_FLAG, Integer.parseInt(masterId), DELETE_NO_FLAG });
 			log.debug("Total no. of query instance deleted" + queryInstanceCount);

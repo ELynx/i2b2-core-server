@@ -22,6 +22,7 @@ import java.util.List;
 
 import javax.sql.DataSource;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.dao.DataAccessException;
@@ -76,7 +77,7 @@ public class GetCodeInfoDao extends JdbcDaoSupport {
 
 		// table code to table name conversion
 		// Get metadata schema name from properties file.
-		String metadataSchema = "";
+		String metadataSchema;
 		try {
 			metadataSchema = OntologyUtil.getInstance().getMetaDataSchemaName();
 		} catch (I2B2Exception e1) {
@@ -117,12 +118,11 @@ public class GetCodeInfoDao extends JdbcDaoSupport {
 			}
 		}
 
-		String hidden = "";
-		//TODO: only for the IRIS
+		String hidden = StringUtils.EMPTY;
 		if(!vocabType.isHiddens())
 			hidden = " and (not c_visualattributes %STARTSWITH '_H')";
 
-		String synonym = "";
+		String synonym = StringUtils.EMPTY;
 		if(!vocabType.isSynonyms())
 			synonym = " and c_synonym_cd = 'N'";
 

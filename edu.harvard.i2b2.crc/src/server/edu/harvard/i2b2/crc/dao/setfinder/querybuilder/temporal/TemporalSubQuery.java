@@ -176,9 +176,6 @@ public class TemporalSubQuery implements Comparable{
 				level = 1;
 			subQuerySqlBuffer.append(buildMoveToMasterSql(level)); 
 			subQuerySqlBuffer.append(getSqlDelimiter());
-	
-			if (parent.getServerType().equals(DAOFactoryHelper.ORACLE))
-				parent.addPostProcessingSql(getDeleteTempMasterSql(this.getSubQueryId(), 0));
 						
 			subQuerySqlBuffer.append(getDeleteTempTableSql());
 			subQuerySqlBuffer.append(getSqlDelimiter());			
@@ -303,70 +300,32 @@ public class TemporalSubQuery implements Comparable{
 	
 	protected String buildMasterTableTimingConstraintUpdate(int level){
 		String timingConstraintSql = buildTimingConstraintSql(level);
-		
 		StringBuilder updateSql = new StringBuilder();
-		if (parent.getServerType().equals(DAOFactoryHelper.SQLSERVER)){
-			if (useSqlServerTempTables()){
-				updateSql.append("update #m" + getSubQueryId() + " ");
-				updateSql.append("set level_no = " + String.valueOf(level) + " ");
-				updateSql.append("from #m" + getSubQueryId() + " t ");				
-				updateSql.append(timingConstraintSql + " ");
-				updateSql.append("and t.level_no = " + String.valueOf(level - 1) + " ");
-			}
-			else {
-				updateSql.append("update " + parent.getMasterTempTableName() + " ");
-				updateSql.append("set level_no = " + String.valueOf(level) + " ");
-				updateSql.append("from " + parent.getMasterTempTableName() + " t ");
-				updateSql.append(timingConstraintSql + " ");
-				updateSql.append("and t.level_no = " + String.valueOf(level - 1) + " ");
-				updateSql.append("and t.master_id = '" + this.getSubQueryId() + "'");
-			}
-		}
-		else {
-			updateSql.append("update " + parent.getMasterTempTableName() + " t ");
-			updateSql.append("set level_no = " + String.valueOf(level) + " ");
-			updateSql.append(timingConstraintSql + " ");
-			updateSql.append("and t.level_no = " + String.valueOf(level - 1) + " ");
-			updateSql.append("and t.master_id = '" + this.getSubQueryId() + "'");
-		}
-		
-
+		updateSql.append("update " + parent.getMasterTempTableName() + " t ");
+		updateSql.append("set level_no = " + String.valueOf(level) + " ");
+		updateSql.append(timingConstraintSql + " ");
+		updateSql.append("and t.level_no = " + String.valueOf(level - 1) + " ");
+		updateSql.append("and t.master_id = '" + this.getSubQueryId() + "'");
 		return updateSql.toString();
 	}
-	
-	protected String buildTimingConstraintUpdate(int panelCount){
+
+	protected String buildTimingConstraintUpdate(int panelCount) {
 		String timingConstraintSql = buildTimingConstraintSql(panelCount);
-		
 		StringBuilder updateSql = new StringBuilder();
-		if (parent.getServerType().equals(DAOFactoryHelper.SQLSERVER)){
-			updateSql.append("update " + parent.getTempTableName() + " ");
-			updateSql.append("set panel_count = " + String.valueOf(panelCount) + " ");
-			updateSql.append("from " + parent.getTempTableName() + " t ");
-		}
-		else {
-			updateSql.append("update " + parent.getTempTableName() + " t ");
-			updateSql.append("set panel_count = " + String.valueOf(panelCount) + " ");
-		}
-		
+		updateSql.append("update " + parent.getTempTableName() + " t ");
+		updateSql.append("set panel_count = " + String.valueOf(panelCount) + " ");
 		updateSql.append(timingConstraintSql + " ");
 		updateSql.append("and t.panel_count = " + String.valueOf(panelCount - 1));
-
 		return updateSql.toString();
 	}
 	
 	private String addTimingConstraintSql(String panelSql){
 		String timingConstraint = buildTimingConstraintSql();
 		int lastIndex = panelSql.lastIndexOf(this.getSqlDelimiter());
-		if (lastIndex==-1){
+		if (lastIndex == -1)
 			panelSql += timingConstraint;
-		}
-		else if (parent.getQueryOptions().getQueryConstraintLogic()==QueryConstraintStrategy.TEMP_TABLES &&
-				parent.getServerType().equals(DAOFactoryHelper.SQLSERVER)){
-			panelSql = addToRegExExpression(panelSql, "insert into " + parent.getTempTableName() + "(.*?)(?:(" + getSqlDelimiter().replace("*", "\\*") + "|$))", timingConstraint);		
-		}
-		else { 
+		else
 			panelSql = panelSql.replace(getSqlDelimiter(), timingConstraint + getSqlDelimiter()) + timingConstraint;
-		}
 		return panelSql;
 	}
 
@@ -396,37 +355,24 @@ public class TemporalSubQuery implements Comparable{
 		
 		boolean firstConstraint = true;
 		
-		boolean encounterConstraint = false;
-		if (parent.getQueryTiming()!=null&&
-				(parent.getQueryTiming().equalsIgnoreCase(QueryTimingHandler.SAME)||
-				parent.getQueryTiming().equalsIgnoreCase(QueryTimingHandler.SAMEVISIT)))
-			encounterConstraint = true;
-		
+		boolean encounterConstraint = parent.getQueryTiming() != null &&
+				(parent.getQueryTiming().equalsIgnoreCase(QueryTimingHandler.SAME) ||
+						parent.getQueryTiming().equalsIgnoreCase(QueryTimingHandler.SAMEVISIT));
+
 		String lastSubQueryId = parent.getLastProcessedSubQueryId();
-		if (lastSubQueryId!=null&&lastSubQueryId.trim().length()>0){
-			if (useSqlServerTempTables()){
-				timingSqlBuf.append(" where exists (select 1 from " + 
-						"#m" + lastSubQueryId + " m " +
-						"where m.patient_num = t.patient_num " +
-						(encounterConstraint?"and m.encounter_num = t.encounter_num ":"") +
-						"and m.level_no = 1 " +
-						//"group by m.patient_num" + 
-						") \n");				
-			}
-			else {
-				timingSqlBuf.append(" where exists (select 1 from " + parent.getMasterTempTableName() + " m " +
-							"where m.master_id = '" + lastSubQueryId + "' " +
-							"and m.patient_num = t.patient_num " +
-							(encounterConstraint?"and m.encounter_num = t.encounter_num ":"") +
-							"and m.level_no = 1 " +
-							//"group by m.patient_num " +
-							") \n");
-			}
+		if (lastSubQueryId != null && lastSubQueryId.trim().length() > 0) {
+			timingSqlBuf.append(" where exists (select 1 from " + parent.getMasterTempTableName() + " m " +
+					"where m.master_id = '" + lastSubQueryId + "' " +
+					"and m.patient_num = t.patient_num " +
+					(encounterConstraint ? "and m.encounter_num = t.encounter_num " : "") +
+					"and m.level_no = 1 " +
+					//"group by m.patient_num " +
+					") \n");
 			firstConstraint = false;
 		}
 		
-		if (constraints!=null){
-			for (List<QueryConstraintType> constraintLists: constraints.values()){
+		if (constraints != null){
+			for (List<QueryConstraintType> constraintLists: constraints.values()) {
 				for (QueryConstraintType constraint: constraintLists){
 				
 					QueryJoinType masterTableQuery = constraint.getFirstQuery();
@@ -451,9 +397,7 @@ public class TemporalSubQuery implements Comparable{
 					}
 			
 					String dateConstraintSql = buildDateSqlForMaster(masterTableQuery, encounterConstraint);
-					
-					if (dateConstraintSql!=null&&dateConstraintSql.trim().length()>0){
-					
+					if (dateConstraintSql !=null && dateConstraintSql.trim().length() > 0){
 						if (firstConstraint){
 							timingSqlBuf.append(" where ");
 							firstConstraint = false;
@@ -461,25 +405,18 @@ public class TemporalSubQuery implements Comparable{
 						else
 							timingSqlBuf.append(" and ");
 						
-						
 						timingSqlBuf.append(" exists (" + 
 								"select 1 " +
-								"from (" + dateConstraintSql + ") m "); 
-				
+								"from (" + dateConstraintSql + ") m ");
 						
 						String newPrefix = "t";
 						String columnName = getColumnNameFromType(tempTableQuery.getJoinColumn());
 						if (tempTableQuery.getAggregateOperator().equals(QueryAggregateOperatorType.FIRST)){
-							timingSqlBuf.append(", (select m.patient_num " + 
-									(encounterConstraint?", m.encounter_num ":"") +
+							timingSqlBuf.append(", (select m.patient_num " +
+									(encounterConstraint ? ", m.encounter_num " : "") +
 									", min(m." + columnName + ") " + columnName + " ");
-							if (useSqlServerTempTables()){
-								timingSqlBuf.append("from #m" + this.buildSubQueryId(tempTableQuery.getQueryId()) + " m ");
-							}
-							else {
-								timingSqlBuf.append("from " + parent.getMasterTempTableName() + " m " +
+							timingSqlBuf.append("from " + parent.getMasterTempTableName() + " m " +
 									"where m.master_id = '" + this.buildSubQueryId(tempTableQuery.getQueryId()) + "' ");
-							}
 							timingSqlBuf.append("group by m.patient_num" +
 									(encounterConstraint?", m.encounter_num ":"") +
 									") t2 " +
@@ -489,16 +426,10 @@ public class TemporalSubQuery implements Comparable{
 									(encounterConstraint?"and t.encounter_num = t2.encounter_num ":"") +
 									"and ");	
 							newPrefix = "t2";
-						}
-						else if (tempTableQuery.getAggregateOperator().equals(QueryAggregateOperatorType.LAST)){
+						} else if (tempTableQuery.getAggregateOperator().equals(QueryAggregateOperatorType.LAST)) {
 							timingSqlBuf.append(", (select m.patient_num, max(m." + columnName + ") " + columnName + " ");
-							if (useSqlServerTempTables()){
-								timingSqlBuf.append("from #m" + this.buildSubQueryId(tempTableQuery.getQueryId()) + " m ");
-							}
-							else {
-								timingSqlBuf.append("from " + parent.getMasterTempTableName() + " m " +
+							timingSqlBuf.append("from " + parent.getMasterTempTableName() + " m " +
 									"where m.master_id = '" + this.buildSubQueryId(tempTableQuery.getQueryId()) + "' ");
-							}
 							timingSqlBuf.append("group by m.patient_num) t2 " +
 									"where m.patient_num = t2.patient_num " + 
 									(encounterConstraint?"and m.encounter_num = t2.encounter_num ":"") +
@@ -506,10 +437,8 @@ public class TemporalSubQuery implements Comparable{
 									(encounterConstraint?"and t.encounter_num = t2.encounter_num ":"") +
 									"and ");	
 							newPrefix = "t2";
-						}
-						else {
+						} else
 							timingSqlBuf.append("where ");
-						}
 						
 						if (firstPrefix.equals("t"))
 							firstPrefix = newPrefix;
@@ -535,14 +464,11 @@ public class TemporalSubQuery implements Comparable{
 						timingSqlBuf.append(secondPrefix + "." + secondColumn + " ");
 										
 						if (constraint.getSpan()!=null&&constraint.getSpan().size()>0){
-							for (QuerySpanConstraintType spanConstraint : constraint.getSpan())
-							{
+							for (QuerySpanConstraintType spanConstraint : constraint.getSpan()) {
 								String spanFirstPrefix = firstPrefix;
 								String spanFirstColumn = firstColumn;
 								String spanSecondPrefix = secondPrefix;
 								String spanSecondColumn = secondColumn;
-									
-								
 								String spanOperator = "=";
 								QueryOperatorType spanOpType = spanConstraint.getOperator();
 								if (spanConstraint.getOperator()!=null){
@@ -562,9 +488,8 @@ public class TemporalSubQuery implements Comparable{
 								String sqlUnits = "";
 								int span = spanConstraint.getSpanValue();
 								
-								if (units!=null){
-									
-									if (dateOperator.equals(QueryOperatorType.GREATER)||dateOperator.equals(QueryOperatorType.GREATEREQUAL)){
+								if (units != null) {
+									if (dateOperator.equals(QueryOperatorType.GREATER) || dateOperator.equals(QueryOperatorType.GREATEREQUAL)) {
 										String spanPrefix = spanFirstPrefix;
 										String spanColumn = spanFirstColumn;
 										spanFirstPrefix = spanSecondPrefix;
@@ -572,71 +497,25 @@ public class TemporalSubQuery implements Comparable{
 										spanSecondPrefix = spanPrefix;
 										spanSecondColumn = spanColumn;
 									}
-									
-									if (TemporalQuerySpanUnits.valueOf(units)==TemporalQuerySpanUnits.YEAR){
-										if (parent.getServerType().equals(DAOFactoryHelper.ORACLE))
-											sqlUnits = "ADD_MONTHS(" + spanFirstPrefix + "." + spanFirstColumn + ", (12 * " + span  + "))";
-										else if (parent.getServerType().equals(DAOFactoryHelper.SQLSERVER))
-											sqlUnits = "DATEADD(YEAR, (" + span + "), " + spanFirstPrefix + "." + spanFirstColumn + ")";
-										else if (parent.getServerType().equals(DAOFactoryHelper.POSTGRESQL)
-													|| parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS))
-											sqlUnits = " " + spanFirstPrefix + "." + spanFirstColumn + " + cast('" + span + " years' as interval) ";
 
-									}
-									else if (TemporalQuerySpanUnits.valueOf(units)==TemporalQuerySpanUnits.MONTH){
-										if (parent.getServerType().equals(DAOFactoryHelper.ORACLE))
-											sqlUnits = "ADD_MONTHS(" + spanFirstPrefix + "." + spanFirstColumn + ", (" + span  + "))";
-										else if (parent.getServerType().equals(DAOFactoryHelper.SQLSERVER))
-											sqlUnits = "DATEADD(MONTH, (" + span + "), " + spanFirstPrefix + "." + spanFirstColumn + ")";
-										else if (parent.getServerType().equals(DAOFactoryHelper.POSTGRESQL)
-													|| parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS))
-											sqlUnits = " " + spanFirstPrefix + "." + spanFirstColumn + " + cast('" + span + " months' as interval) ";
-									}
-									else if (TemporalQuerySpanUnits.valueOf(units)==TemporalQuerySpanUnits.DAY){
-										if (parent.getServerType().equals(DAOFactoryHelper.ORACLE))
-											sqlUnits = "(" + spanFirstPrefix + "." + spanFirstColumn + " + (" + span  + "))";
-										else if (parent.getServerType().equals(DAOFactoryHelper.SQLSERVER))
-											sqlUnits = "DATEADD(DAY, (" + span  + "), " + spanFirstPrefix + "." + spanFirstColumn + ")";
-										else if (parent.getServerType().equals(DAOFactoryHelper.POSTGRESQL)
-													|| parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS))
-											sqlUnits = " " + spanFirstPrefix + "." + spanFirstColumn + " + cast('" + span + " days' as interval) ";
-									}
-									else if (TemporalQuerySpanUnits.valueOf(units)==TemporalQuerySpanUnits.HOUR){
-										if (parent.getServerType().equals(DAOFactoryHelper.ORACLE))
-											sqlUnits = "(" + spanFirstPrefix + "." + spanFirstColumn + " + (1/24 * " + span  + "))";
-										else if (parent.getServerType().equals(DAOFactoryHelper.SQLSERVER))
-											sqlUnits = "DATEADD(HOUR, (" + span  + "), " + spanFirstPrefix + "." + spanFirstColumn + ")";	
-										else if (parent.getServerType().equals(DAOFactoryHelper.POSTGRESQL)
-													|| parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS))
-											sqlUnits = " " + spanFirstPrefix + "." + spanFirstColumn + " + cast('" + span + " hours' as interval) ";
-									}
-									else if (TemporalQuerySpanUnits.valueOf(units)==TemporalQuerySpanUnits.MINUTE){
-										if (parent.getServerType().equals(DAOFactoryHelper.ORACLE))
-											sqlUnits = "(" + spanFirstPrefix + "." + spanFirstColumn + " + (1/1440 * " + span  + "))";
-										else if (parent.getServerType().equals(DAOFactoryHelper.SQLSERVER))
-											sqlUnits = "DATEADD(MINUTE, (" + span  + "), " + spanFirstPrefix + "." + spanFirstColumn + ")";	
-										else if (parent.getServerType().equals(DAOFactoryHelper.POSTGRESQL)
-													|| parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS))
-											sqlUnits = " " + spanFirstPrefix + "." + spanFirstColumn + " + cast('" + span + " minutes' as interval) ";
-									}
-									else if (TemporalQuerySpanUnits.valueOf(units)==TemporalQuerySpanUnits.SECOND){
-										if (parent.getServerType().equals(DAOFactoryHelper.ORACLE))
-											sqlUnits = "(" + spanFirstPrefix + "." + spanFirstColumn + " + (1/86400 * " + span  + "))";
-										else if (parent.getServerType().equals(DAOFactoryHelper.SQLSERVER))
-											sqlUnits = "DATEADD(SECOND, (" + span  + "), " + spanFirstPrefix + "." + spanFirstColumn + ")";	
-										else if (parent.getServerType().equals(DAOFactoryHelper.POSTGRESQL)
-													|| parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS))
-											sqlUnits = " " + spanFirstPrefix + "." + spanFirstColumn + " + cast('" + span + " seconds' as interval) ";
-									}
+									if (TemporalQuerySpanUnits.valueOf(units) == TemporalQuerySpanUnits.YEAR)
+										sqlUnits = "DATEADD(YEAR, " + span + ", " + spanFirstPrefix + "." + spanFirstColumn + ")";
+									else if (TemporalQuerySpanUnits.valueOf(units) == TemporalQuerySpanUnits.MONTH)
+										sqlUnits = "DATEADD(MONTH, " + span + ", " + spanFirstPrefix + "." + spanFirstColumn + ")";
+									else if (TemporalQuerySpanUnits.valueOf(units) == TemporalQuerySpanUnits.DAY)
+										sqlUnits = "DATEADD(DAY, " + span + ", " + spanFirstPrefix + "." + spanFirstColumn + ")";
+									else if (TemporalQuerySpanUnits.valueOf(units) == TemporalQuerySpanUnits.HOUR)
+										sqlUnits = "DATEADD(HOUR, " + span + ", " + spanFirstPrefix + "." + spanFirstColumn + ")";
+									else if (TemporalQuerySpanUnits.valueOf(units) == TemporalQuerySpanUnits.MINUTE)
+										sqlUnits = "DATEADD(MINUTE, " + span + ", " + spanFirstPrefix + "." + spanFirstColumn + ")";
+									else if (TemporalQuerySpanUnits.valueOf(units) == TemporalQuerySpanUnits.SECOND)
+										sqlUnits = "DATEADD(SECOND, " + span + ", " + spanFirstPrefix + "." + spanFirstColumn + ")";
 								}
-								
 								if (sqlUnits.trim().length()>0)
 									timingSqlBuf.append("and " + spanSecondPrefix + "." + spanSecondColumn + " " + spanOperator + " " + sqlUnits);
 							}
-							
 						}
 					}
-					
 					timingSqlBuf.append(")");
 				}
 			}
@@ -646,11 +525,6 @@ public class TemporalSubQuery implements Comparable{
 	
 	private String getTempQueryConstraint(QueryJoinType tempJoin, int panelCount){				
 		boolean useTempTables = false;
-		if (parent.getServerType().equalsIgnoreCase(
-				DAOFactoryHelper.SQLSERVER)&&
-				parent.getQueryOptions().getQueryConstraintLogic()==QueryConstraintStrategy.TEMP_TABLES){
-			useTempTables = true;
-		}
 		
 		StringBuilder tempClause = new StringBuilder();
 		if (tempJoin!=null){
@@ -731,40 +605,29 @@ public class TemporalSubQuery implements Comparable{
 	
 	private String buildDateSqlForMaster(QueryJoinType masterJoin, boolean includeEncounter){
 		String columnName = getColumnNameFromType(masterJoin.getJoinColumn());
-
 		String encounterColumn = (includeEncounter?", m.encounter_num ":"");
-		
 		String selectStatement = "select m.patient_num " + encounterColumn + ", m." + columnName + " ";
 		String fromStatement = "from " + parent.getMasterTempTableName() + " m ";
 		String whereStatement = "where m.master_id = '" + this.buildSubQueryId(masterJoin.getQueryId()) + "' ";
 		String groupByStatement = "group by m.patient_num " + encounterColumn + " ";
-		
-		if (useSqlServerTempTables()){
-			fromStatement = "from #m" + this.buildSubQueryId(masterJoin.getQueryId()) + " m ";
-			whereStatement = "";
-		}
-		
+
 		if (!masterJoin.getJoinColumn().equals(QueryJoinColumnType.INSTANCE)){
-			if (masterJoin.getAggregateOperator().equals(QueryAggregateOperatorType.FIRST)){
+			if (masterJoin.getAggregateOperator().equals(QueryAggregateOperatorType.FIRST))
 				selectStatement = "select m.patient_num " + encounterColumn + ", min(m." + columnName + ") " + columnName + " ";
-			}
-			else if (masterJoin.getAggregateOperator().equals(QueryAggregateOperatorType.LAST)){
+			else if (masterJoin.getAggregateOperator().equals(QueryAggregateOperatorType.LAST))
 				selectStatement = "select m.patient_num " + encounterColumn + ", max(m." + columnName + ") " + columnName + " ";
-			}
 			else {
 				selectStatement = "select m.patient_num " + encounterColumn + ", m." + columnName + " ";
-				if (whereStatement.trim().length()>0)
+				if (whereStatement.trim().length() > 0)
 					whereStatement += "and m.level_no = 1 ";
 				else
 					whereStatement = "where m.level_no = 1 ";
 				groupByStatement = "";
 			}
-		}
-		else {
+		} else {
 			selectStatement = "select " + columnName + ", temporal_start_date, temporal_end_date ";
 			groupByStatement = "";
-		}		
-		
+		}
 		return selectStatement + " " + 
 			fromStatement + " " +
 			whereStatement + " " +
@@ -819,40 +682,29 @@ public class TemporalSubQuery implements Comparable{
 		String tempTableName = parent.getTempTableName();
 		String masterTableName = parent.getMasterTempTableName();
 		StringBuilder masterSql = new StringBuilder();
-		
 		StringBuilder insertClause = new StringBuilder();
-		if (!useSqlServerTempTables()){
-			insertClause.append(" insert into " + masterTableName);
-			insertClause.append("(master_id, patient_num, level_no");
-			if (rtnColumns.contains(TemporalQueryReturnColumns.ENCOUNTER)){
-				insertClause.append(", encounter_num");			
-			}
-			if (rtnColumns.contains(TemporalQueryReturnColumns.INSTANCE)){
-				if (!rtnColumns.contains(TemporalQueryReturnColumns.ENCOUNTER)){
-					insertClause.append(", encounter_num");			
-				}
-				insertClause.append(", provider_id, start_date, concept_cd, instance_num");			
-			}		
-			if (returnInstanceStartDate()||returnEncounterStartDate()){
-				insertClause.append(", temporal_start_date");
-			}
-			if (returnInstanceEndDate()||returnEncounterEndDate()){
-				insertClause.append(", temporal_end_date");
-			}
-			insertClause.append(") ");
+		insertClause.append(" insert into " + masterTableName);
+		insertClause.append("(master_id, patient_num, level_no");
+		if (rtnColumns.contains(TemporalQueryReturnColumns.ENCOUNTER))
+			insertClause.append(", encounter_num");
+		if (rtnColumns.contains(TemporalQueryReturnColumns.INSTANCE)) {
+			if (!rtnColumns.contains(TemporalQueryReturnColumns.ENCOUNTER))
+				insertClause.append(", encounter_num");
+			insertClause.append(", provider_id, start_date, concept_cd, instance_num");
 		}
-		else {
-			masterSql.append(parent.buildTempTableCheckDrop("#m" + getSubQueryId()));
-			masterSql.append(parent.getSqlDelimiter());
-		}
-		
-		
+		if (returnInstanceStartDate() || returnEncounterStartDate())
+			insertClause.append(", temporal_start_date");
+		if (returnInstanceEndDate() || returnEncounterEndDate())
+			insertClause.append(", temporal_end_date");
+
+		insertClause.append(") ");
+
 		String schema = getDatabaseSchema();
-		if (schema==null)
+		if (schema == null)
 			schema = "";
 		else if (!schema.endsWith("."))
 			schema += ".";
-		
+
 		String primaryTableAlias = "t.";
 		StringBuilder fromClause = new StringBuilder("from " + tempTableName + " t ");
 		StringBuilder whereClause = new StringBuilder(" where t.panel_count = " + this.getEndPanelIndex() + " ");	
@@ -866,22 +718,19 @@ public class TemporalSubQuery implements Comparable{
 			if (this.getQueryTiming().equalsIgnoreCase(QueryTimingHandler.SAME)||
 				this.getQueryTiming().equalsIgnoreCase(QueryTimingHandler.SAMEVISIT)){
 				whereClause.append("and f.encounter_num = t.encounter_num ");
-			}
-			else if (this.getQueryTiming().equalsIgnoreCase(QueryTimingHandler.SAMEINSTANCENUM)){
+			} else if (this.getQueryTiming().equalsIgnoreCase(QueryTimingHandler.SAMEINSTANCENUM)){
 				whereClause.append("and f.encounter_num = t.encounter_num ");
 				whereClause.append("and f.provider_id = t.provider_id ");
 				whereClause.append("and f.start_date = t.start_date ");
 				whereClause.append("and f.instance_num = t.instance_num ");
 				whereClause.append("and f.concept_cd = t.concept_cd ");
 			}
-			
 			if (returnEncounterEndDate()||returnEncounterStartDate()){
 				fromClause.append(", " + schema + "visit_dimension v ");
 				whereClause.append("and f.patient_num = v.patient_num ");
 				whereClause.append("and f.encounter_num = v.encounter_num ");
 			}
-		}
-		else if ((rtnColumns.contains(TemporalQueryReturnColumns.ENCOUNTER)&&
+		} else if ((rtnColumns.contains(TemporalQueryReturnColumns.ENCOUNTER)&&
 				!this.getQueryTiming().equalsIgnoreCase(QueryTimingHandler.SAME)&&
 				!this.getQueryTiming().equalsIgnoreCase(QueryTimingHandler.SAMEVISIT)&&
 				!this.getQueryTiming().equalsIgnoreCase(QueryTimingHandler.SAMEINSTANCENUM))||
@@ -897,14 +746,9 @@ public class TemporalSubQuery implements Comparable{
 
 		boolean aggregate = false;
 		StringBuilder selectClause = new StringBuilder();
-		if (useSqlServerTempTables()){
-			selectClause.append("select t.patient_num, " + String.valueOf(level) + " level_no ");
-		}
-		else {
-			selectClause.append("select '" + getSubQueryId() + "', t.patient_num, " + String.valueOf(level) + " ");
-		}
+		selectClause.append("select '" + getSubQueryId() + "', t.patient_num, " + String.valueOf(level) + " ");
 		StringBuilder groupByClause = new StringBuilder("group by t.patient_num ");
-		if (rtnColumns.contains(TemporalQueryReturnColumns.INSTANCE)){
+		if (rtnColumns.contains(TemporalQueryReturnColumns.INSTANCE)) {
 			selectClause.append(", " + primaryTableAlias + "encounter_num, " + 
 						primaryTableAlias + "provider_id, " + 
 						primaryTableAlias + "start_date, " + 
@@ -922,74 +766,53 @@ public class TemporalSubQuery implements Comparable{
 		}
 		
 		TemporalQueryReturnColumns startDateRtn = getStartDateReturnType();
-		if (startDateRtn!=null){
-			if (startDateRtn==TemporalQueryReturnColumns.FIRST_START_DATE){
+		if (startDateRtn != null){
+			if (startDateRtn == TemporalQueryReturnColumns.FIRST_START_DATE) {
 				selectClause.append(", min(" + primaryTableAlias + "start_date) temporal_start_date ");
 				aggregate = true;
-			}
-			else if (startDateRtn==TemporalQueryReturnColumns.LAST_START_DATE){
+			} else if (startDateRtn == TemporalQueryReturnColumns.LAST_START_DATE) {
 				selectClause.append(", max(" + primaryTableAlias + "start_date) temporal_start_date ");
 				aggregate = true;
-			}
-			else if (startDateRtn==TemporalQueryReturnColumns.START_DATE){
+			} else if (startDateRtn == TemporalQueryReturnColumns.START_DATE) {
 				selectClause.append(", " + primaryTableAlias + "start_date temporal_start_date ");			
 				groupByClause.append(", " + primaryTableAlias + "start_date");
-			}
-			else if (startDateRtn==TemporalQueryReturnColumns.FIRST_ENCOUNTER_START_DATE){
+			} else if (startDateRtn == TemporalQueryReturnColumns.FIRST_ENCOUNTER_START_DATE) {
 				selectClause.append(", min(" + primaryTableAlias + "start_date) temporal_start_date ");
 				aggregate = true;
-			}
-			else if (startDateRtn==TemporalQueryReturnColumns.LAST_ENCOUNTER_START_DATE){
+			} else if (startDateRtn == TemporalQueryReturnColumns.LAST_ENCOUNTER_START_DATE) {
 				selectClause.append(", max(" + primaryTableAlias + "start_date) temporal_start_date ");
 				aggregate = true;
-			}
-			else if (startDateRtn==TemporalQueryReturnColumns.ENCOUNTER_START_DATE){
+			} else if (startDateRtn == TemporalQueryReturnColumns.ENCOUNTER_START_DATE) {
 				selectClause.append(", " + primaryTableAlias + "start_date temporal_start_date ");			
 				groupByClause.append(", " + primaryTableAlias + "start_date");
 			}
 		}
 		
 		TemporalQueryReturnColumns endDateRtn = getEndDateReturnType();
-		if (endDateRtn!=null){
-			if (endDateRtn==TemporalQueryReturnColumns.FIRST_END_DATE){
+		if (endDateRtn != null) {
+			if (endDateRtn == TemporalQueryReturnColumns.FIRST_END_DATE) {
 				selectClause.append(", min(" + primaryTableAlias + "end_date) temporal_end_date ");
 				aggregate = true;
-			}
-			else if (endDateRtn==TemporalQueryReturnColumns.LAST_END_DATE){
+			} else if (endDateRtn == TemporalQueryReturnColumns.LAST_END_DATE) {
 				selectClause.append(", max(" + primaryTableAlias + "end_date) temporal_end_date ");
 				aggregate = true;
-			}
-			else if (endDateRtn==TemporalQueryReturnColumns.END_DATE){
+			} else if (endDateRtn == TemporalQueryReturnColumns.END_DATE) {
 				selectClause.append(", " + primaryTableAlias + "end_date temporal_end_date ");					
 				groupByClause.append(", " + primaryTableAlias + "end_date");
-			}
-			else if (endDateRtn==TemporalQueryReturnColumns.FIRST_ENCOUNTER_END_DATE){
+			} else if (endDateRtn == TemporalQueryReturnColumns.FIRST_ENCOUNTER_END_DATE) {
 				selectClause.append(", min(" + primaryTableAlias + "end_date) temporal_end_date ");
 				aggregate = true;
-			}
-			else if (endDateRtn==TemporalQueryReturnColumns.LAST_ENCOUNTER_END_DATE){
+			} else if (endDateRtn == TemporalQueryReturnColumns.LAST_ENCOUNTER_END_DATE) {
 				selectClause.append(", max(" + primaryTableAlias + "end_date) temporal_end_date ");
 				aggregate = true;
-			}
-			else if (endDateRtn==TemporalQueryReturnColumns.ENCOUNTER_END_DATE){
+			} else if (endDateRtn == TemporalQueryReturnColumns.ENCOUNTER_END_DATE) {
 				selectClause.append(", " + primaryTableAlias + "end_date temporal_end_date ");					
 				groupByClause.append(", " + primaryTableAlias + "end_date");
 			}
 		}
 
 		String intoClause = "";
-		if (useSqlServerTempTables()){
-			intoClause = " into #m" + getSubQueryId() + " ";
-		}
-		
 		String indexClause = "";
-		if (useSqlServerTempTables()){
-			indexClause = "CREATE NONCLUSTERED INDEX m" + getSubQueryId() + "_idx on #m" + getSubQueryId() + " (patient_num, " + 
-					(startDateRtn!=null ? "temporal_start_date, " : "") + 
-					(endDateRtn!=null ? "temporal_end_date, " : "") + 
-					"level_no)";
-		}
-		
 		masterSql.append(insertClause.toString());
 		masterSql.append(selectClause.toString());
 		masterSql.append(intoClause);
@@ -998,54 +821,23 @@ public class TemporalSubQuery implements Comparable{
 		if (aggregate)
 			masterSql.append(groupByClause.toString());
 		
-		if (indexClause.trim().length()>0){
+		if (indexClause.trim().length() > 0){
 			masterSql.append(getSqlDelimiter());
 			masterSql.append(indexClause);
 		}
-		
 		return masterSql.toString();
 	}
 	
-	private boolean useSqlServerTempTables(){
-		return parent.useSqlServerTempTables();
-	}
-	
-	protected String getDeleteTempTableSql()  { 
-		String tempTableName = parent.getTempTableName();
-		
-		if (parent.getServerType().equals(DAOFactoryHelper.SQLSERVER))
-			return "truncate table "+ tempTableName;
-		else
-			return "delete  "+
-					(parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
-						|| parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS) ? " from " : "") + tempTableName;
+	protected String getDeleteTempTableSql() {
+		return "delete from " + parent.getTempTableName();
 	}
 	
 	protected String getDeleteDxTempTableSql()  { 
-		String tempTableName = parent.getDxTempTableName();
-		
-		if (parent.getServerType().equals(DAOFactoryHelper.SQLSERVER))
-			return "truncate table "+ tempTableName;
-		else
-			return "delete  "+
-					(parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
-						|| parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS) ? " from " : "") + tempTableName;
+		return "delete from " + parent.getDxTempTableName();
 	}
 	
 	protected String getDeleteTempMasterSql(String masterId, int level) {
-		String masterTableName = parent.getMasterTempTableName();
-		
-		if (useSqlServerTempTables()){
-			return "if (object_id(#m" + masterId + ") is not null) drop table #m" + masterId + "\n" + 
-					" else delete " + masterTableName + " " +
-					"where master_id = '" + masterId + "' " + 
-					"and level_no >= " + String.valueOf(level);			
-		}
-		else
-			return "delete " +
-			(parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
-				|| parent.getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS) ? " from " : "") +
-			masterTableName + " " +
+		return "delete from " + parent.getMasterTempTableName() + " " +
 					"where master_id = '" + masterId + "' " + 
 					"and level_no >= " + String.valueOf(level);
 	}
@@ -1096,9 +888,9 @@ public class TemporalSubQuery implements Comparable{
 	
 	protected String getQueryTiming(){
 		String timing = subQuery.getQueryTiming();
-		if (timing==null||timing.trim().length()==0)
+		if (timing == null || timing.trim().length() == 0)
 			timing = parent.getQueryTiming();
-		if (timing==null||timing.trim().length()==0)
+		if (timing == null || timing.trim().length() == 0)
 			timing = QueryTimingHandler.ANY;
 		return timing;
 	}
@@ -1116,7 +908,7 @@ public class TemporalSubQuery implements Comparable{
 	}
 	
 	protected int getPanelIndex(TemporalPanel panel){
-		if (panel==null||panelList==null)
+		if (panel == null || panelList == null)
 			return -1;
 		else
 			return this.panelList.indexOf(panel);
@@ -1165,54 +957,36 @@ public class TemporalSubQuery implements Comparable{
 	}
 	
 	protected boolean returnEncounterNum(){
-		if (this.getQueryTiming().equalsIgnoreCase(QueryTimingHandler.SAMEVISIT)||
-				this.getQueryTiming().equalsIgnoreCase(QueryTimingHandler.SAME))
-			return true;
-		else
-			return false;
+		return this.getQueryTiming().equalsIgnoreCase(QueryTimingHandler.SAMEVISIT) ||
+				this.getQueryTiming().equalsIgnoreCase(QueryTimingHandler.SAME);
 	}
 		
 	protected boolean returnInstanceNum(){
-		if (this.getQueryTiming().equalsIgnoreCase(QueryTimingHandler.SAMEINSTANCENUM))
-			return true;
-		else
-			return false;
+		return this.getQueryTiming().equalsIgnoreCase(QueryTimingHandler.SAMEINSTANCENUM);
 	}
 		
 	protected boolean returnEncounterStartDate(){
-		if (rtnColumns.contains(TemporalQueryReturnColumns.ENCOUNTER_START_DATE) ||
-			rtnColumns.contains(TemporalQueryReturnColumns.FIRST_ENCOUNTER_START_DATE) ||
-			rtnColumns.contains(TemporalQueryReturnColumns.LAST_ENCOUNTER_START_DATE))
-			return true;
-		else
-			return false;
+		return rtnColumns.contains(TemporalQueryReturnColumns.ENCOUNTER_START_DATE) ||
+				rtnColumns.contains(TemporalQueryReturnColumns.FIRST_ENCOUNTER_START_DATE) ||
+				rtnColumns.contains(TemporalQueryReturnColumns.LAST_ENCOUNTER_START_DATE);
 	}
 		
 	protected boolean returnEncounterEndDate(){
-		if (rtnColumns.contains(TemporalQueryReturnColumns.ENCOUNTER_END_DATE) ||
+		return rtnColumns.contains(TemporalQueryReturnColumns.ENCOUNTER_END_DATE) ||
 				rtnColumns.contains(TemporalQueryReturnColumns.FIRST_ENCOUNTER_END_DATE) ||
-				rtnColumns.contains(TemporalQueryReturnColumns.LAST_ENCOUNTER_END_DATE))
-			return true;
-		else
-			return false;
+				rtnColumns.contains(TemporalQueryReturnColumns.LAST_ENCOUNTER_END_DATE);
 	}
 	
 	protected boolean returnInstanceStartDate(){
-		if (rtnColumns.contains(TemporalQueryReturnColumns.START_DATE) ||
-			rtnColumns.contains(TemporalQueryReturnColumns.FIRST_START_DATE) ||
-			rtnColumns.contains(TemporalQueryReturnColumns.LAST_START_DATE))
-			return true;
-		else
-			return false;
+		return rtnColumns.contains(TemporalQueryReturnColumns.START_DATE) ||
+				rtnColumns.contains(TemporalQueryReturnColumns.FIRST_START_DATE) ||
+				rtnColumns.contains(TemporalQueryReturnColumns.LAST_START_DATE);
 	}
 		
 	protected boolean returnInstanceEndDate(){
-		if (rtnColumns.contains(TemporalQueryReturnColumns.END_DATE) ||
+		return rtnColumns.contains(TemporalQueryReturnColumns.END_DATE) ||
 				rtnColumns.contains(TemporalQueryReturnColumns.FIRST_END_DATE) ||
-				rtnColumns.contains(TemporalQueryReturnColumns.LAST_END_DATE))
-			return true;
-		else
-			return false;
+				rtnColumns.contains(TemporalQueryReturnColumns.LAST_END_DATE);
 	}
 	
 	protected int getProcessingLevel(){
@@ -1224,9 +998,9 @@ public class TemporalSubQuery implements Comparable{
 	}
 	
 	protected int getEndPanelIndex() {
-		if (endPanelIndex==-1){
+		if (endPanelIndex == -1) {
 			int nonInvertedPanels = getPanelCount() - getInvertedPanelCount();
-			if (!this.isFirstSubQuery()&&(parent.getQueryOptions().getTemporalConstraintStrategy()==TemporalConstraintStrategy.TEMP_TABLE_UPDATE))
+			if (!this.isFirstSubQuery() && (parent.getQueryOptions().getTemporalConstraintStrategy() == TemporalConstraintStrategy.TEMP_TABLE_UPDATE))
 				nonInvertedPanels++;
 			endPanelIndex = this.startPanelIndex + (nonInvertedPanels>0?nonInvertedPanels-1:0);
 		}
@@ -1235,11 +1009,10 @@ public class TemporalSubQuery implements Comparable{
 
 	
 	private List<QueryConstraintType> getConstraintsForSubQuery(TemporalSubQuery subQuery){
-		if (subQuery!=null){
+		if (subQuery != null) {
 			String eventId = subQuery.getQueryId();
-			if (this.constraints!=null){
+			if (this.constraints != null)
 				return constraints.get(eventId);
-			}
 		}
 		return null;
 	}
@@ -1253,12 +1026,12 @@ public class TemporalSubQuery implements Comparable{
 	}
 
 	protected void addPreProcessingSql(String sql){
-		if (sql!=null&&sql.trim().length()>0)
+		if (sql!=null && sql.trim().length() > 0)
 			this.preProcessingSql.add(sql);
 	}
 
 	protected void addPostProcessingSql(String sql){
-		if (sql!=null&&sql.trim().length()>0)
+		if (sql!=null && sql.trim().length() > 0)
 			this.postProcessingSql.add(sql);
 	}
 	
@@ -1266,15 +1039,15 @@ public class TemporalSubQuery implements Comparable{
 		return parent.searchForSubQuery(subQueryId);
 	}
 
-	
+
 	public boolean occursTogether(TemporalSubQuery subQuery){
 		String eventId = subQuery.getQueryId();
 		List<QueryConstraintType> constraintList = getConstraintsForSubQuery(subQuery);
-		if (constraintList!=null){
+		if (constraintList != null) {
 			for(QueryConstraintType constraint : constraintList){
-				if (((constraint.getFirstQuery().getQueryId()!=null&constraint.getFirstQuery().getQueryId().equalsIgnoreCase(eventId))||
-						(constraint.getSecondQuery().getQueryId()!=null&constraint.getSecondQuery().getQueryId().equalsIgnoreCase(eventId)))&&
-					(constraint.getOperator().equals(QueryOperatorType.EQUAL)||constraint.getOperator().equals(QueryOperatorType.GREATEREQUAL)||constraint.getOperator().equals(QueryOperatorType.LESSEQUAL))){
+				if (((constraint.getFirstQuery().getQueryId() != null & constraint.getFirstQuery().getQueryId().equalsIgnoreCase(eventId)) ||
+						(constraint.getSecondQuery().getQueryId() != null &constraint.getSecondQuery().getQueryId().equalsIgnoreCase(eventId))) &&
+					(constraint.getOperator().equals(QueryOperatorType.EQUAL) || constraint.getOperator().equals(QueryOperatorType.GREATEREQUAL) || constraint.getOperator().equals(QueryOperatorType.LESSEQUAL))){
 					return true;
 				}													
 			}
@@ -1320,22 +1093,21 @@ public class TemporalSubQuery implements Comparable{
 	}
 
 	@Override
-	public int compareTo(Object element) {		
+	public int compareTo(Object element) {
 		if (element.getClass().equals((TemporalSubQuery.class))) {
 			TemporalSubQuery tp2 = (TemporalSubQuery) element;
 			boolean before = occursBefore(tp2);
 			boolean after = occursAfter(tp2);
-			if (before&&!after)
+			if (before && !after)
 				return -1;
-			else if (after&&!before)
+			else if (after && !before)
 				return 1;
 			else {
 				return this.panelList.get(0).compareTo(tp2.panelList.get(0));
 			}
 		} else {
-            return this.toString().compareTo(element.toString());
-        }
+			return this.toString().compareTo(element.toString());
+		}
 	}
-	
 
 }

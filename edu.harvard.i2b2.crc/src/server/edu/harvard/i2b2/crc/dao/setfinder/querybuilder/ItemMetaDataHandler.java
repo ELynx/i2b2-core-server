@@ -91,17 +91,6 @@ public class ItemMetaDataHandler {
 			String theData = conceptType.getDimcode();
 			if (conceptType.getColumndatatype() != null
 					&& conceptType.getColumndatatype().equalsIgnoreCase("T")) {
-				
-				
-				if(dbType.toUpperCase().equals("SQLSERVER")){
-					conceptType.setDimcode(StringUtil.escapeSQLSERVER(conceptType.getDimcode()));
-				}
-
-				else if(dbType.toUpperCase().equals("ORACLE")){
-					conceptType.setDimcode(StringUtil.escapeORACLE(conceptType.getDimcode()));
-				}
-
-				
 				theData = SqlClauseUtil.handleMetaDataTextValue(
 						conceptType.getOperator(), conceptType.getDimcode());
 			} else if (conceptType.getColumndatatype() != null
@@ -182,14 +171,6 @@ public class ItemMetaDataHandler {
 			String theData = modifierType.getDimcode();
 			if (modifierType.getColumndatatype() != null
 					&& modifierType.getColumndatatype().equalsIgnoreCase("T")) {
-				
-				if(dbType.toUpperCase().equals("SQLSERVER")){
-					modifierType.setDimcode(StringUtil.escapeSQLSERVER(modifierType.getDimcode()));
-				}
-
-				else if(dbType.toUpperCase().equals("ORACLE")){
-					modifierType.setDimcode(StringUtil.escapeORACLE(modifierType.getDimcode()));
-				}	
 				theData = SqlClauseUtil.handleMetaDataTextValue(
 						modifierType.getOperator(), modifierType.getDimcode());
 			} else if (modifierType.getColumndatatype() != null

@@ -96,32 +96,7 @@ public class PdoQueryPatientDao extends CRCDAO implements IPdoQueryPatientDao {
 			patientRelated.setMetaDataParamList(this.metaDataParamList);
 
 			String selectClause = patientRelated.getSelectClause();
-			ResultSet resultSet = null;
-			/*
-			if (dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.ORACLE)) {
-				//oracle.jdbc.driver.OracleConnection conn1 = null;// (oracle.jdbc.driver.OracleConnection) ((WrappedConnection) conn)
-						//.getUnderlyingConnection();
-				String finalSql = "SELECT "
-						+ selectClause
-						+ " FROM "
-						+ getDbSchemaName()
-						+ "patient_dimension patient WHERE patient.patient_num IN (SELECT * FROM TABLE (cast (? as QT_PDO_QRY_STRING_ARRAY))) order by 1";
-				log.debug("Executing [" + finalSql + "]");
-				query = conn.prepareStatement(finalSql);
-
-				ArrayDescriptor desc = ArrayDescriptor.createDescriptor(
-						"QT_PDO_QRY_STRING_ARRAY", conn);
-
-				oracle.sql.ARRAY paramArray = new oracle.sql.ARRAY(desc, conn,
-						patientNumList.toArray(new String[] {}));
-				query.setArray(1, paramArray);
-				resultSet = query.executeQuery();
-			} else if (dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.SQLSERVER) ||
-					dataSourceLookup.getServerType().equalsIgnoreCase(
-							DAOFactoryHelper.POSTGRESQL)) {
-			 */
+			ResultSet resultSet;
 			// create temp table
 			// load to temp table
 			// execute sql

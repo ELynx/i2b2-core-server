@@ -128,13 +128,7 @@ public class PidListTypeHandler extends CRCDAO implements
 		deleteTempTableFlag = true;
 		// create temp table
 		java.sql.Statement tempStmt = conn.createStatement();
-		if (dataSourceLookup.getServerType().equalsIgnoreCase(
-				DAOFactoryHelper.SQLSERVER)) {
-			String createTempInputListTable = "create table "
-					+ getTempTableName()
-					+ " (set_index int, char_param1 varchar(100), char_param2 varchar(100) )";
-			tempStmt.executeUpdate(createTempInputListTable);
-		}
+
 		int i = 0, j = 1;
 
 		List<Pid> pidList = pidListType.getPid();

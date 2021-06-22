@@ -343,8 +343,6 @@ public class OntProcessStatusDao extends JdbcDaoSupport {
 	}
 
 	private static class SaveOntProcessStatus extends SqlUpdate {
-
-		private String INSERT_SQLSERVER;
 		private DBInfoType dbInfo;
 
 		public SaveOntProcessStatus(DataSource dataSource, DBInfoType dbInfo) {
@@ -353,11 +351,10 @@ public class OntProcessStatusDao extends JdbcDaoSupport {
 			// sqlServerSequenceDao = new
 			// SQLServerSequenceDAO(dataSource,dataSourceLookup) ;
 			setDataSource(dataSource);
-			INSERT_SQLSERVER = "insert into "
+			setSql("insert into "
 					+ dbInfo.getDb_fullSchema()
 					+ "ONT_PROCESS_STATUS"
-					+ "(process_type_cd, process_step_cd, start_date,  process_status_cd, changedby_char, message,entry_date,status_cd) values (?,?,?,?,?,?,?,?)";
-			setSql(INSERT_SQLSERVER);
+					+ "(process_type_cd, process_step_cd, start_date,  process_status_cd, changedby_char, message,entry_date,status_cd) values (?,?,?,?,?,?,?,?)");
 
 			declareParameter(new SqlParameter(Types.VARCHAR));
 			declareParameter(new SqlParameter(Types.VARCHAR));

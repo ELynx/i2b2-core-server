@@ -372,34 +372,21 @@ public class TemporalQuery {
 		
 		return dxInsertSql.toString();
 	}
-	
-	public String buildDxInsertSqlFromMaster(boolean encounterNumFlag, boolean instanceNumFlag, String subQueryId, int levelNo) {
+
+	public String buildDxInsertSqlFromMaster(boolean encounterNumFlag, boolean instanceNumFlag,
+											 String subQueryId, int levelNo) {
 		StringBuilder dxInsertSql = new StringBuilder();
+		String selectEncounterNum = " ", selectPatientNum = " patient_num ";
+		if (encounterNumFlag)
+			selectEncounterNum = " , encounter_num ";
 
-		
-			String selectEncounterNum = " ", selectPatientNum = " patient_num ";
-			if (encounterNumFlag) {
-				selectEncounterNum = " , encounter_num ";
-			}
-
-			if (useSqlServerTempTables()){
-				dxInsertSql.append(" insert into " + this.getDxTempTableName() + " ( " + selectPatientNum
-						+ selectEncounterNum + " ) select * from ("
-						+ " select distinct " + selectPatientNum
-						+ selectEncounterNum + "from #m" + subQueryId
-						+ " where level_no = " + String.valueOf(levelNo));				
-			}
-			else {
-				dxInsertSql.append(" insert into " + this.getDxTempTableName() + " ( " + selectPatientNum
-						+ selectEncounterNum + " ) select * from ("
-						+ " select distinct " + selectPatientNum
-						+ selectEncounterNum + "from " + this.getMasterTempTableName()
-						+ " where level_no = " + String.valueOf(levelNo)
-						+ " and master_id = '" + subQueryId + "'");
-			}
-			
-			dxInsertSql.append(" ) q");
-		
+		dxInsertSql.append(" insert into " + this.getDxTempTableName() + " ( " + selectPatientNum
+				+ selectEncounterNum + " ) select * from ("
+				+ " select distinct " + selectPatientNum
+				+ selectEncounterNum + "from " + this.getMasterTempTableName()
+				+ " where level_no = " + String.valueOf(levelNo)
+				+ " and master_id = '" + subQueryId + "'");
+		dxInsertSql.append(" ) q");
 		return dxInsertSql.toString();
 	}
 	
@@ -554,15 +541,9 @@ public class TemporalQuery {
 	 * @return string containing the name of the default temporary table name in the database
 	 */
 	protected String getTempTableName(){
-		if (this.tempTableNameMap==null)
+		if (this.tempTableNameMap == null)
 			this.tempTableNameMap = new TempTableNameMap(this.getServerType());
-		String tableName = "";
-		if (getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE)){
-			tableName = getDatabaseSchema();
-		}
-		tableName += tempTableNameMap.getTempTableName();
-
-		return tableName;
+		return tempTableNameMap.getTempTableName();
 	}
 	
 	/**
@@ -574,15 +555,9 @@ public class TemporalQuery {
 	 * @return string containing the default name of the dx return table in database
 	 */
 	protected String getDxTempTableName(){
-		if (this.tempTableNameMap==null)
+		if (this.tempTableNameMap == null)
 			this.tempTableNameMap = new TempTableNameMap(this.getServerType());
-		String tableName = "";
-		if (getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE)){
-			tableName = getDatabaseSchema();
-		}
-		tableName += tempTableNameMap.getTempDxTableName();
-
-		return tableName;
+		return tempTableNameMap.getTempDxTableName();
 	}
 	
 	/**
@@ -594,15 +569,9 @@ public class TemporalQuery {
 	 * @return string containing the default name used for the "master" table in the database
 	 */
 	protected String getMasterTempTableName(){
-		if (this.tempTableNameMap==null)
+		if (this.tempTableNameMap == null)
 			this.tempTableNameMap = new TempTableNameMap(this.getServerType());
-		String tableName = "";
-		if (getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE)){
-			tableName = getDatabaseSchema();
-		}
-		tableName += tempTableNameMap.getTempMasterTable();
-
-		return tableName;
+		return tempTableNameMap.getTempMasterTable();
 	}
 	
 	/**
@@ -635,10 +604,7 @@ public class TemporalQuery {
 	 * @return true if query needs to return instance information is the final results, else false
 	 */
 	protected boolean returnInstanceNum(){
-		if (getTimingHandler().isSameInstanceNum(queryTiming))
-			return true;
-		else
-			return false;
+		return getTimingHandler().isSameInstanceNum(queryTiming);
 	}
 	
 	/**
@@ -671,7 +637,7 @@ public class TemporalQuery {
 	 * @return string containing the unique id of the query that is being run
 	 */
 	protected String getQueryId(){
-		if (queryId==null)
+		if (queryId == null)
 			queryId = generateUniqueId();
 		return queryId;
 	}
@@ -741,11 +707,6 @@ public class TemporalQuery {
 
 		return "if (object_id('tempdb.." + tempTableName + "') is not null) \n"
 				+ "begin \n" + "drop table " + tempTableName + " \n" + "end";
-	}
-	
-	protected boolean useSqlServerTempTables(){
-		return ((this.getQueryOptions().getQueryConstraintLogic()==QueryConstraintStrategy.TEMP_TABLES) &&
-				(this.getServerType().equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)));
 	}
 
 }

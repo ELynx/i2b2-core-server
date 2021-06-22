@@ -110,11 +110,6 @@ public class PdoQueryProviderDao extends CRCDAO implements IPdoQueryProviderDao 
 			log.error(StringUtils.EMPTY, ioex);
 			throw new I2B2DAOException("io exception", ioex);
 		} finally {
-			if (dataSourceLookup.getServerType().equalsIgnoreCase(
-					DAOFactoryHelper.SQLSERVER)) {
-				PdoTempTableUtil tempUtil = new PdoTempTableUtil(); 
-				tempUtil.deleteTempTableSqlServer(conn, tempTableName);
-			}
 			try {
 				JDBCUtil.closeJdbcResource(null, query, conn);
 			} catch (SQLException sqlEx) {
