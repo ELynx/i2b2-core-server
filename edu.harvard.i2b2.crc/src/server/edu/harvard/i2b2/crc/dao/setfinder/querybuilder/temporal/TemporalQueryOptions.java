@@ -73,14 +73,14 @@ public class TemporalQueryOptions {
 	}
 
 	/**
-	 * @return the temporalConstraintType
+	 * @return TemporalConstraintStrategy the temporalConstraintType
 	 */
 	public TemporalConstraintStrategy getTemporalConstraintStrategy() {
 		return temporalConstraintLogic;
 	}
 
 	/**
-	 * @param temporalConstraintType the temporalConstraintType to set
+	 * @param temporalConstraintStrategy the temporalConstraintType to set
 	 */
 	public void setTemporalConstraintStrategy(TemporalConstraintStrategy temporalConstraintStrategy) {
 		this.temporalConstraintLogic = temporalConstraintStrategy;

@@ -127,21 +127,9 @@ public class TemporalQuery {
 		this.userRoles = userRoles;
 		this.processingLevel = processingLevel;
 		options = new TemporalQueryOptions();
-		if (getServerType().equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)){
-			if (queryConstraintLogic.equalsIgnoreCase("TEMP")||queryConstraintLogic.equalsIgnoreCase("TEMPTABLES"))
-				options.setQueryConstraintLogic(QueryConstraintStrategy.TEMP_TABLES);
-			else 
-				options.setQueryConstraintLogic(QueryConstraintStrategy.WITH_STATEMENT);
-		}
-		else if (getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
-					|| getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)){
-			options.setQueryConstraintLogic(QueryConstraintStrategy.WITH_STATEMENT);
-		}
-		else if (getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE)){
-			options.setInvertedConstraintLogic(InvertedConstraintStrategy.MINUS_CLAUSE);
-		}
-		this.preProcessingSql = new ArrayList<String>();
-		this.postProcessingSql = new ArrayList<String>();
+		options.setQueryConstraintLogic(QueryConstraintStrategy.WITH_STATEMENT);
+		this.preProcessingSql = new ArrayList<>();
+		this.postProcessingSql = new ArrayList<>();
 
 		parseQueryDefinitionXml(queryXml);
 	}
@@ -168,28 +156,13 @@ public class TemporalQuery {
 		}catch (I2B2Exception e) {
 			// ignore this default will be WITH
 		}
-	
-		if (getServerType().equalsIgnoreCase(DAOFactoryHelper.SQLSERVER)){
-			//no default options at this time
-			if (queryConstraintLogic.equalsIgnoreCase("TEMP")||queryConstraintLogic.equalsIgnoreCase("TEMPTABLES"))
-				options.setQueryConstraintLogic(QueryConstraintStrategy.TEMP_TABLES);
-			else 
-				options.setQueryConstraintLogic(QueryConstraintStrategy.WITH_STATEMENT);
-		}
-		else if (getServerType().equalsIgnoreCase(DAOFactoryHelper.POSTGRESQL)
-					|| getServerType().equalsIgnoreCase(DAOFactoryHelper.IRIS)){
-				//no default options at this time
-			options.setQueryConstraintLogic(QueryConstraintStrategy.WITH_STATEMENT);
-		}
-		else if (getServerType().equalsIgnoreCase(DAOFactoryHelper.ORACLE)){
-			options.setInvertedConstraintLogic(InvertedConstraintStrategy.MINUS_CLAUSE);
-		}
+		options.setQueryConstraintLogic(QueryConstraintStrategy.WITH_STATEMENT);
 		this.queryDef = queryDefinition;
 		this.projectId = queryProjectId;
 		this.userSecurityType = userSecurityType;
 		this.securityType = querySecurityType;
-		this.preProcessingSql = new ArrayList<String>();
-		this.postProcessingSql = new ArrayList<String>();
+		this.preProcessingSql = new ArrayList<>();
+		this.postProcessingSql = new ArrayList<>();
 		parseQuery();
 	}
 
