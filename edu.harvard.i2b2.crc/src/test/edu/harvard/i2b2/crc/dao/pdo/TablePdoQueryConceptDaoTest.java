@@ -91,7 +91,7 @@ public class TablePdoQueryConceptDaoTest {
 		List<Integer> sqlParamCountList = new ArrayList<Integer>();
 		for (PanelType panel : filterListType.getPanel()) {
 			panelSql = pdoQueryHandler.buildQuery(panel,
-					PdoQueryHandler.PLAIN_PDO_TYPE);
+					PdoQueryHandler.PLAIN_PDO_TYPE, true);
 			System.out.println("Panel Sql " + panelSql);
 			panelSqlList.add(panelSql);
 

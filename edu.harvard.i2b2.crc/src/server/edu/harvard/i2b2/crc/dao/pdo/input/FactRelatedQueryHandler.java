@@ -89,7 +89,7 @@ import edu.harvard.i2b2.crc.util.QueryProcessorUtil;
  * @see VisitFactRelated
  * @see ProviderFactRelated
  * @see PatientFactRelated
- * @see ObservationFactRelated
+ * @see ObservationFactFactRelated
  */
 public class FactRelatedQueryHandler extends CRCDAO implements IFactRelatedQueryHandler {
 	/** Input option list from pdo request* */
@@ -278,7 +278,8 @@ public class FactRelatedQueryHandler extends CRCDAO implements IFactRelatedQuery
 					}
 				}
 				// generate sql
-				String querySql = buildQuery(null, PdoQueryHandler.PLAIN_PDO_TYPE);
+				String querySql = buildQuery(null, PdoQueryHandler.PLAIN_PDO_TYPE, false);
+				querySql += " ORDER BY 2,5,3,7,6";
 				log.debug("Executing sql PLAIN PDO[" + querySql + "]");
 				panelSqlList.add(querySql);
 				if (createTempTable)
@@ -291,8 +292,7 @@ public class FactRelatedQueryHandler extends CRCDAO implements IFactRelatedQuery
 			} else {
 				for (PanelType panel : filterList.getPanel()) {
 					// generate sql
-					String querySql = buildQuery(panel,
-							PdoQueryHandler.PLAIN_PDO_TYPE);
+					String querySql = buildQuery(panel, PdoQueryHandler.PLAIN_PDO_TYPE, false);
 					if (querySql.trim().length() == 0 ) { 
 						continue;
 					}
@@ -330,6 +330,7 @@ public class FactRelatedQueryHandler extends CRCDAO implements IFactRelatedQuery
 							}
 						}
 					}
+					querySql += " ORDER BY 2,5,3,7,6";
 					log.debug("Executing sql PLAIN PDO [" + querySql + "]");
 					panelSqlList.add(querySql);
 					// execute fullsql
@@ -410,15 +411,13 @@ public class FactRelatedQueryHandler extends CRCDAO implements IFactRelatedQuery
 					}
 				}
 				// generate sql
-				String querySql = buildQuery(null, PdoQueryHandler.PLAIN_PDO_TYPE);
+				String querySql = buildQuery(null, PdoQueryHandler.PLAIN_PDO_TYPE, false);
 
 				log.debug("Executing sql PLAIN PDO [" + querySql + "]");
 				panelSqlList.add(querySql);
 				if (createTempTable) {
-					if (inputOptionListHandler.isEnumerationSet()) {
-						inputOptionListHandler
-						.uploadEnumerationValueToTempTable(conn);
-					}
+					if (inputOptionListHandler.isEnumerationSet())
+						inputOptionListHandler.uploadEnumerationValueToTempTable(conn);
 				}
 				// execute fullsql
 				resultSet = executeQuery(conn, querySql, sqlParamCount);
@@ -427,7 +426,7 @@ public class FactRelatedQueryHandler extends CRCDAO implements IFactRelatedQuery
 			} else {
 				for (PanelType panel : filterList.getPanel()) {
 					// generate sql
-					String querySql = buildQuery(panel, PdoQueryHandler.TABLE_PDO_TYPE);
+					String querySql = buildQuery(panel, PdoQueryHandler.TABLE_PDO_TYPE, false);
 					if (querySql.trim().length() == 0 )
 						continue;
 					log.debug("Executing sql[" + querySql + "]");
@@ -472,7 +471,7 @@ public class FactRelatedQueryHandler extends CRCDAO implements IFactRelatedQuery
 							}
 						}
 					}
-					
+					querySql += " ORDER BY 2,5,3,7,6";
 					panelSqlList.add(querySql);
 					log.debug("TABLE PDO Executing sql [" + querySql + "]");
 					// execute fullsql
@@ -559,10 +558,9 @@ public class FactRelatedQueryHandler extends CRCDAO implements IFactRelatedQuery
 	}
 
 	@Override
-	public String buildTotalQuery(PanelType panel, String pdoType)
-			throws I2B2DAOException {
+	public String buildTotalQuery(PanelType panel, String pdoType, boolean orderBy) throws I2B2DAOException {
 		// TODO Auto-generated method stub
-		return buildQuery(panel, pdoType);
+		return buildQuery(panel, pdoType, orderBy);
 	}
 
 	/**
@@ -573,8 +571,7 @@ public class FactRelatedQueryHandler extends CRCDAO implements IFactRelatedQuery
 	 * @throws I2B2DAOException
 	 */
 	@Override
-	public String buildQuery(PanelType panel, String pdoType)
-			throws I2B2DAOException {
+	public String buildQuery(PanelType panel, String pdoType, boolean orderBy) throws I2B2DAOException {
 		String obsFactSelectClause = null;
 /*
  * Original OMOP addition, superceded by mult domain solution.
@@ -649,7 +646,7 @@ public class FactRelatedQueryHandler extends CRCDAO implements IFactRelatedQuery
 			if (panel != null) {
 				factByConceptSql = factQueryWithDimensionFilter(
 						obsFactSelectClause, tableLookupJoinClause,
-						fullWhereClause, panel);
+						fullWhereClause, panel, orderBy);
 				if (factByConceptSql.trim().length() == 0)
 					return StringUtils.EMPTY;
 				mainQuerySql += factByConceptSql;
@@ -740,7 +737,7 @@ public class FactRelatedQueryHandler extends CRCDAO implements IFactRelatedQuery
 	 * @return
 	 */
 	private String factQueryWithDimensionFilter(String obsFactSelectClause, String tableLookupJoinClause,
-												String fullWhereClause, PanelType panel) throws I2B2Exception {
+												String fullWhereClause, PanelType panel, boolean orderBy) throws I2B2Exception {
 		String factByProviderSql = StringUtils.EMPTY;
 		int i = 0;
 		String panelName = null;
@@ -1000,7 +997,7 @@ public class FactRelatedQueryHandler extends CRCDAO implements IFactRelatedQuery
 
 		// factByProviderSql += " ORDER BY
 		// obs.patient_num,obs.start_date,obs.concept_cd,obs.rowid) a \n";
-		if (this.requestVersion.startsWith("1.5"))
+		if (this.requestVersion.startsWith("1.5") || !orderBy)
 			factByProviderSql += "  ) a \n";
 		else
 			factByProviderSql += "  ORDER BY 2,5,3,7,6) a \n";

@@ -16,6 +16,7 @@ package edu.harvard.i2b2.crc.dao.pdo.filter;
 
 import edu.harvard.i2b2.common.exception.I2B2Exception;
 import edu.harvard.i2b2.common.util.db.JDBCUtil;
+import edu.harvard.i2b2.common.util.db.QueryUtil;
 import edu.harvard.i2b2.crc.datavo.db.DataSourceLookup;
 import edu.harvard.i2b2.crc.datavo.pdo.query.ItemType;
 import edu.harvard.i2b2.crc.util.QueryProcessorUtil;
@@ -39,7 +40,9 @@ public class DimensionFilter {
 	/**
 	 * Parameter constructor
 	 * 
-	 * @param filterListType
+	 * @param item
+	 * @param schemaName
+	 * @param dataSourceLookup
 	 */
 	public DimensionFilter(ItemType item, String schemaName, DataSourceLookup dataSourceLookup) {
 		this.item = item;
@@ -73,10 +76,14 @@ public class DimensionFilter {
 					// so that it matches concept_dimension's concept_path or
 					// provider_dimension's provider_path
 					if (dimCode.lastIndexOf('\\') == dimCode.length() - 1) {
-						dimCode = dimCode + "%";
+						dimOperator = QueryUtil.getOperatorByValue(dimCode + "%");
+						dimCode = QueryUtil.getCleanValue(dimCode + "%");
 					} else {
-						dimCode = dimCode + "\\%";
+						dimOperator = QueryUtil.getOperatorByValue(dimCode + "\\%");
+						dimCode = QueryUtil.getCleanValue(dimCode + "\\%");
 					}
+				} else {
+					dimOperator = QueryUtil.getOperatorByValue(dimCode);
 				}
 			}
 			

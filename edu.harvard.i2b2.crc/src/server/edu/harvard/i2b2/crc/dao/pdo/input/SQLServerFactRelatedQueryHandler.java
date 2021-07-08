@@ -91,10 +91,9 @@ import edu.harvard.i2b2.crc.util.QueryProcessorUtil;
  * @see VisitFactRelated
  * @see ProviderFactRelated
  * @see PatientFactRelated
- * @see ObservationFactRelated
+ * @see ObservationFactFactRelated
  */
-public class SQLServerFactRelatedQueryHandler extends CRCDAO implements
-		IFactRelatedQueryHandler {
+public class SQLServerFactRelatedQueryHandler extends CRCDAO implements IFactRelatedQueryHandler {
 	/** Input option list from pdo request* */
 	private InputOptionListType inputList = null;
 
@@ -271,8 +270,8 @@ public class SQLServerFactRelatedQueryHandler extends CRCDAO implements
 				}
 				
 				// generate sql
-				String querySql = buildQuery(null, PdoQueryHandler.PLAIN_PDO_TYPE);
-				panelSqlList.add(buildQueryCommon(null, PdoQueryHandler.PLAIN_PDO_TYPE));
+				String querySql = buildQuery(null, PdoQueryHandler.PLAIN_PDO_TYPE, true);
+				panelSqlList.add(buildQueryCommon(null, PdoQueryHandler.PLAIN_PDO_TYPE, true));
 				log.debug("Executing sql[" + querySql + "]");
 				if (inputOptionListHandler.isEnumerationSet())
 					inputOptionListHandler.uploadEnumerationValueToTempTable(conn);
@@ -283,7 +282,7 @@ public class SQLServerFactRelatedQueryHandler extends CRCDAO implements
 			} else {
 				for (PanelType panel : filterList.getPanel()) {
 					// generate sql
-					String querySql = buildQuery(panel, PdoQueryHandler.PLAIN_PDO_TYPE);
+					String querySql = buildQuery(panel, PdoQueryHandler.PLAIN_PDO_TYPE, true);
 					if (querySql.length() == 0)
 						continue;
 					
@@ -321,7 +320,7 @@ public class SQLServerFactRelatedQueryHandler extends CRCDAO implements
 							}
 						}
 					}
-					panelSqlList.add(buildQueryCommon(panel, PdoQueryHandler.PLAIN_PDO_TYPE));
+					panelSqlList.add(buildQueryCommon(panel, PdoQueryHandler.PLAIN_PDO_TYPE, true));
 					log.debug("PLAIN PDO Executing sql[" + querySql + "]");
 					// execute fullsql
 					sqlParamCount = panel.getItem().size();
@@ -410,9 +409,9 @@ public class SQLServerFactRelatedQueryHandler extends CRCDAO implements
 
 				}
 				// generate sql
-				String querySql = buildQuery(null, PdoQueryHandler.PLAIN_PDO_TYPE);
+				String querySql = buildQuery(null, PdoQueryHandler.PLAIN_PDO_TYPE, true);
 				log.debug("Executing sql PLAIN PDO[" + querySql + "]");
-				panelSqlList.add(buildQueryCommon(null, PdoQueryHandler.PLAIN_PDO_TYPE));
+				panelSqlList.add(buildQueryCommon(null, PdoQueryHandler.PLAIN_PDO_TYPE, true));
 				if (inputOptionListHandler.isEnumerationSet())
 					inputOptionListHandler.uploadEnumerationValueToTempTable(conn);
 				// execute fullsql
@@ -422,7 +421,7 @@ public class SQLServerFactRelatedQueryHandler extends CRCDAO implements
 			} else {
 				for (PanelType panel : filterList.getPanel()) {
 					// generate sql
-					String querySql = buildQuery(panel, PdoQueryHandler.TABLE_PDO_TYPE);
+					String querySql = buildQuery(panel, PdoQueryHandler.TABLE_PDO_TYPE, true);
 					if (querySql.length() == 0)
 						continue;
 
@@ -553,13 +552,12 @@ public class SQLServerFactRelatedQueryHandler extends CRCDAO implements
 	}
 
 	@Override
-	public String buildTotalQuery(PanelType panel, String pdoType)
-			throws I2B2DAOException {
+	public String buildTotalQuery(PanelType panel, String pdoType, boolean orderBy) throws I2B2DAOException {
 		// TODO Auto-generated method stub
-		return buildQueryCommon(panel, pdoType);
+		return buildQueryCommon(panel, pdoType, orderBy);
 	}
 
-	private String buildQueryCommon(PanelType panel, String pdoType) throws I2B2DAOException {
+	private String buildQueryCommon(PanelType panel, String pdoType, boolean orderBy) throws I2B2DAOException {
 		String obsFactSelectClause = null;
 		if (obsFactFactRelated != null) {
 			obsFactSelectClause = obsFactFactRelated.getSelectClauseWithoutBlob();
@@ -688,8 +686,8 @@ public class SQLServerFactRelatedQueryHandler extends CRCDAO implements
 	 * @throws I2B2DAOException
 	 */
 	@Override
-	public String buildQuery(PanelType panel, String pdoType) throws I2B2DAOException {
-		String mainQuerySql = this.buildQueryCommon(panel, pdoType);
+	public String buildQuery(PanelType panel, String pdoType, boolean orderBy) throws I2B2DAOException {
+		String mainQuerySql = this.buildQueryCommon(panel, pdoType, orderBy);
 		if (mainQuerySql.length() == 0)
 			return StringUtils.EMPTY;
 		//check for version 1.5, if so return the fact without the duplicates in modifier_cd and instance num

@@ -395,7 +395,7 @@ public class FolderDao extends JdbcDaoSupport {
 		if(childrenType.isBlob())
 			parameters = parameters + BLOB;
 
-		String metadataSchema = dbInfo.getDb_fullSchema();
+		String metadataSchema = dbInfo.getDb_fullSchema() != null ? dbInfo.getDb_fullSchema() : StringUtils.EMPTY;
 		setDataSource(dbInfo.getDb_dataSource());
 
 		if (projectInfo.getRole().size() == 0) {

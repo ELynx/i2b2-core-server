@@ -80,11 +80,9 @@ public interface IFactRelatedQueryHandler {
 	 * @return String
 	 * @throws I2B2DAOException
 	 */
-	public String buildQuery(PanelType panel, String pdoType)
-			throws I2B2DAOException;
+	public String buildQuery(PanelType panel, String pdoType, boolean orderBy) throws I2B2DAOException;
 
-	public String buildTotalQuery(PanelType panel, String pdoType)
-			throws I2B2DAOException;
+	public String buildTotalQuery(PanelType panel, String pdoType, boolean orderBy) throws I2B2DAOException;
 
 	public List<String> getPanelSqlList();
 

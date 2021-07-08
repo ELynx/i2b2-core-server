@@ -132,12 +132,11 @@ public class PagingHandler extends CRCDAO {
 			}
 
 			sqlCountList.add(sqlParamCount);
-			String totalSql = pageTotalDao.buildTotalSql(factRelatedHandler,
-					singlePanel);
-			if (totalSql.trim().length() == 0) { 
+			String totalSql = pageTotalDao.buildTotalSql(factRelatedHandler, singlePanel, false);
+			if (totalSql.trim().length() == 0)
 				continue;
-			}
-			if (singlePanel != null && singlePanel.getItem().get(0).getFacttablecolumn() != null){
+
+			if (singlePanel != null && singlePanel.getItem().get(0).getFacttablecolumn() != null) {
 				boolean derivedFactTable = QueryProcessorUtil.getInstance().getDerivedFactTable();
 				
 				String defaultTableName = dataSourceLookup.getFullSchema() + ".observation_FACT" ;
@@ -225,7 +224,7 @@ public class PagingHandler extends CRCDAO {
 
 			sqlCountList.add(sqlParamCount);
 
-			panelSql = pageTotalDao.buildTotalSql(factRelatedHandler, singlePanel);
+			panelSql = pageTotalDao.buildTotalSql(factRelatedHandler, singlePanel, true);
 			if (panelSql.length() == 0)
 				continue;
 

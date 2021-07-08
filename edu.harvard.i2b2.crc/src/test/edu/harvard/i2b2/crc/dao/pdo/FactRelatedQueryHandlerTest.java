@@ -87,7 +87,7 @@ public class FactRelatedQueryHandlerTest {
 		FilterListType filterListType = pdoRequestType.getFilterList();
 		PanelType panel = filterListType.getPanel().get(0);
 		String pdoSql = pdoQueryHandler.buildQuery(panel,
-				PdoQueryHandler.PLAIN_PDO_TYPE);
+				PdoQueryHandler.PLAIN_PDO_TYPE, true);
 		System.out.println("Generated Sql" + pdoSql);
 	}
 

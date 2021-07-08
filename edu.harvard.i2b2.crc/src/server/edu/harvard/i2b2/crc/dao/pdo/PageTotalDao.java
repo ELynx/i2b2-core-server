@@ -159,9 +159,10 @@ public class PageTotalDao extends CRCDAO implements IPageDao {
 
 	@Override
 	public String buildTotalSql(IFactRelatedQueryHandler factHandler,
-			PanelType panel) throws I2B2DAOException {
+								PanelType panel,
+								boolean orderBy) throws I2B2DAOException {
 		// call factrelatedhandler to build sql
-		return factHandler.buildTotalQuery(panel, PdoQueryHandler.PLAIN_PDO_TYPE);
+		return factHandler.buildTotalQuery(panel, PdoQueryHandler.PLAIN_PDO_TYPE, orderBy);
 	}
 
 	public void getSelect() {

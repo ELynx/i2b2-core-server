@@ -24,7 +24,7 @@ public interface IPageDao {
 			throws I2B2DAOException;
 
 	public String buildTotalSql(IFactRelatedQueryHandler factHandler,
-			PanelType panel) throws I2B2DAOException;
+			PanelType panel, boolean orderBy) throws I2B2DAOException;
 
 	public HashMap getMinIndexAndCountAllPanel(List<String> panelSqlList,
 			List<Integer> sqlParamCountList,
