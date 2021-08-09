@@ -99,8 +99,8 @@
       #org.quartz.jobStore.dataSource = QUARTZ
       #org.quartz.jobStore.nonManagedTXDataSource = QUARTZ_NO_TX
       #org.quartz.jobStore.tablePrefix = QRTZ_
-      #org.quartz.dataSource.QUARTZ.jndiURL = java:/CRCBootstrapDS
-      #org.quartz.dataSource.QUARTZ_NO_TX.jndiURL = java:/CRCBootstrapDS
+      #org.quartz.dataSource.QUARTZ.jndiURL = java:/IrisDS
+      #org.quartz.dataSource.QUARTZ_NO_TX.jndiURL = java:/IrisDS
      
       
     </attribute>

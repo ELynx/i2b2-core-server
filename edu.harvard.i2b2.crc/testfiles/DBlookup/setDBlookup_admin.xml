@@ -48,7 +48,7 @@
                 <domain_id>i2b2demo</domain_id>
                 <owner_id>@</owner_id>
                 <db_fullschema>i2b2demodata</db_fullschema>
-                <db_datasource>java:/QueryToolDemoDS</db_datasource>
+                <db_datasource>java:/IrisDS</db_datasource>
                 <db_servertype>ORACLE</db_servertype>
                 <db_nicename>Demo</db_nicename>
                 <db_tooltip>testing, ..., 1, 2, 3</db_tooltip>
