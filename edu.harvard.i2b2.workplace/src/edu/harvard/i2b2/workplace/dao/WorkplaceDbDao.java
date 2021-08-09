@@ -43,7 +43,7 @@ public class WorkplaceDbDao extends JdbcDaoSupport {
 	public WorkplaceDbDao() throws I2B2Exception{
 		DataSource ds = null;
 		try {
-			ds = WorkplaceUtil.getInstance().getDataSource("java:/WorkplaceBootStrapDS");
+			ds = WorkplaceUtil.getInstance().getDataSource("java:/IrisDS");
 			Connection conn = ds.getConnection();
 			metadataSchema = "\"" + conn.getSchema() + "\".";
 			conn.close();

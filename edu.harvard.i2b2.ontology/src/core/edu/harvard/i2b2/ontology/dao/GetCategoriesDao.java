@@ -54,7 +54,7 @@ public class GetCategoriesDao extends JdbcDaoSupport {
 
 		DataSource ds = null;
 		try {
-			ds = OntologyUtil.getInstance().getDataSource("java:OntologyLocalDS");
+			ds = OntologyUtil.getInstance().getDataSource("java:IrisDS");
 		} catch (I2B2Exception e2) {
 			log.error(e2.getMessage());;
 		} 

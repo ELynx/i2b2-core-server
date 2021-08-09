@@ -56,7 +56,7 @@ public class GetTermInfoDao extends JdbcDaoSupport {
 							   final String dbType) throws DataAccessException {
 		DataSource ds = null;
 		try {
-			ds = OntologyUtil.getInstance().getDataSource("java:OntologyLocalDS");
+			ds = OntologyUtil.getInstance().getDataSource("java:IrisDS");
 		} catch (I2B2Exception e2) {
 			// TODO Auto-generated catch block
 			e2.printStackTrace();

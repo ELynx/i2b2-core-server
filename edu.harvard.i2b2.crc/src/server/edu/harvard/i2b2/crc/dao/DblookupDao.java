@@ -59,7 +59,7 @@ public class DblookupDao extends JdbcDaoSupport {
 	
 	private void initDblookupDao() {		
 		try {
-			ds = QueryProcessorUtil.getInstance().getDataSource("java:/CRCBootStrapDS");
+			ds = QueryProcessorUtil.getInstance().getDataSource("java:/IrisDS");
 		} catch (I2B2Exception e2) {
 			log.error(e2.getMessage());;
 		} 

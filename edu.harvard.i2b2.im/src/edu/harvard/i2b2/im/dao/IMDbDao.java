@@ -43,7 +43,7 @@ public class IMDbDao extends JdbcDaoSupport {
 	public IMDbDao() throws I2B2Exception{
 		DataSource ds = null;
 		try {
-			ds = IMUtil.getInstance().getDataSource("java:/IMBootStrapDS");
+			ds = IMUtil.getInstance().getDataSource("java:/IrisDS");
 			//		log.info(ds.toString());
 		} catch (I2B2Exception e2) {
 			log.error("bootstrap ds failure: " + e2.getMessage());

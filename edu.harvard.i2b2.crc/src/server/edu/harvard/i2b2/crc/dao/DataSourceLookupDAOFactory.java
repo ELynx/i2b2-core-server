@@ -55,7 +55,7 @@ public class DataSourceLookupDAOFactory {
 		//	dataSourceName = crcUtil.getCRCDBLookupDataSource();
 		//	serverType = crcUtil.getCRCDBLookupServerType();
 		//	schemaName = crcUtil.getCRCDBLookupSchemaName();
-			lookupDataSource = crcUtil.getDataSource("java:/CRCBootStrapDS");
+			lookupDataSource = crcUtil.getDataSource("java:/IrisDS");
 			Connection conn = lookupDataSource.getConnection();
 			serverType = conn.getMetaData().getDatabaseProductName().toUpperCase();
 			schemaName = conn.getSchema();

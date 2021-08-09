@@ -356,7 +356,7 @@ public class QueryProcessorUtil {
 			//		log.info(sql + domainId + projectId + ownerId);
 			//	List<ParamType> queryResult = null;
 			try {
-				DataSource   ds = this.getDataSource("java:/CRCBootStrapDS");
+				DataSource   ds = this.getDataSource("java:/IrisDS");
 				Connection conn = ds.getConnection();
 				String metadataSchema = "\"" + conn.getSchema() + "\"";
 				conn.close();

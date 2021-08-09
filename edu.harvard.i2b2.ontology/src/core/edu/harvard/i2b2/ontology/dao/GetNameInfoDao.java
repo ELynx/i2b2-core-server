@@ -56,7 +56,7 @@ public class GetNameInfoDao extends JdbcDaoSupport {
 							 ProjectType projectInfo, final String dbType) throws DataAccessException {
 		DataSource ds = null;
 		try {
-			ds = OntologyUtil.getInstance().getDataSource("java:OntologyLocalDS");
+			ds = OntologyUtil.getInstance().getDataSource("java:IrisDS");
 		} catch (I2B2Exception e2) {
 			log.error(e2.getMessage());
 		} 

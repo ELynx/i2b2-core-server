@@ -51,7 +51,7 @@ public class GetCodeInfoDao extends JdbcDaoSupport {
 	public List findCodeInfo(final VocabRequestType vocabType, final List categories, ProjectType projectInfo) throws DataAccessException, I2B2Exception{
 		DataSource ds = null;
 		try {
-			ds = OntologyUtil.getInstance().getDataSource("java:OntologyLocalDS");
+			ds = OntologyUtil.getInstance().getDataSource("java:IrisDS");
 		} catch (I2B2Exception e2) {
 			log.error(e2.getMessage());
 			throw e2;

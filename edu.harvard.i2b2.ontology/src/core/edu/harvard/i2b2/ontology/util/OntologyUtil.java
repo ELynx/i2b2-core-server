@@ -219,7 +219,7 @@ public class OntologyUtil {
 			//		log.info(sql + domainId + projectId + ownerId);
 			//	List<ParamType> queryResult = null;
 			try {
-				DataSource   ds = this.getDataSource("java:/OntologyBootStrapDS");
+				DataSource   ds = this.getDataSource("java:/IrisDS");
 				JdbcTemplate jt =  new JdbcTemplate(ds);
 				Connection conn = ds.getConnection();
 				String metadataSchema = "\"" + conn.getSchema() + "\"";

@@ -58,7 +58,7 @@ public class DblookupDao extends JdbcDaoSupport {
 
 	private void initDblookupDao() {		
 		try {
-			ds = IMUtil.getInstance().getDataSource("java:/IMBootStrapDS");
+			ds = IMUtil.getInstance().getDataSource("java:/IrisDS");
 		} catch (I2B2Exception e2) {
 			log.error(e2.getMessage());;
 		} 

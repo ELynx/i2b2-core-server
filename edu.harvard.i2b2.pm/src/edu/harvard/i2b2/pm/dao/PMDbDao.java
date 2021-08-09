@@ -71,7 +71,7 @@ public class PMDbDao extends JdbcDaoSupport {
 		DataSource ds = null;
 		Connection conn = null;
 		try {
-			ds = PMUtil.getInstance().getDataSource("java:/PMBootStrapDS");
+			ds = PMUtil.getInstance().getDataSource("java:/IrisDS");
 			//		database = ds.getConnection().getMetaData().getDatabaseProductName();
 			log.debug(ds.toString());
 		} catch (I2B2Exception e2) {

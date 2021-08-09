@@ -150,7 +150,7 @@ public class FRUtil {
 			//		log.info(sql + domainId + projectId + ownerId);
 			//	List<ParamType> queryResult = null;
 			try {
-				DataSource   ds = this.getDataSource("java:/FRBootStrapDS");
+				DataSource   ds = this.getDataSource("java:/IrisDS");
 
 				JdbcTemplate jt =  new JdbcTemplate(ds);
 				Connection conn = ds.getConnection();

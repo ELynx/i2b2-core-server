@@ -58,7 +58,7 @@ public class GetChildrenDao extends JdbcDaoSupport {
 	public List findChildrenByParent(final GetChildrenType childrenType, final List categories, final ProjectType projectInfo) throws DataAccessException{
 		DataSource ds = null;
 		try {
-			ds = OntologyUtil.getInstance().getDataSource("java:OntologyLocalDS");
+			ds = OntologyUtil.getInstance().getDataSource("java:IrisDS");
 		} catch (I2B2Exception e2) {
 			log.error(e2.getMessage());
 		} 

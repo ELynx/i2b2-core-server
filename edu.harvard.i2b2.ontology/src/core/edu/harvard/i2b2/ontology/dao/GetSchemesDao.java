@@ -42,7 +42,7 @@ public class GetSchemesDao extends JdbcDaoSupport {
 	public List findSchemes(final GetReturnType returnType) throws DataAccessException{
 		DataSource ds = null;
 		try {
-			ds = OntologyUtil.getInstance().getDataSource("java:OntologyDemoDS");
+			ds = OntologyUtil.getInstance().getDataSource("java:IrisDS");
 		} catch (I2B2Exception e2) {
 			// TODO Auto-generated catch block
 			e2.printStackTrace();

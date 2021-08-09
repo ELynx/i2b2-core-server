@@ -277,7 +277,7 @@ public class OntologyServiceRESTTest extends OntologyAxisAbstract{
 		sb.append("            <domain_id>i2b2demo</domain_id>\n");
 		sb.append("            <owner_id>@</owner_id>\n");
 		sb.append("            <db_fullschema>i2b2metadata</db_fullschema>\n");
-		sb.append("            <db_datasource>java:/OntologyDemoDS</db_datasource>\n");
+		sb.append("            <db_datasource>java:/IrisDS</db_datasource>\n");
 		sb.append("            <db_servertype>ORACLE</db_servertype>\n");
 		sb.append("            <db_nicename>Metadata</db_nicename>\n");
 		sb.append("            <db_tooltip>testing, ..., 1, 2, 3</db_tooltip>\n");
